@@ -2,4 +2,4 @@ apiKey.py
 __pycache__/
 .dist/
 venv/
-.env
+*.env
