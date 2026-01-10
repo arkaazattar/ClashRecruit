@@ -23,11 +23,13 @@ class API:
         url = f"https://api.clashofclans.com/v1/players/%23{self.user_tag}"
         response = requests.get(url, headers=headers)
         self.storage = response.json()
-        self.clantag = self.storage.get("clan", {}).get("tag", None)
-        self.clantag = self.clantag[1:]
+
         if self.storage.get("reason") == "notFound":
             self.reason = "Player tag is incorrect"
             return False  
+
+        self.clantag = self.storage.get("clan", {}).get("tag", None)
+        self.clantag = self.clantag[1:]
         self.user_name = self.storage.get("name")
         return True
     

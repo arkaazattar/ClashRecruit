@@ -34,7 +34,7 @@
         else{
 
             document.getElementById("result").innerText =
-      "Result: " + result.receivedPlayerTag + "\n able to recruita: " + result.recruit_status ;
+      "Result: " + result.receivedPlayerTag + "\n able to recruit: " + result.recruit_status ;
                 
         }
     })
