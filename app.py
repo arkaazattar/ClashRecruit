@@ -31,8 +31,10 @@ def verify_user():
     
     user = API(received_tag, received_token)
     check_player_team = user.check_player()
+    session["recruiter_status"] = user.recruiter_status
+    print(f"This should be the recruiter status : {user.recruiter_status}")
 
-    if (check_player_team == True):
+    if check_player_team == True:
         status = True
         reason = "Valid User"
         name = user.user_name
@@ -50,7 +52,7 @@ def verify_user():
     return jsonify({
         "message": status, 
         "receivedPlayerTag": reason,
-        "recruit_status" : recruiting(received_tag),
+        "recruit_status" : session.get("recruiter_status"),
         "player_name" : name,
         "clan_tag" : clan_tag
     })
@@ -60,7 +62,7 @@ def dashboard():
         return render_template(
             "dashboard.html",
             username = session.get("player_name"),
-            recruit_status = recruiting(session.get("player_tag")))
+            recruit_status = session.get("recruiter_status"))
         
 
 @app.route("/recruiter")

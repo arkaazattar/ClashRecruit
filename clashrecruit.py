@@ -17,6 +17,7 @@ class API:
             "token": api
         }
         self.clantag = ""
+        self.recruiter_status = ""
     def check_player_api(self):
 
         url = f"https://api.clashofclans.com/v1/players/%23{self.user_tag}/verifytoken"
@@ -52,13 +53,28 @@ class API:
              return False
         
         if self.check_player_api() == False: 
-            return self.reason
-
+            return False
+       
+        print(self.storage)
+        self.recruiter_status = self.recruiting(self.storage)
         self.clantag = self.storage.get("clan", {}).get("tag", None)
         self.clantag = self.clantag[1:]
         self.user_name = self.storage.get("name")
         return True
     
+    def recruiting(self, data : dict): 
+        roles = ["leader", "coleader", "admin"] #admin is elder r we 
+        
+        clan_tag = data.get("clan", {}).get("tag", 0)
+        if(clan_tag == 0):
+            print("not in clan")
+            return False
+        
+        if(data["role"].lower() not in roles):
+            print("not a leader")
+            return False
+        
+        return True
 
 
 class Advertisement:
@@ -152,20 +168,7 @@ def check_api():
         else: print(f"{user.reason}, try again") 
     return(user_tag)
 
-def recruiting(user_tag): # this should automatically load their clan, no need to type in clan tag
-    roles = ["leader", "coleader", "admin"] #admin is elder r we 
-    response = requests.get(f"https://api.clashofclans.com/v1/players/%23{user_tag}", headers=headers)
-    data = response.json()
-    clan_tag = data.get("clan", {}).get("tag", 0)
-    if(clan_tag == 0):
-        print("not in clan")
-        return(False)
-    
-    if(data["role"].lower() not in roles):
-        print("not a leader")
-        return(False)
-    
-    return(True)
+
 
 def recruitee():
     invalid_input = True
