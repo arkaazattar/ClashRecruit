@@ -26,11 +26,13 @@ def verify_user():
     data = request.get_json()
 
     received_tag = data.get('playerTag')
-    session["player_tag"] = received_tag
     received_token = data.get('apiToken')
+    session["player_tag"] = received_tag
+    
     user = API(received_tag, received_token)
-    user.check_player()
-    if (user.check_player_api() == True):
+    check_player_team = user.check_player()
+
+    if (check_player_team == True):
         status = True
         reason = "Valid User"
         name = user.user_name

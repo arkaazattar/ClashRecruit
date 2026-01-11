@@ -12,47 +12,54 @@ class API:
     def __init__(self, user_tag, api):
         self.token = False
         self.user_tag = user_tag
-        self.reason = 0 # should be string but wtv
         self.user_name = "Guest"
         self.json_data = {
-            "token": str(api)
+            "token": api
         }
         self.clantag = ""
-        #api is one time use, no point of storing it 
+    def check_player_api(self):
+
+        url = f"https://api.clashofclans.com/v1/players/%23{self.user_tag}/verifytoken"
+
+        response = requests.post(url, headers=headers, json = self.json_data)
+        self.apistorage = response.json() # Important!! this storage now holds whether the api key is valid or not
+
+        status = self.apistorage.get("status")
+
+        if status == "ok":
+            self.token = True # set token value to 1 in boolean. this makes it easy to check if token info is correct
+
+        elif status == "invalid":
+            self.reason = "API Token is incorrect"
+
+        else: self.reason = self.apistorage  
+        
+        return self.token 
+    
     def check_player(self):
         url = f"https://api.clashofclans.com/v1/players/%23{self.user_tag}"
         response = requests.get(url, headers=headers)
         self.storage = response.json()
-
-        if self.storage.get("reason") == "notFound":
+        
+        reason = self.storage.get("reason")
+        
+        if reason == "notFound":
             self.reason = "Player tag is incorrect"
             return False  
+        
+        if reason == "accessDenied.invalidIp":
+             self.reason = "Invalid IP"
+             return False
+        
+        if self.check_player_api() == False: 
+            return self.reason
 
         self.clantag = self.storage.get("clan", {}).get("tag", None)
         self.clantag = self.clantag[1:]
         self.user_name = self.storage.get("name")
         return True
     
-    def check_player_api(self):
 
-        if (self.check_player() == False):
-            return False
-
-        url = f"https://api.clashofclans.com/v1/players/%23{self.user_tag}/verifytoken"
-
-        response = requests.post(url, headers=headers, json = self.json_data)
-        self.storage = response.json() # Important!! this storage now holds whether the api key is valid or not
-
-        if self.storage.get("status") == "invalid":
-            self.reason = "API Token is incorrect"
-
-
-        elif self.storage.get("status") == "ok":
-            self.token = True # set token value to 1 in boolean. this makes it easy to check if token info is correct
-
-        else: self.reason = self.storage  
-        
-        return self.token #dont really need to store token in class, as its being returned anyways. keeping for now in the case that we need it for error checking.
 
 class Advertisement:
 
@@ -88,52 +95,6 @@ class Recruiter: # error checking needs to be done out of class
         
         self.new_clan_requirements(required_league, required_builder_trophies, required_townhall)
 
-        #need to pull, required trophies, required builder base trophies, required townhall level,
-        #required trophies doesnt work till api is changed
-        #leaving blank for now
-
-  
-        # invalid = True
-        # while invalid:
-        #     change_requirements = input(f"Do you want to change the townhall requirements from clans default requirements ({required_townhall})? Yes or no: ").lower()
-        #     if change_requirements == "yes":
-        #         required_townhall = int(input("New Townhall requirement: ")) #error handling later
-        #         self.set_townhall_requirement(required_townhall)
-        #         invalid = False
-        #     elif change_requirements == "no":
-        #         invalid = False
-        #     else: 
-        #         print("Invalid input")
-                
-        # invalid = True
-        # while invalid:
-        #     change_requirements = input(f"Do you want to change the builder trophy requirements from clans default requirements ({required_builder_trophies})? Yes or no: ").lower()
-        #     if change_requirements == "yes":
-
-        #         required_builder_trophies = int(input("New builder trophies requirement: ")) #error handling later
-
-        #         self.set_builder_trophies_requirement(required_builder_trophies)
-        #         invalid = False
-        #     elif change_requirements == "no":
-        #         invalid = False
-        #     else: 
-        #         print("Invalid input")
-
-        # print("Set required league") #ts will go away
-        # self.set_league_requirement(required_league)
-
-        
-        # self.new_clan_requirements(required_league, required_builder_trophies, required_townhall)
-        
-        # valid_input = False
-        # while(False):
-        #     if (input("Do you want to post an ad? (Yes/No)").lower) == "yes" or "no":
-        #         self.post_ad()
-        #         valid_input = True
-        #     else:  
-        #         (print("Invalid Input"))
-
-        
         
 #setters
     def set_townhall_requirement(self, required_townhall):
@@ -165,10 +126,6 @@ class Recruitee:
     def __init__(self, user_tag):
         self.user_tag = user_tag
 
-
-
-
-        
 
 def ask_if_recruiting():
     invalid_input = True
