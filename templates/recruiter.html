@@ -2,8 +2,8 @@
 <html>
 <head>
     <title>Recruit</title> 
-    <script> const datatosend = {{ data|tojson }}; </script>
-    <script async src="{{ url_for('static', filename='js/recruiter.js') }}"></script>
+    <!-- <script> const datatosend = {{ data|tojson }}; </script> -->
+    <!-- <script async src="{{ url_for('static', filename='js/recruiter.js') }}"></script> -->
 </head>
 <body style="background-color: white; color: black;">
 
@@ -12,7 +12,7 @@
   Player Tag: {{ data.player_tag }}
 
 
-<form id="required_league">     
+<form id="required_league" method="POST">     
     <label for="leagues">Enter Required League</label>
     <select id="leagues" name="required_league">
         <option value="" disabled selected>--Select an option--</option>
