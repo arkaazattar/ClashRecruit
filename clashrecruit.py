@@ -55,7 +55,6 @@ class API:
         if self.check_player_api() == False: 
             return False
        
-        print(self.storage)
         self.recruiter_status = self.recruiting(self.storage)
         self.clantag = self.storage.get("clan", {}).get("tag", None)
         self.clantag = self.clantag[1:]
