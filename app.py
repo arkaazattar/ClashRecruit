@@ -1,14 +1,13 @@
 import os
-from flask import Flask, request, jsonify, render_template
+import sys
+from flask import Flask, request, jsonify, render_template, session
 from flask_cors import CORS
-import apiKey
 from clashrecruit import *
-from flask import session
 from dotenv import load_dotenv
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
-load_dotenv()
+load_dotenv(".env")
 
 uri = f"mongodb+srv://arkaazattar_db_user:{os.getenv('DB_PASSWORD')}@clashrecruit.poawkmg.mongodb.net/?appName=clashrecruit"
 # Create a new client and connect to the server
@@ -23,6 +22,7 @@ try:
     print("Pinged your deployment. You successfully connected to MongoDB!")
 except Exception as e:
     print(e)
+    sys.exit("Could not connect to DB. Check IP?")
 
 template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "templates"))
 app = Flask(__name__, template_folder=template_dir)
@@ -108,6 +108,4 @@ def recruit():
     return render_template("recruiter.html", data = render_data)
 
 if __name__ == "__main__":
-
-
-    app.run(debug=True, port=5000)
+    app.run(port=5000)

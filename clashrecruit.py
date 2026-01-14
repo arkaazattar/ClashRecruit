@@ -138,7 +138,7 @@ class Recruiter: # error checking needs to be done out of class
 class Recruitee:
     # everything here now needs to call back to api request
 
-    def __init__(self, user_tag):
+    def __init__(self, user_tag, townhall, league):
         self.user_tag = user_tag
 
 
