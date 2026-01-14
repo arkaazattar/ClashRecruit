@@ -106,5 +106,16 @@ def recruit():
 
     return render_template("recruiter.html", data = render_data)
 
+
+@app.route("/recruitee")
+def recruitee():
+
+    clan_list = []
+    for clan in clan_collection.find():
+
+        clan_list.append(clan)
+    
+    return render_template("recruitee.html", clan_list = clan_list)
+
 if __name__ == "__main__":
     app.run(port=5000)
