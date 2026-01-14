@@ -2,14 +2,13 @@ import os
 import sys
 from flask import Flask, request, jsonify, render_template, session
 from flask_cors import CORS
-from clashrecruit import *
-from dotenv import load_dotenv
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
+from .config import FLASK_SECRET_KEY, DB_PASSWORD
+from .clashrecruit import *
 
-load_dotenv(".env")
 
-uri = f"mongodb+srv://arkaazattar_db_user:{os.getenv('DB_PASSWORD')}@clashrecruit.poawkmg.mongodb.net/?appName=clashrecruit"
+uri = f"mongodb+srv://arkaazattar_db_user:{DB_PASSWORD}@clashrecruit.poawkmg.mongodb.net/?appName=clashrecruit"
 # Create a new client and connect to the server
 client = MongoClient(uri, server_api=ServerApi('1'))
 # Send a ping to confirm a successful connection
@@ -26,7 +25,7 @@ except Exception as e:
 
 template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "templates"))
 app = Flask(__name__, template_folder=template_dir)
-app.secret_key = os.getenv("FLASK_SECRET_KEY")
+app.secret_key = FLASK_SECRET_KEY
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 CORS(app) 
 

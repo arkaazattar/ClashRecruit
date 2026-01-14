@@ -1,12 +1,8 @@
 import requests
-import apiKey
-import time 
-
-headers = {
-
-    "Content-Type" : "application/json",
-    "Authorization" : apiKey.api 
-    }
+from dotenv import load_dotenv
+from .config import headers
+from .maxtownhall import refresh
+MAXTOWNHALL = refresh()
 
 class API:
     def __init__(self, user_tag, api):
@@ -93,10 +89,6 @@ class Recruiter: # error checking needs to be done out of class
         print(self.user_tag + " " + self.clan_tag)
 
     def pull_clan_requirements(self):
-        
-       # params = {
-       #     "name" : self.clan_tag,
-       # }
 
         response = requests.get(f"https://api.clashofclans.com/v1/clans?name=%23{self.clan_tag}", headers=headers)
         self.storage = response.json()
@@ -136,8 +128,6 @@ class Recruiter: # error checking needs to be done out of class
 
 
 class Recruitee:
-    # everything here now needs to call back to api request
-
     def __init__(self, user_tag, townhall, league):
         self.user_tag = user_tag
 
