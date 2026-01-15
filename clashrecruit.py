@@ -14,6 +14,9 @@ class API:
         }
         self.clantag = ""
         self.recruiter_status = ""
+        self.league = 0
+        self.builder_trophies = 0
+        self.townhall = 0
     def check_player_api(self):
         
         url = f"https://api.clashofclans.com/v1/players/%23{self.user_tag}/verifytoken"
@@ -36,7 +39,10 @@ class API:
         url = f"https://api.clashofclans.com/v1/players/%23{self.user_tag}"
         response = requests.get(url, headers=headers)
         self.storage = response.json()
-        
+        self.league = self.storage.get("leagueTier").get("name")
+        self.league = int(self.league[-2:])
+
+
         reason = self.storage.get("reason")
         
         if reason == "notFound":
@@ -49,7 +55,10 @@ class API:
         
         if self.check_player_api() == False: 
             return False
-       
+        self.townhall = self.storage.get("townHallLevel")
+        self.builder_trophies = self.storage.get("builderBaseTrophies")
+     
+
         self.recruiter_status = self.recruiting(self.storage)
         self.clantag = self.storage.get("clan", {}).get("tag", None)
         self.clantag = self.clantag[1:]
