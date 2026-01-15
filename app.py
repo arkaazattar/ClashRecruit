@@ -43,12 +43,8 @@ def verify_user():
     received_token = data.get('apiToken')
     session["player_tag"] = received_tag
     
-    
     user = API(received_tag, received_token)
     check_player_team = user.check_player()
-    session["player_townhall"] = user.townhall
-    session["player_builderbase_trophies"] = user.builder_trophies
-    session["player_league"] = user.league
     session["recruiter_status"] = user.recruiter_status
 
     if check_player_team == True:
@@ -58,6 +54,9 @@ def verify_user():
         session["player_name"] = name
         clan_tag = user.clantag
         session["clan_tag"] = clan_tag
+        session["player_league"] = user.league
+        session["player_league"] = user.townhall
+        session["player_builderbase_trophies"] = user.builder_trophies
     else:
         status = False
         reason = f"{user.reason}"
@@ -114,7 +113,6 @@ def recruit():
 @app.route("/recruitee")
 def recruitee():
 
-
     clan_list = list(clan_collection.find({
         "requirements.1": {"$lte" : session.get("player_builderbase_trophies")},
         "requirements.2": {"$lte" : session.get("player_townhall")},
@@ -126,8 +124,6 @@ def recruitee():
     
     # print(clan_list)
     return render_template("recruitee.html", clan_list = clan_list)
-
-
 
 if __name__ == "__main__":
     app.run(port=5000)

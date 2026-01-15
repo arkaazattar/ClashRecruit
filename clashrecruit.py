@@ -41,6 +41,8 @@ class API:
         self.storage = response.json()
         self.league = self.storage.get("leagueTier").get("name")
         self.league = int(self.league[-2:])
+        self.townhall = self.storage.get("townHallLevel")
+        self.builder_trophies = self.storage.get("builderBaseTrophies")
 
 
         reason = self.storage.get("reason")
