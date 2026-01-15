@@ -55,7 +55,7 @@ def verify_user():
         clan_tag = user.clantag
         session["clan_tag"] = clan_tag
         session["player_league"] = user.league
-        session["player_league"] = user.townhall
+        session["player_townhall"] = user.townhall
         session["player_builderbase_trophies"] = user.builder_trophies
     else:
         status = False
@@ -92,11 +92,13 @@ def recruit():
     user.pull_clan_requirements()
     requirements = user.get_requirements()
     requirements[0] = user_required_league
+    clan_info = user.lookup_clan()
 
     data = {
         "requirements": requirements,
         "clan_tag": session.get("clan_tag"),
-        "player_tag": session.get("player_tag")
+        "player_tag": session.get("player_tag"),
+        "clan_info": clan_info
     }
     render_data = data.copy()
     
@@ -105,7 +107,7 @@ def recruit():
         clan_collection.insert_one(data)
 
     else: 
-        clan_collection.update_one({"clan_tag" : session.get("clan_tag")}, {'$set' : {"requirements" : requirements}})
+        clan_collection.update_one({"clan_tag" : session.get("clan_tag")}, {'$set' : {"requirements" : requirements, "clan_info" : clan_info}})
 
     return render_template("recruiter.html", data = render_data)
 
@@ -116,7 +118,7 @@ def recruitee():
     clan_list = list(clan_collection.find({
         "requirements.1": {"$lte" : session.get("player_builderbase_trophies")},
         "requirements.2": {"$lte" : session.get("player_townhall")},
-        "requirements.0": {"$lte" : session.get("player_league")                          
+        "requirements.0": {"$lte" : session.get("player_league")                              
         }},
         {"_id" : 0}        
         ).limit(20))
