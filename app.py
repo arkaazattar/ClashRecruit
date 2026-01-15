@@ -1,16 +1,14 @@
 import os
-from flask import Flask, request, jsonify, render_template
+import sys
+from flask import Flask, request, jsonify, render_template, session
 from flask_cors import CORS
-import apiKey
-from clashrecruit import *
-from flask import session
-from dotenv import load_dotenv
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
+from .config import FLASK_SECRET_KEY, DB_PASSWORD
+from .clashrecruit import *
 
-load_dotenv()
 
-uri = f"mongodb+srv://arkaazattar_db_user:{os.getenv('DB_PASSWORD')}@clashrecruit.poawkmg.mongodb.net/?appName=clashrecruit"
+uri = f"mongodb+srv://arkaazattar_db_user:{DB_PASSWORD}@clashrecruit.poawkmg.mongodb.net/?appName=clashrecruit"
 # Create a new client and connect to the server
 client = MongoClient(uri, server_api=ServerApi('1'))
 # Send a ping to confirm a successful connection
@@ -23,10 +21,11 @@ try:
     print("Pinged your deployment. You successfully connected to MongoDB!")
 except Exception as e:
     print(e)
+    sys.exit("Could not connect to DB. Check IP?")
 
 template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "templates"))
 app = Flask(__name__, template_folder=template_dir)
-app.secret_key = os.getenv("FLASK_SECRET_KEY")
+app.secret_key = FLASK_SECRET_KEY
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 CORS(app) 
 
@@ -55,6 +54,9 @@ def verify_user():
         session["player_name"] = name
         clan_tag = user.clantag
         session["clan_tag"] = clan_tag
+        session["player_league"] = user.league
+        session["player_townhall"] = user.townhall
+        session["player_builderbase_trophies"] = user.builder_trophies
     else:
         status = False
         reason = f"{user.reason}"
@@ -87,14 +89,15 @@ def recruit():
         user_required_league = int(request.form.get("required_league"))
     
     user = Recruiter(session.get("player_tag"), session.get("clan_tag"))
-    user.pull_clan_requirements()
-    requirements = user.get_requirements()
+    requirements = user.pull_clan_requirements()
     requirements[0] = user_required_league
+    clan_info = user.lookup_clan()
 
     data = {
         "requirements": requirements,
         "clan_tag": session.get("clan_tag"),
-        "player_tag": session.get("player_tag")
+        "player_tag": session.get("player_tag"),
+        "clan_info": clan_info
     }
     render_data = data.copy()
     
@@ -103,11 +106,25 @@ def recruit():
         clan_collection.insert_one(data)
 
     else: 
-        clan_collection.update_one({"clan_tag" : session.get("clan_tag")}, {'$set' : {"requirements" : requirements}})
+        clan_collection.update_one({"clan_tag" : session.get("clan_tag")}, {'$set' : {"requirements" : requirements, "clan_info" : clan_info}})
 
     return render_template("recruiter.html", data = render_data)
 
+
+@app.route("/recruitee")
+def recruitee():
+
+    clan_list = list(clan_collection.find({
+        "requirements.1": {"$lte" : session.get("player_builderbase_trophies")},
+        "requirements.2": {"$lte" : session.get("player_townhall")},
+        "requirements.0": {"$lte" : session.get("player_league")                              
+        }},
+        {"_id" : 0}        
+        ).limit(20))
+
+    
+    # print(clan_list)
+    return render_template("recruitee.html", clan_list = clan_list)
+
 if __name__ == "__main__":
-
-
-    app.run(debug=True, port=5000)
+    app.run(port=5000)

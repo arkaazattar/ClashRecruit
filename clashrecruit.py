@@ -1,12 +1,7 @@
 import requests
-import apiKey
-import time 
-
-headers = {
-
-    "Content-Type" : "application/json",
-    "Authorization" : apiKey.api 
-    }
+from .config import headers
+from .maxtownhall import refresh
+MAXTOWNHALL = refresh()
 
 class API:
     def __init__(self, user_tag, api):
@@ -18,8 +13,11 @@ class API:
         }
         self.clantag = ""
         self.recruiter_status = ""
+        self.league = 0
+        self.builder_trophies = 0
+        self.townhall = 0
     def check_player_api(self):
-
+        
         url = f"https://api.clashofclans.com/v1/players/%23{self.user_tag}/verifytoken"
 
         response = requests.post(url, headers=headers, json = self.json_data)
@@ -34,14 +32,19 @@ class API:
             self.reason = "API Token is incorrect"
 
         else: self.reason = self.apistorage  
-        
         return self.token 
     
     def check_player(self):
         url = f"https://api.clashofclans.com/v1/players/%23{self.user_tag}"
         response = requests.get(url, headers=headers)
         self.storage = response.json()
-        
+        self.league = self.storage.get("leagueTier").get("name")
+        if self.league != 'Unranked':
+            self.league = int(self.league[-2:])
+        self.townhall = self.storage.get("townHallLevel")
+        self.builder_trophies = self.storage.get("builderBaseTrophies")
+
+
         reason = self.storage.get("reason")
         
         if reason == "notFound":
@@ -54,7 +57,10 @@ class API:
         
         if self.check_player_api() == False: 
             return False
-       
+        self.townhall = self.storage.get("townHallLevel")
+        self.builder_trophies = self.storage.get("builderBaseTrophies")
+     
+
         self.recruiter_status = self.recruiting(self.storage)
         self.clantag = self.storage.get("clan", {}).get("tag", None)
         self.clantag = self.clantag[1:]
@@ -75,13 +81,6 @@ class API:
         
         return True
 
-
-class Advertisement:
-
-    def __init__(self, requirements, Recruiter):
-        self.requirements = requirements
-
-    
 class Recruiter: # error checking needs to be done out of class
     
     def __init__(self, user_tag, clan_tag):
@@ -89,14 +88,7 @@ class Recruiter: # error checking needs to be done out of class
         self.clan_tag = clan_tag
         self.requirements = []
 
-    def print_info(self): # idk why we would need this 
-        print(self.user_tag + " " + self.clan_tag)
-
     def pull_clan_requirements(self):
-        
-       # params = {
-       #     "name" : self.clan_tag,
-       # }
 
         response = requests.get(f"https://api.clashofclans.com/v1/clans?name=%23{self.clan_tag}", headers=headers)
         self.storage = response.json()
@@ -109,6 +101,22 @@ class Recruiter: # error checking needs to be done out of class
 
         
         self.new_clan_requirements(required_league, required_builder_trophies, required_townhall)
+
+        return self.requirements
+
+    def lookup_clan(self):
+        """
+        Used for looking up further clan stats
+        """
+        response = requests.get(f"https://api.clashofclans.com/v1/clans/%23{self.clan_tag}", headers=headers)
+        response = response.json()  
+        rsp = {}
+        rsp['type'] = response.get("type")
+        rsp['description'] = response.get("description")
+        rsp['location']= response.get("location", {}).get("name", None)
+        rsp['badge'] = response.get("badgeUrls").get("medium")
+        rsp['clan_level'] = response.get("clanLevel")
+        return rsp
 
         
 #setters
@@ -128,71 +136,64 @@ class Recruiter: # error checking needs to be done out of class
         self.required_townhall = required_townhall
         self.requirements = [self.required_league, self.required_builder_trophies, self.required_townhall]
 
-    def post_ad(self):
-        print(self.requirements)
-
-    def get_requirements(self):
-        return self.requirements
-
 
 class Recruitee:
-    # everything here now needs to call back to api request
-
-    def __init__(self, user_tag):
+    def __init__(self, user_tag, townhall, league):
         self.user_tag = user_tag
 
+if __name__ == "__main":
 
-def ask_if_recruiting():
-    invalid_input = True
-    while invalid_input:
-        recruiting = input("Are you recuiting? Yes or no: ").lower()
-        if recruiting == "yes" or  recruiting == "no" or recruiting == 'test':
-            invalid_input = False
-        else: print("Invalid input")
-    return recruiting # returns yes, no, or test
+    def ask_if_recruiting():
+        invalid_input = True
+        while invalid_input:
+            recruiting = input("Are you recuiting? Yes or no: ").lower()
+            if recruiting == "yes" or  recruiting == "no" or recruiting == 'test':
+                invalid_input = False
+            else: print("Invalid input")
+        return recruiting # returns yes, no, or test
 
-def check_api():
-    valid_api = False
-    while valid_api == False:
-        user_tag = input("Please enter your player tag: #")
-        tag_check = API(user_tag, "")
-        if tag_check.check_player() == False:
-            print(f"{tag_check.reason}, try again.")
-            continue
-        api = input("Please enter your API token: ")
-        user = API(user_tag, api)
-        user.check_player_api()
-        if user.token == True:
-            valid_api = True
-        else: print(f"{user.reason}, try again") 
-    return(user_tag)
-
-
-
-def recruitee():
-    invalid_input = True
-    while invalid_input:
-        looking_for_clan = input("Are you looking for a clan? Yes or no: ").lower()
-        if looking_for_clan == "yes" or  looking_for_clan == "no":
-            if looking_for_clan == "no":
-                exit() # kill program ? prob wont be needed when made into website
-            else: invalid_input = False
-        else: print("Invalid input")
-    return
+    def check_api():
+        valid_api = False
+        while valid_api == False:
+            user_tag = input("Please enter your player tag: #")
+            tag_check = API(user_tag, "")
+            if tag_check.check_player() == False:
+                print(f"{tag_check.reason}, try again.")
+                continue
+            api = input("Please enter your API token: ")
+            user = API(user_tag, api)
+            user.check_player_api()
+            if user.token == True:
+                valid_api = True
+            else: print(f"{user.reason}, try again") 
+        return(user_tag)
 
 
-def get_user():
-    response = ask_if_recruiting()
-    user_tag = check_api()
-    if response == "yes":
-        if recruiting(user_tag) == False:
-            return # this return might be bad, not a graceful exit
-        else: 
-            pass
-            # need to figure out how to call a clan tag for that function, basically need to store the clan tag and then call new_clan_requirements() to store parameters for that clan
 
-    if response == "no":
-        recruitee()
+    def recruitee():
+        invalid_input = True
+        while invalid_input:
+            looking_for_clan = input("Are you looking for a clan? Yes or no: ").lower()
+            if looking_for_clan == "yes" or  looking_for_clan == "no":
+                if looking_for_clan == "no":
+                    exit() # kill program ? prob wont be needed when made into website
+                else: invalid_input = False
+            else: print("Invalid input")
+        return
+
+
+    def get_user():
+        response = ask_if_recruiting()
+        user_tag = check_api()
+        if response == "yes":
+            if recruiting(user_tag) == False:
+                return # this return might be bad, not a graceful exit
+            else: 
+                pass
+                # need to figure out how to call a clan tag for that function, basically need to store the clan tag and then call new_clan_requirements() to store parameters for that clan
+
+        if response == "no":
+            recruitee()
 
 
 
