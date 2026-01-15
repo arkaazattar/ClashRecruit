@@ -15,7 +15,7 @@ class API:
         self.clantag = ""
         self.recruiter_status = ""
     def check_player_api(self):
-
+        
         url = f"https://api.clashofclans.com/v1/players/%23{self.user_tag}/verifytoken"
 
         response = requests.post(url, headers=headers, json = self.json_data)
@@ -30,7 +30,6 @@ class API:
             self.reason = "API Token is incorrect"
 
         else: self.reason = self.apistorage  
-        
         return self.token 
     
     def check_player(self):

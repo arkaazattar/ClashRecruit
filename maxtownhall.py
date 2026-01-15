@@ -16,7 +16,6 @@ def get_max_townhall():
     """
     response = requests.get('https://api.clashofclans.com/v1/locations/32000249/rankings/players?limit=1', headers=headers)
     response = response.json()
-    print(response)
     tag = response['items'][0]["tag"]
     tag = tag[1:]
     response = requests.get(f"https://api.clashofclans.com/v1/players/%23{tag}", headers=headers)

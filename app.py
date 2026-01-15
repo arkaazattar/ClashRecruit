@@ -110,11 +110,8 @@ def recruit():
 @app.route("/recruitee")
 def recruitee():
 
-    clan_list = []
-    for clan in clan_collection.find():
-
-        clan_list.append(clan)
-    
+    clan_list = list(clan_collection.find({"requirements": {"$gt" : 5}}).limit(20))
+    print(clan_list)
     return render_template("recruitee.html", clan_list = clan_list)
 
 if __name__ == "__main__":
