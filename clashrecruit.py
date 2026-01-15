@@ -39,7 +39,8 @@ class API:
         response = requests.get(url, headers=headers)
         self.storage = response.json()
         self.league = self.storage.get("leagueTier").get("name")
-        self.league = int(self.league[-2:])
+        if self.league != 'Unranked':
+            self.league = int(self.league[-2:])
         self.townhall = self.storage.get("townHallLevel")
         self.builder_trophies = self.storage.get("builderBaseTrophies")
 
@@ -100,6 +101,8 @@ class Recruiter: # error checking needs to be done out of class
 
         
         self.new_clan_requirements(required_league, required_builder_trophies, required_townhall)
+
+        return self.requirements
 
     def lookup_clan(self):
         """

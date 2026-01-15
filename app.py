@@ -89,8 +89,7 @@ def recruit():
         user_required_league = int(request.form.get("required_league"))
     
     user = Recruiter(session.get("player_tag"), session.get("clan_tag"))
-    user.pull_clan_requirements()
-    requirements = user.get_requirements()
+    requirements = user.pull_clan_requirements()
     requirements[0] = user_required_league
     clan_info = user.lookup_clan()
 
