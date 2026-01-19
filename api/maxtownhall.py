@@ -6,11 +6,10 @@ Important Note:
 """
 import requests
 from diskcache import Cache
-from .config import headers 
 
 cache = Cache("cache")
 
-def get_max_townhall():
+def get_max_townhall(headers):
     """
     This function will return the current highest ranked player in the United States and pull their Townhall level.
     """
@@ -25,13 +24,13 @@ def get_max_townhall():
     return MAXTOWNHALL
 
 
-def refresh():
+def refresh(headers):
     """
     Returns the current highest Townhall level.
     Checks the cache first, and calls the API only if needed.
     """
     if cache.get("MAXTOWNHALL") is None:
-        get_max_townhall()
+        get_max_townhall(headers)
     return cache.get("MAXTOWNHALL")
 
 if __name__ == "__main__":
