@@ -1,12 +1,13 @@
-import os
-import sys
 from flask import Flask, request, jsonify, render_template, session
 from flask_cors import CORS
+import os
+import sys
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
-from .config import FLASK_SECRET_KEY, DB_PASSWORD
-from .clashrecruit import *
-
+from .config import FLASK_SECRET_KEY, DB_PASSWORD, headers
+from .api.clash_api import API
+from .api.recruitee_api import Recruitee
+from .api.recruiter_api import Recruiter
 
 uri = f"mongodb+srv://arkaazattar_db_user:{DB_PASSWORD}@clashrecruit.poawkmg.mongodb.net/?appName=clashrecruit"
 # Create a new client and connect to the server
@@ -43,7 +44,7 @@ def verify_user():
     received_token = data.get('apiToken')
     session["player_tag"] = received_tag
     
-    user = API(received_tag, received_token)
+    user = API(received_tag, received_token, headers)
     check_player_team = user.check_player()
     session["recruiter_status"] = user.recruiter_status
 
@@ -88,7 +89,7 @@ def recruit():
         
         user_required_league = int(request.form.get("required_league"))
     
-    user = Recruiter(session.get("player_tag"), session.get("clan_tag"))
+    user = Recruiter(session.get("player_tag"), session.get("clan_tag"), headers)
     requirements = user.pull_clan_requirements()
     requirements[0] = user_required_league
     clan_info = user.lookup_clan()
