@@ -65,7 +65,7 @@ class API:
         return True
     
     def recruiting(self, data : dict): 
-        roles = ["leader", "coleader", "admin"] #admin is elder r we 
+        roles = ["leader", "coleader", "admin"]
         
         clan_tag = data.get("clan", {}).get("tag", 0)
         if(clan_tag == 0):
@@ -76,4 +76,4 @@ class API:
             print("not a leader")
             return False
         
-        return True
+        return True  

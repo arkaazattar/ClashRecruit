@@ -4,3 +4,51 @@
 
 </head>
   Clans: {{ clan_list}} <br>
+
+
+<form id="clanForm">
+    <label>
+        Name:
+        <input type="text" name="name">
+    </label><br><br>
+
+    <label>
+        War Frequency:
+        <select name="warFrequency">
+            <option value="">Any</option>
+            <option value="always">Always</option>
+            <option value="moreThanOncePerWeek">More than once per week</option>
+            <option value="oncePerWeek">Once per week</option>
+            <option value="lessThanOncePerWeek">Less than once per week</option>
+            <option value="never">Never</option>
+        </select>
+    </label><br><br>
+
+    <label>
+        Min Members:
+        <input type="number" name="minMembers">
+    </label><br><br>
+
+    <label>
+        Max Members:
+        <input type="number" name="maxMembers">
+    </label><br><br>
+
+    <label>
+        Min Clan Level:
+        <input type="number" name="minClanLevel">
+    </label><br><br>
+
+    <label>
+        Limit:
+        <input type="number" name="limit" value="10" max="50">
+    </label><br><br>
+
+    <button type="submit">Search</button>
+</form>
+
+
+<div id="results"></div>
+
+
+<script src="{{ url_for('static', filename='js/recruitee.js') }}"></script>
