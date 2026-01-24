@@ -1,10 +1,13 @@
 const form = document.getElementById("clanForm");
-
+let after = null;
 form.addEventListener("submit", async function (event) {
     event.preventDefault();
-
     const formData = new FormData(form);
     const filters = {};
+
+    if(after) {
+        filters.after = after;
+    }
 
     for (const [key, value] of formData.entries()) {
         if (value !== "") {
@@ -21,5 +24,6 @@ form.addEventListener("submit", async function (event) {
     });
 
     const data = await response.json();
+    after = data.after
     console.log(data)
 });

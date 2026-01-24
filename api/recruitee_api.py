@@ -5,13 +5,18 @@ class Recruitee:
         self.user_tag = user_tag
 
     
-    def searchClan(self, filter, after):
+    def searchClan(self, filter, after = None):
         url = f"https://api.clashofclans.com/v1/clans"
         if after:
             filter["after"] = after
-        
+      
         response = requests.get(url, 
                                 params = filter, 
                                 headers = self.headers)
         
-        return response.json()     
+        storage = response.json()
+
+        return {
+        "items": storage.get("items", []),
+        "after": storage.get("paging", {}).get("cursors", {}).get("after")
+    }
