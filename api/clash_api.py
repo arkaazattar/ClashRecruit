@@ -60,7 +60,8 @@ class API:
 
         self.recruiter_status = self.recruiting(self.storage)
         self.clantag = self.storage.get("clan", {}).get("tag", None)
-        self.clantag = self.clantag[1:]
+        if self.clantag: 
+            self.clantag = self.clantag[1:]            
         self.user_name = self.storage.get("name")
         return True
     
