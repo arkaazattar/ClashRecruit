@@ -1,13 +1,12 @@
-from flask import Flask, request, jsonify, render_template, session
+from flask import Flask
 from flask_cors import CORS
 import os
-from .config import FLASK_SECRET_KEY, DB_PASSWORD, headers
+from .config import FLASK_SECRET_KEY
 from .api.recruiter_api import Recruiter
 from .routes.home_route import home_bp
 from .routes.dashboard_route import dashboard_bp
 from .routes.recruiter_route import recruiter_bp
 from .routes.recruitee_route import recruitee_bp
-
 
 template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "templates"))
 app = Flask(__name__, template_folder=template_dir)

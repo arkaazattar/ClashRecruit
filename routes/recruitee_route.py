@@ -13,5 +13,4 @@ def recruitee():
         }},
         {"_id" : 0}        
         ).limit(20))
-    # print(clan_list)
     return render_template("recruitee.html", clan_list = clan_list)

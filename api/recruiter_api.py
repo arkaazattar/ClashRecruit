@@ -1,5 +1,5 @@
 import requests
-from .maxtownhall import refresh
+from ..services.maxtownhall import refresh
 
 class Recruiter:
 
