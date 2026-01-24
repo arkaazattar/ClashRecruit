@@ -9,5 +9,4 @@ form.addEventListener("submit", async function(event){
     datatosend.requirements[0] = Number(entered.value);
     console.log(datatosend.requirements);
     
-    
 })

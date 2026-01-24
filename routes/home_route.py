@@ -4,13 +4,10 @@ from ..config import headers
 
 home_bp = Blueprint("home", __name__)
 
-@home_bp.route("/", methods=["GET", "POST"])
+@home_bp.route("/", methods=["POST"])
 
 def home():
     
-    if request.method == "GET":
-        return render_template("index.html")
-
     data = request.get_json()
 
     received_tag = data.get('playerTag')

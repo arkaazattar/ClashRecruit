@@ -35,13 +35,6 @@ class API:
         url = f"https://api.clashofclans.com/v1/players/%23{self.user_tag}"
         response = requests.get(url, headers=self.headers)
         self.storage = response.json()
-        self.league = self.storage.get("leagueTier").get("name")
-        if self.league != 'Unranked':
-            self.league = int(self.league[-2:])
-        self.townhall = self.storage.get("townHallLevel")
-        self.builder_trophies = self.storage.get("builderBaseTrophies")
-
-
         reason = self.storage.get("reason")
         
         if reason == "notFound":
@@ -54,10 +47,15 @@ class API:
         
         if self.check_player_api() == False: 
             return False
+
+        self.league = self.storage.get("leagueTier").get("name")
+        if self.league != 'Unranked':
+            self.league = int(self.league[-2:])
         self.townhall = self.storage.get("townHallLevel")
         self.builder_trophies = self.storage.get("builderBaseTrophies")
-     
-
+        self.townhall = self.storage.get("townHallLevel")
+        self.builder_trophies = self.storage.get("builderBaseTrophies")
+    
         self.recruiter_status = self.recruiting(self.storage)
         self.clantag = self.storage.get("clan", {}).get("tag", None)
         if self.clantag: 
