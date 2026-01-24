@@ -60,12 +60,13 @@ class API:
 
         self.recruiter_status = self.recruiting(self.storage)
         self.clantag = self.storage.get("clan", {}).get("tag", None)
-        self.clantag = self.clantag[1:]
+        if self.clantag: 
+            self.clantag = self.clantag[1:]            
         self.user_name = self.storage.get("name")
         return True
     
     def recruiting(self, data : dict): 
-        roles = ["leader", "coleader", "admin"] #admin is elder r we 
+        roles = ["leader", "coleader", "admin"]
         
         clan_tag = data.get("clan", {}).get("tag", 0)
         if(clan_tag == 0):
@@ -76,4 +77,4 @@ class API:
             print("not a leader")
             return False
         
-        return True
+        return True  
