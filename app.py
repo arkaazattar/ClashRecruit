@@ -13,7 +13,12 @@ template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "template
 app = Flask(__name__, template_folder=template_dir)
 app.secret_key = FLASK_SECRET_KEY
 app.config["TEMPLATES_AUTO_RELOAD"] = True
-CORS(app) 
+
+CORS(
+    app,
+    supports_credentials=True,
+    origins=["http://localhost:3000"]
+)
 
 app.register_blueprint(home_bp)
 app.register_blueprint(dashboard_bp)

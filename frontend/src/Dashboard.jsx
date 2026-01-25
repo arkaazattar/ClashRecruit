@@ -1,27 +1,54 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import "./Dashboard.css"
+import "./Dashboard.css";
 
 function Dashboard() {
   const navigate = useNavigate();
 
-  const Recruiter = () => {
+  const [recruitStatus, setRecruitStatus] = useState(false);
+
+  useEffect(() => {
+    fetch("http://localhost:5000/dashboard", {
+      credentials: "include",
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setRecruitStatus(data.recruit_status);
+      })
+  }, []);
+
+  const Recruiter = (e) => {
+    e.preventDefault();
     navigate("/recruit");
   };
 
-  const Recruitee = () => {
+  const Recruitee = (e) => {
+    e.preventDefault();
     navigate("/looking-for-clan");
   };
 
   return (
     <div className="Dashboard">
-        <form>
-            <button className="buttons" onClick={Recruiter}>Recruit!</button>
-            <button className="buttons" onClick={Recruitee}>Looking For Clan</button>
-        </form>
+      <form>
+        {recruitStatus === true && (
+          <button
+            type="button"
+            className="buttons"
+            onClick={Recruiter}
+          >
+            Recruit!
+          </button>
+        )}
 
+        <button
+          type="button"
+          className="buttons"
+          onClick={Recruitee}
+        >
+          Looking For Clan
+        </button>
+      </form>
     </div>
-    
   );
 }
 

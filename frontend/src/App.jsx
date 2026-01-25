@@ -27,18 +27,23 @@ function App() {
     if (data.message == true){
       navigate("/dashboard")
     }
+    else {
+      console.log(data.receivedPlayerTag)
+    }
   };
 
   return (
     <div className="App">
       <form onSubmit={handleSubmit}>
         <input
+          required
           type="text"
           placeholder="Player Tag"
           value={playerTag}
           onChange={(e) => setPlayerTag(e.target.value)}
         />
         <input
+          required
           type="text"
           placeholder="API Token"
           value={apiToken}
