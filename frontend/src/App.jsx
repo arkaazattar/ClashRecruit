@@ -1,8 +1,11 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
+import "./App.css";
 
 function App() {
   const [playerTag, setPlayerTag] = useState("");
   const [apiToken, setApiToken] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault(); 
@@ -13,6 +16,7 @@ function App() {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify({
         playerTag: playerTag,
         apiToken: apiToken,
@@ -20,25 +24,29 @@ function App() {
     });
 
     const data = await response.json();
-    console.log(data); // do something with the response
+    if (data.message == true){
+      navigate("/dashboard")
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input
-        type="text"
-        placeholder="Player Tag"
-        value={playerTag}
-        onChange={(e) => setPlayerTag(e.target.value)}
-      />
-      <input
-        type="text"
-        placeholder="API Token"
-        value={apiToken}
-        onChange={(e) => setApiToken(e.target.value)}
-      />
-      <button type="submit">Submit</button>
-    </form>
+    <div className="App">
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="Player Tag"
+          value={playerTag}
+          onChange={(e) => setPlayerTag(e.target.value)}
+        />
+        <input
+          type="text"
+          placeholder="API Token"
+          value={apiToken}
+          onChange={(e) => setApiToken(e.target.value)}
+        />
+        <button type="submit">Submit</button>
+      </form>
+    </div>
   );
 }
 
