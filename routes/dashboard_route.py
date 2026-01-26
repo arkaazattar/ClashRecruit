@@ -3,5 +3,5 @@ dashboard_bp = Blueprint("dashboard", __name__)
 
 @dashboard_bp.route("/dashboard")
 def dashboard():
-        return jsonify(username = session.get("player_name"),
+        return jsonify(username = session.get("player_name", "Guest"),
             recruit_status = session.get("recruiter_status"))           

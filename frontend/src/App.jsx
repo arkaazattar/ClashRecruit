@@ -7,6 +7,10 @@ function App() {
   const [apiToken, setApiToken] = useState("");
   const navigate = useNavigate();
 
+  const guesthandleSubmit = (e) => {
+    e.preventDefault()
+    navigate("/dashboard")
+  }
   const handleSubmit = async (e) => {
     e.preventDefault(); 
 
@@ -27,7 +31,7 @@ function App() {
     if (data.message == true){
       navigate("/dashboard")
     }
-    else {
+    else { //testing
       console.log(data.receivedPlayerTag)
     }
   };
@@ -50,6 +54,10 @@ function App() {
           onChange={(e) => setApiToken(e.target.value)}
         />
         <button type="submit">Submit</button>
+      </form>
+
+      <form onClick={guesthandleSubmit}>
+        <button type="button">Continue as Guest</button>
       </form>
     </div>
   );

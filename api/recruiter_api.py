@@ -39,6 +39,7 @@ class Recruiter:
         rsp['location']= response.get("location", {}).get("name", None)
         rsp['badge'] = response.get("badgeUrls").get("medium")
         rsp['clan_level'] = response.get("clanLevel")
+        rsp['member_count'] = response.get("members")
         return rsp
 
         
