@@ -10,5 +10,4 @@ def search_clans():
     user = Recruitee(session.get("user_tag"), session.get("player_townhall"), session.get("player_league"), headers)
     clans = user.searchClan(filters, filters.get("after"))
      
-
     return jsonify(clans)

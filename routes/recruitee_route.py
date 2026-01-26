@@ -5,8 +5,14 @@ recruitee_bp = Blueprint("recruitee", __name__)
 
 @recruitee_bp.route("/recruitee")
 def recruitee():
+    if session.get("player_name") == "Guest":
+        data = list(clan_collection.aggregate([
+    { "$sample": { "size": 20 } },
+    { "$project": { "_id": 0 } }  
+]))
 
-    data = list(clan_collection.find({
+    else:
+        data = list(clan_collection.find({
         "requirements.1": {"$lte" : session.get("player_builderbase_trophies")},
         "requirements.2": {"$lte" : session.get("player_townhall")},
         "requirements.0": {"$lte" : session.get("player_league")                              

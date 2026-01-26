@@ -7,6 +7,10 @@ function LookingForClan() {
     const [clanList, setClanList] = useState([]);
     
     useEffect(() => {
+
+    })
+
+    useEffect(() => {
     fetch("http://localhost:5000/recruitee", {
       credentials: "include",
     })
@@ -18,12 +22,32 @@ function LookingForClan() {
 
 return (
   <form>
+    <label> 
+      Min Members:
+      <input type="number"/>
+      
+      Max Members:
+      <input type="number"/>
 
-    {clanList.map((clan, index) => (
+      Min Clan Level:
+      <input type="number"/>
+
+      Number of Clans:
+      <input type="number"/>
+    </label>
+
+    
+    <br></br>
+
+    {clanList.map((clan) => (
         <button type="button" className="box" onClick={ () => navigate(`/${clan.clan_tag}`)}>
-            <div key={clan.clan_tag ?? index}>
+            <div key={clan.clan_tag}>
                 <h3>{clan.clan_tag}</h3>
+      
                 <p>Townhall Requirement: {clan.requirements[2]}</p>
+                <p>League Requirement: {clan.requirements[0]}</p>
+                <p>Location: {clan.clan_info.location}</p>
+                <p>{clan.clan_info.description}</p>
             </div>
         </button>
     ))}
