@@ -98,9 +98,16 @@ This avoids hardcoding backend URLs and prevents CORS issues during local develo
 Create a .env file in the root directory and enter:
 ```
 FLASKSECRETKEY=your_secret_key  
-DBPASSWORD=your_db_uri
+DBURI=your_db_uri
 APIKEY=your_clash_of_clans_apikey  
 ```
+**Note: DBURI should be your entire DBURI.** 
+
+Example Below:
+```
+DBURI=mongodb+srv://arkaazattar_db_user:<db_password>@clashrecruit.poawkmg.mongodb.net/?appName=clashrecruit
+```
+
 ---
 
 ## Future Improvements

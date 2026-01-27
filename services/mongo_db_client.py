@@ -1,9 +1,9 @@
 import sys
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
-from ..config import DBPASSWORD
+from ..config import DBURI
 
-uri = f"mongodb+srv://arkaazattar_db_user:{DBPASSWORD}@clashrecruit.poawkmg.mongodb.net/?appName=clashrecruit"
+uri = DBURI
 # Create a new client and connect to the server
 client = MongoClient(uri, server_api=ServerApi('1'))
 # Send a ping to confirm a successful connection
