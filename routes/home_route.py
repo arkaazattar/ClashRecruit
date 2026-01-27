@@ -1,4 +1,4 @@
-from flask import request, render_template, session, Blueprint, jsonify
+from flask import request, session, Blueprint, jsonify
 from ..api.clash_api import API
 from ..config import headers
 
