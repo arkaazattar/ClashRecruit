@@ -6,7 +6,7 @@ function Recruiter() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:5000/dashboard", {
+    fetch("/dashboard", {
       credentials: "include",
     })
       .then((res) => res.json())

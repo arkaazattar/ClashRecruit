@@ -8,7 +8,7 @@ function Dashboard() {
   const [recruitStatus, setRecruitStatus] = useState(false);
 
   useEffect(() => {
-    fetch("http://localhost:5000/dashboard", {
+    fetch("/dashboard", {
       credentials: "include",
     })
       .then((res) => res.json())

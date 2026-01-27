@@ -11,7 +11,7 @@ function LookingForClan() {
     })
 
     useEffect(() => {
-    fetch("http://localhost:5000/recruitee", {
+    fetch("/recruitee", {
       credentials: "include",
     })
       .then((res) => res.json())

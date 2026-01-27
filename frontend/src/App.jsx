@@ -7,15 +7,30 @@ function App() {
   const [apiToken, setApiToken] = useState("");
   const navigate = useNavigate();
 
-  const guesthandleSubmit = (e) => {
+  const guesthandleSubmit = async (e) => {
     e.preventDefault()
     navigate("/dashboard")
+    const guestResponse = await fetch("/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        playerTag: "Guest",
+        apiToken: "None",
+      }),
+    });
+    const guestData = await guestResponse.json();
+    if (guestData.message == false){
+      navigate("/dashboard")
+    }
   }
   const handleSubmit = async (e) => {
     e.preventDefault(); 
 
     // send input to Flask
-    const response = await fetch("http://localhost:5000/", {
+    const response = await fetch("/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

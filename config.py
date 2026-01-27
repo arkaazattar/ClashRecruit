@@ -8,5 +8,5 @@ headers = {
     "Authorization" : os.getenv("APIKEY")
 }
 
-DB_PASSWORD = os.getenv('DB_PASSWORD')
-FLASK_SECRET_KEY = os.getenv("FLASK_SECRET_KEY")
+DBPASSWORD = os.getenv('DBPASSWORD')
+FLASKSECRETKEY = os.getenv("FLASKSECRETKEY")

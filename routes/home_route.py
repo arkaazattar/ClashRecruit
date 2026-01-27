@@ -13,7 +13,6 @@ def home():
     received_tag = data.get('playerTag')
     received_token = data.get('apiToken')
     session["player_tag"] = received_tag
-    
     user = API(received_tag, received_token, headers)
     check_player_team = user.check_player()
     session["recruiter_status"] = user.recruiter_status

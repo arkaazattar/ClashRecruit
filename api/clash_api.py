@@ -32,6 +32,9 @@ class API:
         return self.token 
     
     def check_player(self):
+        if self.user_tag == "Guest":
+            self.reason = "User is a Guest"
+            return False
         url = f"https://api.clashofclans.com/v1/players/%23{self.user_tag}"
         response = requests.get(url, headers=self.headers)
         self.storage = response.json()
