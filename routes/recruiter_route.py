@@ -2,6 +2,7 @@ from flask import Blueprint, request, session, render_template
 from ..api.recruiter_api import Recruiter
 from ..config import headers
 from ..services.mongo_db_client import clan_collection
+from datetime import datetime
 
 recruiter_bp = Blueprint("recruiter", __name__)
 
@@ -21,15 +22,22 @@ def recruit():
         "requirements": requirements,
         "clan_tag": session.get("clan_tag"),
         "player_tag": session.get("player_tag"),
-        "clan_info": clan_info
+        "clan_info": clan_info,
+        "last_updated" : datetime.now()
     }
     render_data = data.copy()
     
     existing = clan_collection.find_one({"clan_tag": data["clan_tag"]})
     if not existing:
         clan_collection.insert_one(data)
+        clan_collection.create_index("last_updated", expireAfterSeconds=604800)
 
     else: 
-        clan_collection.update_one({"clan_tag" : session.get("clan_tag")}, {'$set' : {"requirements" : requirements, "clan_info" : clan_info}})
+        clan_collection.update_one({"clan_tag" : session.get("clan_tag")}, 
+                                   {'$set' : 
+                                    {"requirements" : requirements, 
+                                     "clan_info" : clan_info,
+                                     "last_updated" : datetime.now()
+                                     }})
 
     return render_template("recruiter.html", data = render_data)
