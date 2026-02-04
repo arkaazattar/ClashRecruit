@@ -4,16 +4,30 @@ import { useNavigate } from "react-router";
 function Recruiter() {
   const navigate = useNavigate();
   const [requiredLeague, setRequiredLeague] = useState("");
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     // this needs to go to the api route for recuriter.
     console.log(requiredLeague)
+    const recruiterResponse = await fetch("/recruiter", {
+        method: "POST",
+        headers: {
+        "Content-Type": "application/json",
+      },
+        credentials: "include",
+        // placeholder values for now 
+        body: JSON.stringify({
+          "requiredLeague" : requiredLeague,
+          "requiredBuilderhall" : null,
+          "requiredTownhall" : null
+        })
+      }  
+    ).then(
+    )
+    const recruiterData = await recruiterResponse.json()
+    console.log(recruiterData)
+    
+    
   }
-    useEffect (() => {
-      fetch("/recruiter", {
-        // tbw
-      })
-    })
 
   return (
     
