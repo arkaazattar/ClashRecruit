@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 function Recruiter() {
   const navigate = useNavigate();
   const [requiredLeague, setRequiredLeague] = useState("");
+  const [requiredBuilderLeague, setRequiredBuilderLeague] = useState("");
   const [requiredTownhall, setRequiredTownhall] = useState("");
   const [maxTownhall, setmaxTownhall] = useState(0);
   
@@ -12,6 +13,7 @@ function Recruiter() {
     const rsp = await fetch("/recruiter")
     const data = await rsp.json()
    setmaxTownhall(data.MAXTOWNHALL) 
+   setRequiredTownhall  (data.oldRequiredTownhall)
   }
    useEffect(() => {
     getmaxTownhall();
@@ -30,7 +32,7 @@ function Recruiter() {
         // placeholder values for now 
         body: JSON.stringify({
           "requiredLeague" : requiredLeague,
-          "requiredBuilderhall" : null,
+          "requiredBuilderLeague" : requiredBuilderLeague,
           "requiredTownhall" : requiredTownhall
         })
       }  
@@ -125,6 +127,19 @@ function Recruiter() {
           </option>
         ))}
       </select>
+      <br/>
+      
+      <label htmlFor="builderleagues">Enter Required Builder Trophies</label>
+      <input 
+      type="number"
+      name="builderleagues" 
+      value={requiredBuilderLeague}
+      onChange={(e) => setRequiredBuilderLeague(Number(e.target.value))}
+      // might need to cache the #1 player trophies or something. could also use options here
+      max={6700}
+      min={0}
+      />
+      
       <br/>
       <button>Submit</button>
       </form>
