@@ -4,10 +4,23 @@ import { useNavigate } from "react-router";
 function Recruiter() {
   const navigate = useNavigate();
   const [requiredLeague, setRequiredLeague] = useState("");
+  const [requiredTownhall, setRequiredTownhall] = useState("");
+  const [maxTownhall, setmaxTownhall] = useState(0);
+  
+  
+  async function getmaxTownhall(){
+    const rsp = await fetch("/recruiter")
+    const data = await rsp.json()
+   setmaxTownhall(data.MAXTOWNHALL) 
+  }
+   useEffect(() => {
+    getmaxTownhall();
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     // this needs to go to the api route for recuriter.
-    console.log(requiredLeague)
+
     const recruiterResponse = await fetch("/recruiter", {
         method: "POST",
         headers: {
@@ -18,23 +31,22 @@ function Recruiter() {
         body: JSON.stringify({
           "requiredLeague" : requiredLeague,
           "requiredBuilderhall" : null,
-          "requiredTownhall" : null
+          "requiredTownhall" : requiredTownhall
         })
       }  
     ).then(
     )
     const recruiterData = await recruiterResponse.json()
-    console.log(recruiterData)
-    
-    
+    // log the rsp for testing
+    console.log(recruiterData) 
   }
-
+  
   return (
     
     <div>
-    <label htmlFor="leagues">Enter Required League</label>
     <form onSubmit={handleSubmit}>
 
+      <label htmlFor="leagues">Enter Required League</label>
       <select
         id="leagues"
         name="required_league"
@@ -94,8 +106,28 @@ function Recruiter() {
 
         <option value={34}>Legend League</option>
       </select>
-        <button>Submit</button>
-        </form>
+      <br/>
+      <label htmlFor="townhall">Enter Required Townhall</label>
+      <select
+        id="townhall"
+        name="required_townhall"
+        value={requiredTownhall}
+        onChange={(e) => setRequiredTownhall(Number(e.target.value))}
+        required
+      >
+        <option value={""} disabled>
+          -- Select an option --
+        </option>
+        <option value={0}>No Townhall Requirement</option>
+        {Array.from({ length: maxTownhall }, (_, i) => (
+          <option key={i} value={i + 1}>
+            Townhall Level {i + 1}
+          </option>
+        ))}
+      </select>
+      <br/>
+      <button>Submit</button>
+      </form>
   </div>
 
 

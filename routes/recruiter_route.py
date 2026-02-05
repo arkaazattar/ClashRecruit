@@ -3,21 +3,22 @@ from ..api.recruiter_api import Recruiter
 from ..config import headers
 from ..services.mongo_db_client import clan_collection
 from datetime import datetime, timedelta, timezone
+from ..services.maxtownhall import refresh
 
 recruiter_bp = Blueprint("recruiter", __name__)
 
-@recruiter_bp.route("/recruiter", methods= ['POST'])
+@recruiter_bp.route("/recruiter", methods= ['GET', 'POST'])
 def recruit():
-    if request.method == "POST":
-        data = request.get_json()
+    # testing
+    if request.method == "GET":
+        MAXTOWNHALL = refresh(headers)
         return jsonify({
-            "Required League" : data["requiredLeague"]
+            "MAXTOWNHALL" : MAXTOWNHALL
         })
-    return jsonify({
-        "return" : 123
-    }
+    
+    response = request.get_json()
+    return response
 
-    )
 
     # user_required_league = 0
     # if request.method == 'POST':
