@@ -7,15 +7,17 @@ function Recruiter() {
   const [requiredBuilderLeague, setRequiredBuilderLeague] = useState("");
   const [requiredTownhall, setRequiredTownhall] = useState("");
   const [maxTownhall, setmaxTownhall] = useState(0);
-  
+  const [status, setStatus] = useState(null);
+
   
   async function getmaxTownhall(){
     const rsp = await fetch("/recruiter")
     const data = await rsp.json()
    setmaxTownhall(data.MAXTOWNHALL) 
-   setRequiredTownhall  (data.oldRequiredTownhall)
+   setRequiredTownhall(data.oldRequiredTownhall)
+   setStatus(data.Status)
   }
-   useEffect(() => {
+  useEffect(() => {
     getmaxTownhall();
   }, []);
 
@@ -26,25 +28,38 @@ function Recruiter() {
     const recruiterResponse = await fetch("/recruiter", {
         method: "POST",
         headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
         credentials: "include",
-        // placeholder values for now 
         body: JSON.stringify({
+          "status" : "new",
           "requiredLeague" : requiredLeague,
           "requiredBuilderLeague" : requiredBuilderLeague,
           "requiredTownhall" : requiredTownhall
         })
       }  
-    ).then(
     )
+    setStatus(true)
     const recruiterData = await recruiterResponse.json()
     // log the rsp for testing
     console.log(recruiterData) 
   }
+  const handleUpdate = async (e) => {
+    e.preventDefault()
+    const response = await fetch("/recruiter", {
+      method: "POST",
+      headers : {
+        "Content-Type": "application/json"
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        "status" : "update"
+      })
+    })
+  }
   
   return (
-    
+    status === null ? (
     <div>
     <form onSubmit={handleSubmit}>
 
@@ -143,10 +158,18 @@ function Recruiter() {
       <br/>
       <button>Submit</button>
       </form>
-  </div>
-
-
-
-)}
+      <p>Status : {String(status)}</p>
+    </div>
+    ) : (
+      <div>
+      <p>Listing already exists {status}</p>
+      <button onClick={handleUpdate}>Update Listing</button>
+      <button onClick={() =>
+        navigate("/dashboard")
+      }>Dashboard</button>
+      </div>
+    )
+  )
+}
 
 export default Recruiter;
