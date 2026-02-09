@@ -54,6 +54,7 @@ class API:
         self.league = self.storage.get("leagueTier").get("name")
         if self.league != 'Unranked':
             self.league = int(self.league[-2:])
+        else: self.league = 0
         self.townhall = self.storage.get("townHallLevel")
         self.builder_trophies = self.storage.get("builderBaseTrophies")
         self.townhall = self.storage.get("townHallLevel")
