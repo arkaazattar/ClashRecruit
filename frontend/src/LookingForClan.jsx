@@ -7,7 +7,7 @@ function LookingForClan() {
     const [clanList, setClanList] = useState([]);
     
     useEffect(() => {
-
+    
     })
 
     useEffect(() => {

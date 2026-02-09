@@ -8,14 +8,13 @@ function Recruiter() {
   const [requiredTownhall, setRequiredTownhall] = useState("");
   const [maxTownhall, setmaxTownhall] = useState(0);
   const [status, setStatus] = useState(null);
-
   
   async function getmaxTownhall(){
     const rsp = await fetch("/recruiter")
     const data = await rsp.json()
    setmaxTownhall(data.MAXTOWNHALL) 
    setRequiredTownhall(data.oldRequiredTownhall)
-   setStatus(data.Status)
+   setStatus(data.status)
   }
   useEffect(() => {
     getmaxTownhall();
@@ -56,6 +55,8 @@ function Recruiter() {
         "status" : "update"
       })
     })
+    const data = await response.json()
+    setStatus(data.status)
   }
   
   return (
@@ -162,7 +163,8 @@ function Recruiter() {
     </div>
     ) : (
       <div>
-      <p>Listing already exists {status}</p>
+      <p>Listing already exists. </p> 
+      <p>Set to expire on: {status}</p>
       <button onClick={handleUpdate}>Update Listing</button>
       <button onClick={() =>
         navigate("/dashboard")
