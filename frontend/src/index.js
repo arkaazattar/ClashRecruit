@@ -6,6 +6,7 @@ import App from './App';
 import Dashboard from './Dashboard';
 import Recruiter from './Recruiter'
 import LookingForClan from './LookingForClan';
+import Layout from "./components/Layout"
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -13,9 +14,12 @@ root.render(
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<App />} />
-        <Route path="/dashboard/" element={<Dashboard />} />
-        <Route path="/recruit/" element={<Recruiter/>} />
-        <Route path="/looking-for-clan/" element={<LookingForClan/>}/>
+
+        <Route element={<Layout />}>
+          <Route path="/dashboard/" element={<Dashboard />} />
+          <Route path="/recruit/" element={<Recruiter/>} />
+          <Route path="/looking-for-clan/" element={<LookingForClan/>}/>
+        </Route>
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

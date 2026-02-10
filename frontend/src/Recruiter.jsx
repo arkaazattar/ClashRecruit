@@ -23,7 +23,6 @@ function Recruiter() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    // this needs to go to the api route for recuriter.
 
     const recruiterResponse = await fetch("/recruiter", {
         method: "POST",
@@ -41,11 +40,11 @@ function Recruiter() {
     )
     const recruiterData = await recruiterResponse.json()
     setStatus(recruiterData.status)
-    // log the rsp for testing
-    console.log(recruiterData) 
   }
+
   const handleUpdate = async (e) => {
     e.preventDefault()
+    
     const response = await fetch("/recruiter", {
       method: "POST",
       headers : {
@@ -56,6 +55,7 @@ function Recruiter() {
         "status" : "update"
       })
     })
+
     const data = await response.json()
     setStatus(data.status)
   }

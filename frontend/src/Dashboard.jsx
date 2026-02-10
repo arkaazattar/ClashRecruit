@@ -27,8 +27,11 @@ function Dashboard() {
     navigate("/looking-for-clan");
   };
 
+  <header> testing </header>
+
   return (
     <div className="Dashboard">
+      <header></header>
       <form>
         {recruitStatus === true && (
           <button

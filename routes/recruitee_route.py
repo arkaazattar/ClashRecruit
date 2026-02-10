@@ -14,9 +14,9 @@ def recruitee():
 
         else:
             data = list(clan_collection.find({
+            "requirements.0": {"$lte" : session.get("player_league")},
             "requirements.1": {"$lte" : session.get("player_builderbase_trophies")},
             "requirements.2": {"$lte" : session.get("player_townhall")},
-            "requirements.0": {"$lte" : session.get("player_league")},
             },
             {"_id" : 0}        
             ).limit(20))
