@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 
 function Recruiter() {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
   const [requiredLeague, setRequiredLeague] = useState("");
   const [requiredBuilderLeague, setRequiredBuilderLeague] = useState("");
   const [requiredTownhall, setRequiredTownhall] = useState("");
@@ -38,8 +39,8 @@ function Recruiter() {
         })
       }  
     )
-    setStatus(true)
     const recruiterData = await recruiterResponse.json()
+    setStatus(recruiterData.status)
     // log the rsp for testing
     console.log(recruiterData) 
   }

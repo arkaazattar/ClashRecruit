@@ -34,29 +34,29 @@ def recruit():
     
     #may need to 403 error if existing
     if data.get("status") == "new":
+        expiry = datetime.now(timezone.utc) + timedelta(days=7) 
         data = {
             "requirements": user.requirements,
             "clan_tag": session.get("clan_tag"),
             "player_tag": session.get("player_tag"),
             "clan_info": clan_info,
             "last_updated" : datetime.now(timezone.utc),
-            "expires": datetime.now(timezone.utc) + timedelta(days=7)
+            "expires": expiry
         }
         render_data = data.copy()
         clan_collection.insert_one(data)
-        clan_collection.create_index("expires", expireAfterSeconds=0)
-        render_data["status"] = "Created New Listing"
+        render_data["status"] = expiry
 
     elif data.get("status") == "update":
-        new_expiry = datetime.now(timezone.utc) + timedelta(days=7)
+        expiry = datetime.now(timezone.utc) + timedelta(days=7) 
         clan_collection.update_one({"clan_tag" : session.get("clan_tag")}, 
                                    {'$set' : 
                                     {"requirements" : user.requirements, 
                                      "clan_info" : clan_info,
                                      "last_updated" : datetime.now(timezone.utc),
-                                     "expires" : new_expiry
+                                     "expires" : expiry
                                      }})
         render_data = {}
-        render_data["status"] = new_expiry
+        render_data["status"] = expiry
         
     return jsonify(render_data), 200
