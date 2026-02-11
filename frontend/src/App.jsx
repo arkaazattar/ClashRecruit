@@ -9,7 +9,7 @@ function App() {
 
   const guesthandleSubmit = async (e) => {
     e.preventDefault()
-    navigate("/dashboard")
+
     const guestResponse = await fetch("/", {
       method: "POST",
       headers: {
@@ -18,18 +18,18 @@ function App() {
       credentials: "include",
       body: JSON.stringify({
         playerTag: "Guest",
-        apiToken: "None",
+        apiToken: "None",  
       }),
     });
     const guestData = await guestResponse.json();
     if (guestData.message == false){
+      sessionStorage.setItem("player_name", "Guest")
       navigate("/dashboard")
     }
   }
   const handleSubmit = async (e) => {
     e.preventDefault(); 
 
-    // send input to Flask
     const response = await fetch("/", {
       method: "POST",
       headers: {
@@ -44,6 +44,7 @@ function App() {
 
     const data = await response.json();
     if (data.message == true){
+      sessionStorage.setItem("player_name", data.player_name);
       navigate("/dashboard")
     }
     else { //testing
@@ -71,9 +72,8 @@ function App() {
         <button type="submit">Submit</button>
       </form>
 
-      <form onClick={guesthandleSubmit}>
-        <button type="button">Continue as Guest</button>
-      </form>
+      <button onClick= {guesthandleSubmit} type="button">Continue as Guest</button>
+      
     </div>
   );
 }

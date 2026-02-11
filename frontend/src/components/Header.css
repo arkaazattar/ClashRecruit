@@ -1,0 +1,16 @@
+.header{
+    display: flex;
+    justify-content: space-between;
+    text-align: right;
+    height: 64px;
+    padding: 0 16px;  
+}
+
+.logo{
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.home{
+
+}
