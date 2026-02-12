@@ -3,12 +3,9 @@ import { useNavigate } from "react-router";
 import "./LookingForClan.css";
 
 function LookingForClan() {
-    const navigate = useNavigate() // use for header when we make it
+    const navigate = useNavigate()
     const [clanList, setClanList] = useState([]);
-    
-    useEffect(() => {
-    
-    })
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
     fetch("/recruitee", {
@@ -17,8 +14,15 @@ function LookingForClan() {
       .then((res) => res.json())
       .then((data) => {
         setClanList(data);
+        setLoading(false);
       })
   }, []);
+
+if (loading){
+  return( 
+    <p>Loading...</p>
+  )
+}
 
 return (
   <form>

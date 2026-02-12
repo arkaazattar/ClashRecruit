@@ -16,6 +16,7 @@ function Recruiter() {
    setmaxTownhall(data.MAXTOWNHALL) 
    setRequiredTownhall(data.oldRequiredTownhall)
    setStatus(data.status)
+   setLoading(false);
   }
   useEffect(() => {
     getmaxTownhall();
@@ -60,6 +61,12 @@ function Recruiter() {
     setStatus(data.status)
   }
   
+  if (loading){
+    return (
+      <p>Loading... </p>
+    )
+  }
+
   return (
     status === null ? (
     <div>

@@ -4,7 +4,7 @@ import "./Dashboard.css";
 
 function Dashboard() {
   const navigate = useNavigate();
-
+  const [loading, setLoading] = useState(true);
   const [recruitStatus, setRecruitStatus] = useState(false);
 
   useEffect(() => {
@@ -14,6 +14,7 @@ function Dashboard() {
       .then((res) => res.json())
       .then((data) => {
         setRecruitStatus(data.recruit_status);
+        setLoading(false)
       })
   }, []);
 
@@ -27,15 +28,20 @@ function Dashboard() {
     navigate("/looking-for-clan");
   };
 
+  if (loading) {
+    return(
+      <p> Loading... </p>
+    )
+  }
   return (
+    
     <div className="Dashboard">
-      
-      <form>
+        <form>
         {recruitStatus === true && (
           <button
-            type="button"
-            className="buttons"
-            onClick={Recruiter}
+          type="button"
+          className="buttons"
+          onClick={Recruiter}
           >
             Recruit!
           </button>
@@ -45,7 +51,7 @@ function Dashboard() {
           type="button"
           className="buttons"
           onClick={Recruitee}
-        >
+          >
           Looking For Clan
         </button>
       </form>
