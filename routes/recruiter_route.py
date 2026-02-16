@@ -1,4 +1,4 @@
-from flask import Blueprint, request, session, render_template, jsonify
+from flask import Blueprint, request, session, jsonify
 from ..api.recruiter_api import Recruiter
 from ..config import headers
 from ..services.mongo_db_client import clan_collection

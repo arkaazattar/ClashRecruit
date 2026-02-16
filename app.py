@@ -8,8 +8,7 @@ from .routes.recruiter_route import recruiter_bp
 from .routes.recruitee_route import recruitee_bp
 from .routes.search_clans_route import search_clans_bp
 
-template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "templates"))
-app = Flask(__name__, template_folder=template_dir)
+app = Flask(__name__)
 app.secret_key = FLASKSECRETKEY
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
