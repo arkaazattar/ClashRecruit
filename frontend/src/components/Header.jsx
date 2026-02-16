@@ -1,63 +1,93 @@
 import './Header.css';
-import { Link } from 'react-router-dom';
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 
 function Header() {
-    const user = sessionStorage.getItem("player_name");
-    const isLoggedIn = Boolean(user && user !== "Guest");
+    const [user, setUser] = useState(() => sessionStorage.getItem("player_name") || "Guest");
+    const [hasActiveListing, setHasActiveListing] = useState(false);
     const [open, setOpen] = useState(false);
     const navigate = useNavigate();
+    const isLoggedIn = Boolean(user && user !== "Guest");
+
+    useEffect(() => {
+        let isMounted = true;
+
+        fetch("/dashboard", { credentials: "include" })
+            .then((res) => res.json())
+            .then((data) => {
+                if (!isMounted) return;
+                const username = data.username || "Guest";
+                setUser(username);
+                setHasActiveListing(Boolean(data.has_active_listing));
+                sessionStorage.setItem("player_name", username);
+            })
+            .catch(() => {
+                if (!isMounted) return;
+                setHasActiveListing(false);
+            });
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
     
     const toggleDropdown = () => {
         setOpen(prev => !prev);
     };
 
-    const handleLogout = (e) => {
+    const handleLogout = () => {
         sessionStorage.removeItem("player_name");
+        setUser("Guest");
+        setHasActiveListing(false);
+        setOpen(false);
         navigate("/");
-    }
+    };
     
-    const handleSignin = (e) => {
+    const handleSignin = () => {
+        setOpen(false);
         navigate("/");
-    }
+    };
     
-    const handleListings = (e) => {
-
-    }
+    const handleListings = () => {
+        setOpen(false);
+        navigate("/recruit");
+    };
 
     return (
-        <div className="header">
+        <header className="header">
             <Link to='/dashboard' className='logo'>
                 ClashRecruit
             </Link>
 
-            <div className="dropdown">
-                <button onClick={toggleDropdown}>
-                    {user} ▾
-                </button>
+            <div className="header-right">
+                <span className="header-divider" aria-hidden="true">|</span>
+                <div className="dropdown">
+                    <button className="user-button" onClick={toggleDropdown}>
+                        {user} ▾
+                    </button>
 
-                {open && (
-                    
-                    <div className="dropdown-menu">
+                    {open && (
+                        <div className="dropdown-menu">
+                            {isLoggedIn ?(
+                                <button onClick={handleLogout} className="dropdown-item">
+                                    Logout
+                                </button>
+                            ): (
+                                <button onClick={handleSignin} className="dropdown-item"> 
+                                    Login
+                                </button>
+                            )}
 
-                    {isLoggedIn ?(
-                        <button onClick={handleLogout} className="dropdown-item">
-                            Logout
-                        </button>
-                        ): (
-                        <button onClick={handleSignin} className="dropdown-item"> 
-                            Login
-                        </button>
-                        )}
-
-                        <button onClick={handleListings} className="dropdown-item">
-                            My Listings
-                        </button>
-                    </div>
-                )}
+                            {hasActiveListing && (
+                                <button onClick={handleListings} className="dropdown-item">
+                                    My Listings
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
+        </header>
     );
 }
 

@@ -1,0 +1,126 @@
+.recruiter-page {
+    padding: 24px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.recruiter-loading {
+    padding: 24px;
+}
+
+.recruiter-header h2 {
+    margin: 0;
+    font-size: 1.8rem;
+    color: #0f172a;
+}
+
+.recruiter-header p {
+    margin: 8px 0 20px;
+    color: #475569;
+}
+
+.recruiter-card {
+    border: 1px solid #d8e0ea;
+    border-radius: 12px;
+    background: #f8fbff;
+    padding: 16px;
+}
+
+.recruiter-fields {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(170px, 1fr));
+    gap: 12px;
+}
+
+.recruiter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.recruiter-field label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.86rem;
+    color: #334155;
+}
+
+.recruiter-field input,
+.recruiter-field select {
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.95rem;
+    background: #ffffff;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.recruiter-actions {
+    margin-top: 14px;
+    display: flex;
+    gap: 10px;
+}
+
+.recruiter-primary,
+.recruiter-secondary {
+    border: none;
+    border-radius: 8px;
+    padding: 9px 14px;
+    font-size: 0.92rem;
+    cursor: pointer;
+}
+
+.recruiter-primary {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.recruiter-primary:hover {
+    background: #1d4ed8;
+}
+
+.recruiter-secondary {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+.recruiter-secondary:hover {
+    background: #cbd5e1;
+}
+
+.recruiter-status-card {
+    background: #ffffff;
+}
+
+.recruiter-status-title {
+    margin: 0;
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.recruiter-status-expiry {
+    margin: 8px 0 0;
+    color: #475569;
+}
+
+@media (max-width: 820px) {
+    .recruiter-fields {
+        grid-template-columns: repeat(2, minmax(170px, 1fr));
+    }
+}
+
+@media (max-width: 520px) {
+    .recruiter-page {
+        padding: 16px;
+    }
+
+    .recruiter-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .recruiter-actions {
+        flex-direction: column;
+    }
+}

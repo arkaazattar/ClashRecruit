@@ -1,4 +1,4 @@
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import "./LookingForClan.css";
 
@@ -6,6 +6,10 @@ function LookingForClan() {
     const navigate = useNavigate()
     const [clanList, setClanList] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    const handleFilterSubmit = (e) => {
+      e.preventDefault();
+    };
 
     useEffect(() => {
     fetch("/recruitee", {
@@ -20,42 +24,65 @@ function LookingForClan() {
 
 if (loading){
   return( 
-    <p>Loading...</p>
+    <p className="looking-loading">Loading...</p>
   )
 }
 
 return (
-  <form>
-    <label> 
-      Min Members:
-      <input type="number"/>
-      
-      Max Members:
-      <input type="number"/>
+  <section className="looking-page">
+    <div className="looking-header">
+      <h2>Find a Clan</h2>
+      <p>Browse active listings that match your profile.</p>
+    </div>
 
-      Min Clan Level:
-      <input type="number"/>
+    <form className="looking-filters" onSubmit={handleFilterSubmit}>
+      <label>
+        Min Members
+        <input type="number"/>
+      </label>
 
-      Number of Clans:
-      <input type="number"/>
-    </label>
+      <label>
+        Max Members
+        <input type="number"/>
+      </label>
 
-    
-    <br></br>
+      <label>
+        Min Clan Level
+        <input type="number"/>
+      </label>
 
-    {clanList.map((clan) => (
-        <button type="button" className="box" onClick={ () => navigate(`/${clan.clan_tag}`)}>
-            <div key={clan.clan_tag}>
-                <h3>{clan.clan_tag}</h3>
-      
-                <p>Townhall Requirement: {clan.requirements[2]}</p>
-                <p>League Requirement: {clan.requirements[0]}</p>
-                <p>Location: {clan.clan_info.location}</p>
-                <p>{clan.clan_info.description}</p>
-            </div>
+      <div className="looking-filters-actions">
+        <button type="submit" className="looking-filter-submit">
+          Apply Filters
         </button>
-    ))}
-  </form>
+      </div>
+    </form>
+
+    <div className="listing-grid">
+      {clanList.map((clan) => (
+        <button
+          key={clan.clan_tag}
+          type="button"
+          className="listing-card"
+          onClick={() => navigate(`/${clan.clan_tag}`)}
+        >
+          <div className="listing-top">
+            <h3>{clan.clan_tag}</h3>
+            <span className="listing-location">{clan.clan_info?.location || "Unknown"}</span>
+          </div>
+
+          <div className="listing-stats">
+            <p><strong>Townhall:</strong> {clan.requirements?.[2] ?? 0}</p>
+            <p><strong>League:</strong> {clan.requirements?.[0] ?? 0}</p>
+          </div>
+
+          <p className="listing-description">
+            {clan.clan_info?.description || "No description provided."}
+          </p>
+        </button>
+      ))}
+    </div>
+  </section>
 );
 }
 
