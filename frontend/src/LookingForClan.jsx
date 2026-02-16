@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import "./LookingForClan.css";
+import LoadingScreen from "./components/LoadingScreen";
 
 function LookingForClan() {
     const navigate = useNavigate()
@@ -23,9 +24,7 @@ function LookingForClan() {
   }, []);
 
 if (loading){
-  return( 
-    <p className="looking-loading">Loading...</p>
-  )
+  return <LoadingScreen />;
 }
 
 return (

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import "./Dashboard.css";
+import LoadingScreen from "./components/LoadingScreen";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -29,9 +30,7 @@ function Dashboard() {
   };
 
   if (loading) {
-    return(
-      <p> Loading... </p>
-    )
+    return <LoadingScreen />;
   }
   return (
     

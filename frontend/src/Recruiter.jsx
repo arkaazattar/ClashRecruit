@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import "./Recruiter.css";
+import LoadingScreen from "./components/LoadingScreen";
 
 function Recruiter() {
   const navigate = useNavigate();
@@ -63,9 +64,7 @@ function Recruiter() {
   }
   
   if (loading){
-    return (
-      <p className="recruiter-loading">Loading... </p>
-    )
+    return <LoadingScreen />;
   }
 
   return (
