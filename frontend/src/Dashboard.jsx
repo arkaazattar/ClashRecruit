@@ -7,6 +7,7 @@ function Dashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [recruitStatus, setRecruitStatus] = useState(false);
+  const [username, setUsername] = useState("Guest");
 
   useEffect(() => {
     fetch("/dashboard", {
@@ -15,6 +16,7 @@ function Dashboard() {
       .then((res) => res.json())
       .then((data) => {
         setRecruitStatus(data.recruit_status);
+        setUsername(data.username || "Guest");
         setLoading(false)
       })
   }, []);
@@ -33,27 +35,29 @@ function Dashboard() {
     return <LoadingScreen />;
   }
   return (
-    
     <div className="Dashboard">
-        <form>
-        {recruitStatus === true && (
-          <button
-          type="button"
-          className="buttons"
-          onClick={Recruiter}
-          >
-            Recruit!
-          </button>
-        )}
+      <section className="dashboard-panel">
+        <p className="dashboard-welcome">Welcome {username}</p>
+        <form className="dashboard-form">
+          {recruitStatus === true && (
+            <button
+              type="button"
+              className="dashboard-btn dashboard-btn-primary"
+              onClick={Recruiter}
+            >
+              Recruit!
+            </button>
+          )}
 
-        <button
-          type="button"
-          className="buttons"
-          onClick={Recruitee}
+          <button
+            type="button"
+            className="dashboard-btn dashboard-btn-secondary"
+            onClick={Recruitee}
           >
-          Looking For Clan
-        </button>
-      </form>
+            Looking For Clan
+          </button>
+        </form>
+      </section>
     </div>
   );
 }

@@ -76,7 +76,6 @@ class API:
             return False
         
         if(data["role"].lower() not in roles):
-            print("not a leader")
             return False
         
         return True  
