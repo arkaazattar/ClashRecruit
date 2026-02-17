@@ -23,6 +23,7 @@ function LookingForClan() {
       })
   }, []);
 
+
 if (loading){
   return <LoadingScreen />;
 }
@@ -63,7 +64,7 @@ return (
           key={clan.clan_tag}
           type="button"
           className="listing-card"
-          onClick={() => navigate(`/${clan.clan_tag}`)}
+          onClick={() => navigate(`/looking-for-clan/${clan.clan_tag}`, {clanTag:clan.clan_tag})}
         >
           <div className="listing-top">
             <h3>{clan.clan_tag}</h3>
