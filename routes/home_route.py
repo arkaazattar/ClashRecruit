@@ -1,22 +1,18 @@
-from flask import request, render_template, session, Blueprint, jsonify
+from flask import request, session, Blueprint, jsonify
 from ..api.clash_api import API
 from ..config import headers
 
 home_bp = Blueprint("home", __name__)
 
-@home_bp.route("/", methods=["GET", "POST"])
+@home_bp.route("/", methods=["POST"])
 
 def home():
     
-    if request.method == "GET":
-        return render_template("index.html")
-
     data = request.get_json()
 
     received_tag = data.get('playerTag')
     received_token = data.get('apiToken')
     session["player_tag"] = received_tag
-    
     user = API(received_tag, received_token, headers)
     check_player_team = user.check_player()
     session["recruiter_status"] = user.recruiter_status

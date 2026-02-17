@@ -32,16 +32,12 @@ class API:
         return self.token 
     
     def check_player(self):
+        if self.user_tag == "Guest":
+            self.reason = "User is a Guest"
+            return False
         url = f"https://api.clashofclans.com/v1/players/%23{self.user_tag}"
         response = requests.get(url, headers=self.headers)
         self.storage = response.json()
-        self.league = self.storage.get("leagueTier").get("name")
-        if self.league != 'Unranked':
-            self.league = int(self.league[-2:])
-        self.townhall = self.storage.get("townHallLevel")
-        self.builder_trophies = self.storage.get("builderBaseTrophies")
-
-
         reason = self.storage.get("reason")
         
         if reason == "notFound":
@@ -54,10 +50,16 @@ class API:
         
         if self.check_player_api() == False: 
             return False
+
+        self.league = self.storage.get("leagueTier").get("name")
+        if self.league != 'Unranked':
+            self.league = int(self.league[-2:])
+        else: self.league = 0
         self.townhall = self.storage.get("townHallLevel")
         self.builder_trophies = self.storage.get("builderBaseTrophies")
-     
-
+        self.townhall = self.storage.get("townHallLevel")
+        self.builder_trophies = self.storage.get("builderBaseTrophies")
+    
         self.recruiter_status = self.recruiting(self.storage)
         self.clantag = self.storage.get("clan", {}).get("tag", None)
         if self.clantag: 
@@ -74,7 +76,6 @@ class API:
             return False
         
         if(data["role"].lower() not in roles):
-            print("not a leader")
             return False
         
         return True  

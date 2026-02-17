@@ -1,0 +1,67 @@
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgb(191, 255, 234);
+  color: #0f172a;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(360px, calc(100% - 32px));
+}
+
+.login-form input {
+  border: 1px solid #94a3b8;
+  border-radius: 8px;
+  padding: 11px 12px;
+  font-size: 0.95rem;
+  background: #ffffff;
+}
+
+.login-form input:focus {
+  outline: 2px solid #93c5fd;
+  outline-offset: 1px;
+}
+
+.login-error {
+  margin: 4px 0 0;
+  color: #b91c1c;
+  font-size: 0.88rem;
+}
+
+.primary-btn,
+.ghost-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 11px 14px;
+  font-size: 0.94rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.primary-btn {
+  width: 100%;
+  background: #1d4ed8;
+  color: #ffffff;
+}
+
+.primary-btn:hover {
+  background: #1e40af;
+}
+
+.ghost-btn {
+  width: min(360px, calc(100% - 32px));
+  background: #eef2f7;
+  color: #0f172a;
+}
+
+.ghost-btn:hover {
+  background: #dbe4f1;
+}

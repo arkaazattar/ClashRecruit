@@ -27,18 +27,26 @@ class Recruiter:
 
         return self.requirements
 
-    def lookup_clan(self):
+    def lookup_clan(self, request=None):
         """
         Used for looking up further clan stats
         """
+        
         response = requests.get(f"https://api.clashofclans.com/v1/clans/%23{self.clan_tag}", headers=self.headers)
         response = response.json()  
         rsp = {}
-        rsp['type'] = response.get("type")
-        rsp['description'] = response.get("description")
-        rsp['location']= response.get("location", {}).get("name", None)
-        rsp['badge'] = response.get("badgeUrls").get("medium")
-        rsp['clan_level'] = response.get("clanLevel")
+        
+        if request == None:
+            rsp['type'] = response.get("type")
+            rsp['description'] = response.get("description")
+            rsp['location']= response.get("location", {}).get("name", None)
+            rsp['badge'] = response.get("badgeUrls").get("medium")
+            rsp['clan_level'] = response.get("clanLevel")
+            rsp['member_count'] = response.get("members")
+        
+        elif request == "member_count":
+            rsp['member_count'] = response.get("members")
+        
         return rsp
 
         
