@@ -2,19 +2,36 @@
 Refresh all clan membercount inside of the database.
 """
 
+import os
 from datetime import datetime, timedelta, timezone
-from json import dumps
 from ..api.recruiter_api import Recruiter
 from ..config import headers
 from .mongo_db_client import clan_collection
 from celery import Celery
+from celery.signals import worker_ready
 
 THRESHOLD = timedelta(minutes=10)
-app = Celery("refresh_db", broker="redis://localhost:6379/0") 
+n = timedelta(minutes=5)
 
-@app.task
+app = Celery("refresh_db", 
+             broker=os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")) 
+
+app.conf.beat_schedule = {
+    "run_every_n_seconds" : {
+        "task" : "refresh_membercount_task",
+        "schedule" : n
+    }
+}
+
+@app.task(name="refresh_membercount_task")
 def task():
     refresh_membercount()
+
+
+@worker_ready.connect
+def run_refresh_on_worker_start(sender=None, **kwargs):
+    if sender is not None:
+        sender.app.send_task("refresh_membercount_task")
 
 def refresh_membercount() -> None:
     """

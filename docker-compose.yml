@@ -1,0 +1,49 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  web:
+    build: .
+    working_dir: /app
+    command: flask --app ClashRecruiter.app run --host=0.0.0.0 --port=5000
+    env_file:
+      - .env
+    environment:
+      PYTHONPATH: /app
+      CELERY_BROKER_URL: redis://redis:6379/0
+    volumes:
+      - .:/app/ClashRecruiter
+    ports:
+      - "5000:5000"
+    depends_on:
+      - redis
+
+  worker:
+    build: .
+    working_dir: /app
+    command: celery -A ClashRecruiter.services.refresh_db:app worker --loglevel=info
+    env_file:
+      - .env
+    environment:
+      PYTHONPATH: /app
+      CELERY_BROKER_URL: redis://redis:6379/0
+    volumes:
+      - .:/app/ClashRecruiter
+    depends_on:
+      - redis
+
+  beat:
+    build: .
+    working_dir: /app
+    command: celery -A ClashRecruiter.services.refresh_db:app beat --loglevel=info
+    env_file:
+      - .env
+    environment:
+      PYTHONPATH: /app
+      CELERY_BROKER_URL: redis://redis:6379/0
+    volumes:
+      - .:/app/ClashRecruiter
+    depends_on:
+      - redis
