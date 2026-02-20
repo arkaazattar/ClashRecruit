@@ -25,6 +25,7 @@ def recruitee():
 
             session["db_return"] = data
             session["db_user"] = session.get("player_name")
+        return jsonify(session.get("db_return"))
     
     else:
         data = request.get_json() or {}
@@ -37,4 +38,3 @@ def recruitee():
             return jsonify({"error": "Clan not found"}), 404
         return jsonify(clan_info)
 
-    return jsonify(session.get("db_return"))
