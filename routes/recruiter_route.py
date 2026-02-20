@@ -51,8 +51,7 @@ def recruit():
         expiry = datetime.now(timezone.utc) + timedelta(days=7) 
         clan_collection.update_one({"clan_tag" : session.get("clan_tag")}, 
                                    {'$set' : 
-                                    {"requirements" : user.requirements, 
-                                     "clan_info" : clan_info,
+                                    {
                                      "last_updated" : datetime.now(timezone.utc),
                                      "expires" : expiry
                                      }})

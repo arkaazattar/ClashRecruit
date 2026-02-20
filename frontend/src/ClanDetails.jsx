@@ -66,6 +66,8 @@ function ClanDetails() {
                     <div><span>Clan Level</span><strong>{details.clan_level ?? 0}</strong></div>
                     <div><span>Members</span><strong>{details.member_count ?? 0}</strong></div>
                     <div><span>Type</span><strong>{details.type || "unknown"}</strong></div>
+                    <div><span>War Frequency</span><strong>{details.warFrequency ?? details.war_frequency ?? "unknown"}</strong></div>
+                    <div><span>Clan Points</span><strong>{details.clanPoints ?? details.clan_points ?? 0}</strong></div>
                     <div><span>Required League</span><strong>{requirements[0] ?? 0}</strong></div>
                     <div><span>Required Builder Trophies</span><strong>{requirements[1] ?? 0}</strong></div>
                     <div><span>Required Town Hall</span><strong>{requirements[2] ?? 0}</strong></div>

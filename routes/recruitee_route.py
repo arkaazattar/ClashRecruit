@@ -21,7 +21,7 @@ def recruitee():
                 "requirements.2": {"$lte" : session.get("player_townhall")},
                 },
                 {"_id" : 0}        
-                ).limit(20))
+                ).limit(41))
 
             session["db_return"] = data
             session["db_user"] = session.get("player_name")
