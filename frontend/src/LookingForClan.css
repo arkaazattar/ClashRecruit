@@ -38,7 +38,8 @@
     color: #334155;
 }
 
-.looking-filters input {
+.looking-filters input,
+.looking-filters select {
     border: 1px solid #cbd5e1;
     border-radius: 8px;
     padding: 8px 10px;

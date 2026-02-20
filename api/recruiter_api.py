@@ -43,6 +43,9 @@ class Recruiter:
             rsp['badge'] = response.get("badgeUrls").get("medium")
             rsp['clan_level'] = response.get("clanLevel")
             rsp['member_count'] = response.get("members")
+            rsp['warFrequency'] = response.get("warFrequency")
+            rsp['clanPoints'] = response.get("clanPoints")
+
         
         elif request == "member_count":
             rsp['member_count'] = response.get("members")
