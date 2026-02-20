@@ -46,10 +46,11 @@ def refresh_membercount() -> None:
 
     for entry in outdated_entries:
         clan = Recruiter(None, entry.get("clan_tag"), headers)
+        member_count = clan.lookup_clan("member_count").get("member_count")
         clan_collection.update_one({"clan_tag" : clan.clan_tag},
                                    {'$set' :
                                     {"last_updated" : datetime.now(timezone.utc),
-                                     "clan_info.member_count" : clan.lookup_clan("member_count")
+                                     "clan_info.member_count" : member_count
                                      }})
 
 if __name__ == "__main__":
