@@ -39,7 +39,10 @@ class Recruiter:
         if request == None:
             rsp['type'] = response.get("type")
             rsp['description'] = response.get("description")
-            rsp['location']= response.get("location", {}).get("name", None)
+            rsp['location'] = {
+                "id": response.get("location", {}).get("id"),
+                "name": response.get("location", {}).get("name"),
+            }
             rsp['badge'] = response.get("badgeUrls").get("medium")
             rsp['clan_level'] = response.get("clanLevel")
             rsp['member_count'] = response.get("members")
