@@ -2,6 +2,13 @@ import "./ClanDetails.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 
+function normalizeLocation(rawLocation) {
+    if (!rawLocation) return "";
+    if (typeof rawLocation === "string") return rawLocation.trim();
+    if (typeof rawLocation === "object") return (rawLocation.name || "").trim();
+    return "";
+}
+
 function ClanDetails() {
     const { clanTag } = useParams();
     const navigate = useNavigate();
@@ -56,7 +63,7 @@ function ClanDetails() {
                     <img className="clan-badge" src={details.badge} alt="Clan badge" />
                     <div>
                         <h2>{clanInfo.clan_tag}</h2>
-                        <p className="clan-location">{details.location || "Unknown location"}</p>
+                        <p className="clan-location">{normalizeLocation(details.location) || "Unknown location"}</p>
                     </div>
                 </div>
 
