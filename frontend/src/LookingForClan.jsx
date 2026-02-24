@@ -237,7 +237,9 @@ return (
           <div className="listing-stats">
             <p><strong>Townhall:</strong> {clan.requirements?.[2] ?? 0}</p>
             <p><strong>League:</strong> {clan.requirements?.[0] ?? 0}</p>
-            <p><strong>War Freq:</strong> {clan.clan_info?.warFrequency ?? clan.clan_info?.war_frequency ?? "unknown"}</p>
+            {clan.clan_info.warFrequency != "unknown" &&
+              <p><strong>War Freq:</strong> {clan.clan_info?.warFrequency ?? clan.clan_info?.war_frequency ?? "unknown"}</p>
+            }
             <p><strong>Clan Points:</strong> {clan.clan_info?.clanPoints ?? clan.clan_info?.clan_points ?? 0}</p>
           </div>
 

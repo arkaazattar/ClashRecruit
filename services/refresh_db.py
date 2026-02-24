@@ -10,7 +10,7 @@ from .mongo_db_client import clan_collection
 from celery import Celery
 from celery.signals import worker_ready
 
-THRESHOLD = timedelta(minutes=10)
+THRESHOLD = timedelta(seconds=10)
 n = timedelta(minutes=5)
 
 app = Celery("refresh_db", 
@@ -52,6 +52,9 @@ def refresh_membercount() -> None:
                                     {"last_updated" : datetime.now(timezone.utc),
                                      "clan_info.member_count" : member_count
                                      }})
+    
+    #testing
+    print(len(outdated_entries))
 
 if __name__ == "__main__":
     refresh_membercount()
