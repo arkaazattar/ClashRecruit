@@ -40,21 +40,54 @@ clashrecruit/
 - npm
 - Python 3.10+ (YMMV)
 - pip / virtualenv
+- Docker + Docker Compose
 
 ---
 
 ## Installation
 
-### Backend (Flask)
+### Backend + Celery + Redis (Docker Compose)
+```
+docker compose up --build
+```
+
+This starts:
+- Flask backend (`web`) on `http://127.0.0.1:5000`
+- Celery worker (`worker`)
+- Celery beat scheduler (`beat`)
+- Redis broker (`redis`)
+
+Stop everything:
+```
+docker compose down
+```
+
+---
+
+### Backend + Celery (Local/Manual)
 ```
 python -m venv venv  
 source venv/bin/activate  
 pip install -r requirements.txt  
-flask run  
 ```
 
-Backend runs at:  
-http://127.0.0.1:5000
+Start Redis (if using Docker for Redis):
+```
+docker start redis
+```
+
+Start backend:
+```
+flask run
+```
+
+In separate terminals, start Celery:
+```
+celery -A ClashRecruiter.services.refresh_db:app worker --loglevel=info
+celery -A ClashRecruiter.services.refresh_db:app beat --loglevel=info
+```
+
+Backend runs at `http://127.0.0.1:5000`.
 
 ---
 
