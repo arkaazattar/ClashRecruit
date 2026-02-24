@@ -5,6 +5,18 @@ import LoadingScreen from "./components/LoadingScreen";
 
 const PAGE_SIZE = 10;
 
+const fetchClans = async (offset = 0, limit = PAGE_SIZE) => {
+  const query = `?offset=${offset}&limit=${limit}`;
+  const response = await fetch(`/recruitee${query}`, { credentials: "include" });
+
+  if (!response.ok) {
+    throw new Error(`Failed to load clans: ${response.status}`);
+  }
+
+  const clansData = await response.json();
+  return Array.isArray(clansData) ? clansData : [];
+};
+
 function normalizeLocation(rawLocation) {
   if (!rawLocation) return "";
   if (typeof rawLocation === "string") return rawLocation.trim();
@@ -23,9 +35,12 @@ function LookingForClan() {
     const [clanList, setClanList] = useState([]);
     const [allLocations, setAllLocations] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [hasMoreFromServer, setHasMoreFromServer] = useState(true);
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
     const [draftFilters, setDraftFilters] = useState({
       name: "",
+      minTownhall: "",
       minLeague: "",
       minMembers: "",
       maxMembers: "",
@@ -36,6 +51,7 @@ function LookingForClan() {
     });
     const [appliedFilters, setAppliedFilters] = useState({
       name: "",
+      minTownhall: "",
       minLeague: "",
       minMembers: "",
       maxMembers: "",
@@ -61,15 +77,16 @@ function LookingForClan() {
 
     useEffect(() => {
     Promise.allSettled([
-      fetch("/recruitee", { credentials: "include" }),
+      fetchClans(0, PAGE_SIZE),
       fetch("/clash_locations", { credentials: "include" }),
     ])
       .then(async ([clansResult, locationsResult]) => {
-        if (clansResult.status === "fulfilled" && clansResult.value.ok) {
-          const clansData = await clansResult.value.json();
-          setClanList(Array.isArray(clansData) ? clansData : []);
+        if (clansResult.status === "fulfilled") {
+          setClanList(clansResult.value);
+          setHasMoreFromServer(clansResult.value.length >= PAGE_SIZE);
         } else {
           setClanList([]);
+          setHasMoreFromServer(false);
         }
 
         if (locationsResult.status === "fulfilled" && locationsResult.value.ok) {
@@ -84,9 +101,35 @@ function LookingForClan() {
       });
   }, []);
 
-useEffect(() => {
-  setVisibleCount(PAGE_SIZE);
-}, [clanList.length]);
+const handleLoadMore = async () => {
+  const nextVisibleCount = visibleCount + PAGE_SIZE;
+
+  if (nextVisibleCount <= clanList.length) {
+    setVisibleCount(nextVisibleCount);
+    return;
+  }
+
+  if (!hasMoreFromServer || loadingMore) {
+    return;
+  }
+
+  setLoadingMore(true);
+  try {
+    const nextClans = await fetchClans(clanList.length, PAGE_SIZE);
+    if (nextClans.length > 0) {
+      setClanList((prev) => [...prev, ...nextClans]);
+      setVisibleCount(nextVisibleCount);
+      setHasMoreFromServer(nextClans.length === PAGE_SIZE);
+    } else {
+      setHasMoreFromServer(false);
+      setVisibleCount(nextVisibleCount);
+    }
+  } catch (error) {
+    setHasMoreFromServer(false);
+  } finally {
+    setLoadingMore(false);
+  }
+};
 
 const locationOptions = useMemo(() => {
   const uniqueLocations = new Set();
@@ -116,6 +159,7 @@ const locationNameById = useMemo(() => {
 
 const filteredClans = clanList.filter((clan) => {
   const details = clan.clan_info || {};
+  const requiredTownhall = clan.requirements?.[2] ?? 0;
   const requiredLeague = clan.requirements?.[0] ?? 0;
   const memberCount = details.member_count ?? 0;
   const clanLevel = details.clan_level ?? 0;
@@ -124,8 +168,9 @@ const filteredClans = clanList.filter((clan) => {
   const clanPoints = details.clan_points ?? details.clanPoints ?? 0;
   const location = normalizeLocation(details.location).toLowerCase();
   const locationId = getLocationId(details.location);
-  const clanName = (details.name ?? clan.clan_tag ?? "").toLowerCase();
+  const clanName = (clan.name ?? details.name ?? "").toLowerCase();
 
+  if (appliedFilters.minTownhall !== "" && requiredTownhall < Number(appliedFilters.minTownhall)) return false;
   if (appliedFilters.minLeague !== "" && requiredLeague < Number(appliedFilters.minLeague)) return false;
   if (appliedFilters.minMembers !== "" && memberCount < Number(appliedFilters.minMembers)) return false;
   if (appliedFilters.maxMembers !== "" && memberCount > Number(appliedFilters.maxMembers)) return false;
@@ -146,7 +191,7 @@ const filteredClans = clanList.filter((clan) => {
 });
 
 const visibleClans = filteredClans.slice(0, visibleCount);
-const canLoadMore = visibleClans.length < filteredClans.length;
+const canLoadMore = visibleClans.length < filteredClans.length || hasMoreFromServer;
 
 if (loading){
   return <LoadingScreen />;
@@ -163,6 +208,11 @@ return (
       <label>
         Name
         <input type="text" name="name" value={draftFilters.name} onChange={handleFilterChange} />
+      </label>
+
+      <label>
+        Min TH
+        <input type="number" name="minTownhall" value={draftFilters.minTownhall} onChange={handleFilterChange} />
       </label>
 
       <label>
@@ -230,7 +280,7 @@ return (
           onClick={() => navigate(`/looking-for-clan/${clan.clan_tag}`, {clanTag:clan.clan_tag})}
         >
           <div className="listing-top">
-            <h3>{clan.clan_tag}</h3>
+            <h3>{clan.name || clan.clan_info?.name || clan.clan_tag}</h3>
             <span className="listing-location">{normalizeLocation(clan.clan_info?.location) || "Unknown"}</span>
           </div>
 
@@ -253,9 +303,10 @@ return (
         <button
           type="button"
           className="listing-load-more"
-          onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
+          onClick={handleLoadMore}
+          disabled={loadingMore}
         >
-          Load 10 More Clans
+          {loadingMore ? "Loading..." : "Load 10 More Clans"}
         </button>
       </div>
     )}

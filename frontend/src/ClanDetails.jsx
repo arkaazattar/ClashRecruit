@@ -62,7 +62,7 @@ function ClanDetails() {
                 <div className="clan-details-header">
                     <img className="clan-badge" src={details.badge} alt="Clan badge" />
                     <div>
-                        <h2>{clanInfo.clan_tag}</h2>
+                        <h2>{clanInfo.name || details.name || clanInfo.clan_tag}</h2>
                         <p className="clan-location">{normalizeLocation(details.location) || "Unknown location"}</p>
                     </div>
                 </div>
@@ -81,6 +81,7 @@ function ClanDetails() {
                 </div>
 
                 <div className="clan-meta">
+                    <p><strong>Clan Tag:</strong> {clanInfo.clan_tag}</p>
                     <p><strong>Posted by:</strong> {clanInfo.player_tag}</p>
                     <p><strong>Last updated:</strong> {new Date(clanInfo.last_updated).toLocaleDateString()}</p>
                     <p><strong>Expires:</strong> {new Date(clanInfo.expires).toLocaleDateString()}</p>

@@ -37,6 +37,7 @@ def recruit():
         expiry = datetime.now(timezone.utc) + timedelta(days=7) 
         data = {
             "requirements": user.requirements,
+            "name": clan_info.get("name"),
             "clan_tag": session.get("clan_tag"),
             "player_tag": session.get("player_tag"),
             "clan_info": clan_info,

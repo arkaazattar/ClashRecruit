@@ -37,6 +37,7 @@ class Recruiter:
         rsp = {}
         
         if request == None:
+            rsp['name'] = response.get("name")
             rsp['type'] = response.get("type")
             rsp['description'] = response.get("description")
             rsp['location'] = {
