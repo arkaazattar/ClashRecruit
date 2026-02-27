@@ -1,23 +1,47 @@
-import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "./LookingForClan.css";
 import LoadingScreen from "./components/LoadingScreen";
+
+const PAGE_SIZE = 10;
+
+function toNumberOrNull(value) {
+    return value === "" || value === null ? null : Number(value);
+}
 
 function LookingForClan() {
     const navigate = useNavigate()
     const [Locations, setLocations] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [clans, setClans] = useState([]);
+    const [offset, setOffset] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
     const [Filters, setFilters] = useState({
-      name: null,
-      minTownhall: null,
-      minLeague: null,
-      minMembers: null,
-      maxMembers: null,
-      minClanLevel: null,
-      warFrequency: null,
-      clanPoints: null,
-      location: null,
+      name: "",
+      minTownhall: "",
+      minLeague: "",
+      minMembers: "",
+      maxMembers: "",
+      minClanLevel: "",
+      warFrequency: "",
+      clanPoints: "",
+      location: "",
     });
+    
+    useEffect(() => {
+      const loadData = async() => {
+        await Promise.all(
+          [
+            getClans(0, false),
+            getLocations()
+          ]
+        );
+        setLoading(false);
+      };
+      loadData();
+    }, []);
     
     const handleFilterChange = (e) => {
       const { name, value } = e.target;
@@ -32,39 +56,60 @@ function LookingForClan() {
       const locations = await rsp.json()
       setLocations(locations)
     }
+    async function getClans(nextOffset = 0, append = false){
+      const rsp = await fetch(`/recruitee?limit=${PAGE_SIZE}&offset=${nextOffset}`)
+      const data = await rsp.json()
+      if (append) {
+        setClans((prev) => [...prev, ...data])
+      } else {
+        setClans(data)
+      }
+      setOffset(nextOffset + data.length)
+      setHasMore(data.length === PAGE_SIZE)
+    }
 
-    useEffect(() => {
-      getLocations();
-      setLoading(false);
-    }, []);
-
-    const handleFilterSubmit = (e) => {
+    const handleFilterSubmit = async (e) => {
       e.preventDefault();
-      fetch("/recruitee", {
-        method: 'POST',
+      setHasAppliedFilters(true);
+      const response = await fetch("/recruitee", {
+        method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          "filters": {
-            "name": Filters.name,
-            "minClanLevel": Number(Filters.minClanLevel),
-            "clanPoints": Number(Filters.clanPoints),
-            "warFrequency": Filters.warFrequency,
-            "location": Filters.location,
-            "requirements":{
-              "townhall": Number(Filters.minTownhall),
-              "league": Number(Filters.minLeague),
-              "members": {
-                "max": Number(Filters.maxMembers),
-                "min": Number(Filters.minMembers),
-                } 
-             }
-          }
-        })
+          filters: {
+            name: Filters.name,
+            minClanLevel: toNumberOrNull(Filters.minClanLevel),
+            clanPoints: toNumberOrNull(Filters.clanPoints),
+            warFrequency: Filters.warFrequency || null,
+            location: Filters.location || null,
+            requirements: {
+              townhall: toNumberOrNull(Filters.minTownhall),
+              league: toNumberOrNull(Filters.minLeague),
+              members: {
+                max: toNumberOrNull(Filters.maxMembers),
+                min: toNumberOrNull(Filters.minMembers),
+              },
+            },
+          },
+        }),
+      });
+
+      const data = await response.json();
+      setClans(data);
+      setHasMore(false);
+      setOffset(data.length);
+      setIsLoadingMore(false);
+    };
+
+    const handleLoadMore = async () => {
+      if (!hasMore || isLoadingMore || hasAppliedFilters) {
+        return;
       }
-      );
-    }
+      setIsLoadingMore(true);
+      await getClans(offset, true);
+      setIsLoadingMore(false);
+    };
 
 if (loading){
   return <LoadingScreen />;
@@ -85,7 +130,7 @@ return (
 
       <label>
         Min TH
-        <input type="number" name="minTownhall" value={Filters.minTownhall} onChange={handleFilterChange} />
+        <input type="number" name="minTownhall" value={Filters.minTownhall} onChange={handleFilterChange} min={0} />
       </label>
 
       <label>
@@ -95,17 +140,17 @@ return (
 
       <label>
         Min Members
-        <input type="number" name="minMembers" value={Filters.minMembers} onChange={handleFilterChange} />
+        <input type="number" name="minMembers" value={Filters.minMembers} onChange={handleFilterChange} min={0} max={50}/>
       </label>
 
       <label>
         Max Members
-        <input type="number" name="maxMembers" value={Filters.maxMembers} onChange={handleFilterChange} />
+        <input type="number" name="maxMembers" value={Filters.maxMembers} onChange={handleFilterChange} min={Filters.minMembers || 0} max={50} />
       </label>
 
       <label>
         Min Clan Level
-        <input type="number" name="minClanLevel" value={Filters.minClanLevel} onChange={handleFilterChange} />
+        <input type="number" name="minClanLevel" value={Filters.minClanLevel} onChange={handleFilterChange}  />
       </label>
 
       <label>
@@ -129,7 +174,7 @@ return (
       <label>
         Location
         <select name="location" value={Filters.location} onChange={handleFilterChange}>
-          <option value={null}>All Locations</option>
+          <option value="">All Locations</option>
           {Locations.map((location) => (
             <option value={location.name}>
               {location.name}
@@ -147,8 +192,8 @@ return (
 
 
 
-    {/* <div className="listing-grid">
-      {visibleClans.map((clan) => (
+    <div className="listing-grid">
+      {clans.map((clan) => (
         <button
           key={clan.clan_tag}
           type="button"
@@ -157,29 +202,40 @@ return (
         >
           <div className="listing-top">
             <h3>{clan.name || clan.clan_info?.name || clan.clan_tag}</h3>
-            <span className="listing-location">{normalizeLocation(clan.clan_info?.location) || "Unknown"}</span>
+            <span className="listing-location">{(clan.clan_info.location["name"])}</span>
           </div>
 
           <div className="listing-stats">
-            <p><strong>Townhall:</strong> {clan.requirements?.[2] ?? 0}</p>
-            <p><strong>League:</strong> {clan.requirements?.[0] ?? 0}</p>
+            <p><strong>Townhall:</strong> {clan.requirements[2]}</p>
+            <p><strong>League:</strong> {clan.requirements[0]}</p>
             {clan.clan_info.warFrequency != "unknown" &&
-              <p><strong>War Freq:</strong> {clan.clan_info?.warFrequency ?? clan.clan_info?.war_frequency ?? "unknown"}</p>
+              <p><strong>War Freq:</strong> {clan.clan_info["warFrequency"]}</p>
             }
-            <p><strong>Clan Points:</strong> {clan.clan_info?.clanPoints ?? clan.clan_info?.clan_points ?? 0}</p>
+            <p><strong>Clan Points:</strong> {clan.clan_info["clanPoints"]}</p>
           </div>
 
           <p className="listing-description">
-            {clan.clan_info?.description || "No description provided."}
+            {clan.clan_info["description"] || "No description provided."}
           </p>
         </button>
       ))}
-    </div> */}
+    </div>
+    {!hasAppliedFilters && hasMore && (
+      <div className="listing-load-more-wrap">
+        <button
+          type="button"
+          className="listing-load-more"
+          onClick={handleLoadMore}
+          disabled={isLoadingMore}
+        >
+          {isLoadingMore ? "Loading..." : "Load More"}
+        </button>
+      </div>
+    )}
 
     
     </section>
 );
 }
-
 
 export default LookingForClan

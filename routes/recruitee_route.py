@@ -1,3 +1,4 @@
+import re
 from flask import Blueprint, session, jsonify, request
 from ..services.mongo_db_client import clan_collection
 
@@ -82,14 +83,12 @@ def recruitee_post():
     query = {}
 
     name = filters.get("name", None)
-    if name: query["name"] = name
-    print(f"\n Filters: \n {filters}")
+    if name: query["name"] = {"$regex": re.escape(name.strip()), "$options": "i"}
     requirements = filters.get("requirements", {})
-    print(f"\n Requirements: \n {requirements}")
     min_townhall = requirements.get("townhall", None)
     min_league = requirements.get("league", None)
-    if min_townhall != 0: query["requirements.2"] = {"$gte": min_townhall}
-    if min_league != 0: query["requirements.0"] = {"$gte": min_league}
+    if min_townhall is not None: query["requirements.2"] = {"$gte": min_townhall}
+    if min_league is not None: query["requirements.0"] = {"$gte": min_league}
 
     min_clan_level = filters.get("minClanLevel", None)
     if min_clan_level is not None: query["clan_info.clan_level"] = {"$gte": min_clan_level}
@@ -98,22 +97,19 @@ def recruitee_post():
     if min_clan_points is not None: query["clan_info.clanPoints"] = {"$gte": min_clan_points}
 
     members = requirements.get("members", {})
-    print(f"\n Members: \n {members}")
     min_members = members.get("min", None)
     max_members = members.get("max", None)
-    if min_members != 0 or max_members != 0:
+    if min_members is not None or max_members is not None:
         member_range = {}
-        if min_members != 0: member_range["$gte"] = min_members
-        if max_members != 0: member_range["$lte"] = max_members
+        if min_members is not None: member_range["$gte"] = min_members
+        if max_members is not None: member_range["$lte"] = max_members
         query["clan_info.member_count"] = member_range
     war_frequency = filters.get("warFrequency", None)
     if war_frequency: query["clan_info.warFrequency"] = war_frequency
 
     location = filters.get("location", None)
-    if location is not None: 
-        if location == "All Locations": query.pop("clan_info.location", None)
-        else: query["clan_info.location"] = location
-
+    if location:
+        query["clan_info.location"] = location
 
     requested_limit = _get_requested_limit(DEFAULT_LIMIT)
     print(query)
