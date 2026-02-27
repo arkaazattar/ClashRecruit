@@ -3,195 +3,68 @@ import { useNavigate } from "react-router";
 import "./LookingForClan.css";
 import LoadingScreen from "./components/LoadingScreen";
 
-const PAGE_SIZE = 10;
-
-const fetchClans = async (offset = 0, limit = PAGE_SIZE) => {
-  const query = `?offset=${offset}&limit=${limit}`;
-  const response = await fetch(`/recruitee${query}`, { credentials: "include" });
-
-  if (!response.ok) {
-    throw new Error(`Failed to load clans: ${response.status}`);
-  }
-
-  const clansData = await response.json();
-  return Array.isArray(clansData) ? clansData : [];
-};
-
-function normalizeLocation(rawLocation) {
-  if (!rawLocation) return "";
-  if (typeof rawLocation === "string") return rawLocation.trim();
-  if (typeof rawLocation === "object") return (rawLocation.name || "").trim();
-  return "";
-}
-
-function getLocationId(rawLocation) {
-  if (!rawLocation || typeof rawLocation !== "object") return "";
-  const id = rawLocation.id;
-  return id === null || id === undefined ? "" : String(id);
-}
-
 function LookingForClan() {
     const navigate = useNavigate()
-    const [clanList, setClanList] = useState([]);
-    const [allLocations, setAllLocations] = useState([]);
+    const [Locations, setLocations] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [loadingMore, setLoadingMore] = useState(false);
-    const [hasMoreFromServer, setHasMoreFromServer] = useState(true);
-    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-    const [draftFilters, setDraftFilters] = useState({
-      name: "",
-      minTownhall: "",
-      minLeague: "",
-      minMembers: "",
-      maxMembers: "",
-      minClanLevel: "",
-      warFrequency: "",
-      clanPoints: "",
-      locationId: "",
+    const [Filters, setFilters] = useState({
+      name: null,
+      minTownhall: null,
+      minLeague: null,
+      minMembers: null,
+      maxMembers: null,
+      minClanLevel: null,
+      warFrequency: null,
+      clanPoints: null,
+      location: null,
     });
-    const [appliedFilters, setAppliedFilters] = useState({
-      name: "",
-      minTownhall: "",
-      minLeague: "",
-      minMembers: "",
-      maxMembers: "",
-      minClanLevel: "",
-      warFrequency: "",
-      clanPoints: "",
-      locationId: "",
-    });
-
-    const handleFilterSubmit = (e) => {
-      e.preventDefault();
-      setAppliedFilters(draftFilters);
-      setVisibleCount(PAGE_SIZE);
-    };
-
+    
     const handleFilterChange = (e) => {
       const { name, value } = e.target;
-      setDraftFilters((prev) => ({
+      setFilters((prev) => ({
         ...prev,
         [name]: value,
       }));
     };
 
+    async function getLocations(){
+      const rsp = await fetch("/clash_locations");
+      const locations = await rsp.json()
+      setLocations(locations)
+    }
+
     useEffect(() => {
-    Promise.allSettled([
-      fetchClans(0, PAGE_SIZE),
-      fetch("/clash_locations", { credentials: "include" }),
-    ])
-      .then(async ([clansResult, locationsResult]) => {
-        if (clansResult.status === "fulfilled") {
-          setClanList(clansResult.value);
-          setHasMoreFromServer(clansResult.value.length >= PAGE_SIZE);
-        } else {
-          setClanList([]);
-          setHasMoreFromServer(false);
-        }
+      getLocations();
+      setLoading(false);
+    }, []);
 
-        if (locationsResult.status === "fulfilled" && locationsResult.value.ok) {
-          const locationsData = await locationsResult.value.json();
-          setAllLocations(Array.isArray(locationsData) ? locationsData : []);
-        } else {
-          setAllLocations([]);
-        }
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, []);
-
-const handleLoadMore = async () => {
-  const nextVisibleCount = visibleCount + PAGE_SIZE;
-
-  if (nextVisibleCount <= clanList.length) {
-    setVisibleCount(nextVisibleCount);
-    return;
-  }
-
-  if (!hasMoreFromServer || loadingMore) {
-    return;
-  }
-
-  setLoadingMore(true);
-  try {
-    const nextClans = await fetchClans(clanList.length, PAGE_SIZE);
-    if (nextClans.length > 0) {
-      setClanList((prev) => [...prev, ...nextClans]);
-      setVisibleCount(nextVisibleCount);
-      setHasMoreFromServer(nextClans.length === PAGE_SIZE);
-    } else {
-      setHasMoreFromServer(false);
-      setVisibleCount(nextVisibleCount);
+    const handleFilterSubmit = (e) => {
+      e.preventDefault();
+      fetch("/recruitee", {
+        method: 'POST',
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          "filters": {
+            "name": Filters.name,
+            "minClanLevel": Number(Filters.minClanLevel),
+            "clanPoints": Number(Filters.clanPoints),
+            "warFrequency": Filters.warFrequency,
+            "location": Filters.location,
+            "requirements":{
+              "townhall": Number(Filters.minTownhall),
+              "league": Number(Filters.minLeague),
+              "members": {
+                "max": Number(Filters.maxMembers),
+                "min": Number(Filters.minMembers),
+                } 
+             }
+          }
+        })
+      }
+      );
     }
-  } catch (error) {
-    setHasMoreFromServer(false);
-  } finally {
-    setLoadingMore(false);
-  }
-};
-
-const locationOptions = useMemo(() => {
-  const uniqueLocations = new Set();
-
-  allLocations.forEach((location) => {
-    if (location?.id !== undefined && location?.id !== null && location?.name) {
-      uniqueLocations.add(JSON.stringify({ id: String(location.id), name: location.name }));
-    }
-  });
-
-  clanList.forEach((clan) => {
-    const locationName = normalizeLocation(clan.clan_info?.location);
-    const locationId = getLocationId(clan.clan_info?.location);
-    if (locationName && locationId) {
-      uniqueLocations.add(JSON.stringify({ id: locationId, name: locationName }));
-    }
-  });
-
-  return Array.from(uniqueLocations)
-    .map((location) => JSON.parse(location))
-    .sort((a, b) => a.name.localeCompare(b.name));
-}, [allLocations, clanList]);
-
-const locationNameById = useMemo(() => {
-  return new Map(locationOptions.filter((location) => location.id).map((location) => [location.id, location.name.toLowerCase()]));
-}, [locationOptions]);
-
-const filteredClans = clanList.filter((clan) => {
-  const details = clan.clan_info || {};
-  const requiredTownhall = clan.requirements?.[2] ?? 0;
-  const requiredLeague = clan.requirements?.[0] ?? 0;
-  const memberCount = details.member_count ?? 0;
-  const clanLevel = details.clan_level ?? 0;
-  const warFrequency = (details.war_frequency ?? details.warFrequency ?? "").toLowerCase();
-  const normalizedWarFrequency = warFrequency.replace(/[^a-z]/g, "");
-  const clanPoints = details.clan_points ?? details.clanPoints ?? 0;
-  const location = normalizeLocation(details.location).toLowerCase();
-  const locationId = getLocationId(details.location);
-  const clanName = (clan.name ?? details.name ?? "").toLowerCase();
-
-  if (appliedFilters.minTownhall !== "" && requiredTownhall < Number(appliedFilters.minTownhall)) return false;
-  if (appliedFilters.minLeague !== "" && requiredLeague < Number(appliedFilters.minLeague)) return false;
-  if (appliedFilters.minMembers !== "" && memberCount < Number(appliedFilters.minMembers)) return false;
-  if (appliedFilters.maxMembers !== "" && memberCount > Number(appliedFilters.maxMembers)) return false;
-  if (appliedFilters.minClanLevel !== "" && clanLevel < Number(appliedFilters.minClanLevel)) return false;
-  if (appliedFilters.clanPoints !== "" && clanPoints < Number(appliedFilters.clanPoints)) return false;
-  if (appliedFilters.warFrequency && normalizedWarFrequency !== appliedFilters.warFrequency.toLowerCase()) return false;
-  if (appliedFilters.locationId) {
-    if (locationId) {
-      if (locationId !== appliedFilters.locationId) return false;
-    } else {
-      const selectedLocationName = locationNameById.get(appliedFilters.locationId);
-      if (!selectedLocationName || location !== selectedLocationName) return false;
-    }
-  }
-  if (appliedFilters.name && !clanName.includes(appliedFilters.name.toLowerCase())) return false;
-
-  return true;
-});
-
-const visibleClans = filteredClans.slice(0, visibleCount);
-const canLoadMore = visibleClans.length < filteredClans.length || hasMoreFromServer;
 
 if (loading){
   return <LoadingScreen />;
@@ -207,41 +80,42 @@ return (
     <form className="looking-filters" onSubmit={handleFilterSubmit}>
       <label>
         Name
-        <input type="text" name="name" value={draftFilters.name} onChange={handleFilterChange} />
+        <input type="text" name="name" value={Filters.name} onChange={handleFilterChange} />
       </label>
 
       <label>
         Min TH
-        <input type="number" name="minTownhall" value={draftFilters.minTownhall} onChange={handleFilterChange} />
+        <input type="number" name="minTownhall" value={Filters.minTownhall} onChange={handleFilterChange} />
       </label>
 
       <label>
         Min League
-        <input type="number" name="minLeague" value={draftFilters.minLeague} onChange={handleFilterChange} min={0} max={34} />
+        <input type="number" name="minLeague" value={Filters.minLeague} onChange={handleFilterChange} min={0} max={34} />
       </label>
 
       <label>
         Min Members
-        <input type="number" name="minMembers" value={draftFilters.minMembers} onChange={handleFilterChange} />
+        <input type="number" name="minMembers" value={Filters.minMembers} onChange={handleFilterChange} />
       </label>
 
       <label>
         Max Members
-        <input type="number" name="maxMembers" value={draftFilters.maxMembers} onChange={handleFilterChange} />
+        <input type="number" name="maxMembers" value={Filters.maxMembers} onChange={handleFilterChange} />
       </label>
 
       <label>
         Min Clan Level
-        <input type="number" name="minClanLevel" value={draftFilters.minClanLevel} onChange={handleFilterChange} />
+        <input type="number" name="minClanLevel" value={Filters.minClanLevel} onChange={handleFilterChange} />
       </label>
 
       <label>
         War Freq
-        <select name="warFrequency" value={draftFilters.warFrequency} onChange={handleFilterChange}>
+        <select name="warFrequency" value={Filters.warFrequency} onChange={handleFilterChange}>
           <option value="">All</option>
           <option value="always">Always</option>
-          <option value="onceperweek">Once a week</option>
-          <option value="morethanonceperweek">More than once a week</option>
+          <option value="oncePerWeek">Once a week</option>
+          <option value="twicePerWeek">Twice a week</option>
+          <option value="rarely">Rarely</option>
           <option value="never">Never</option>
           <option value="unknown">Unknown</option>
         </select>
@@ -249,15 +123,15 @@ return (
 
       <label>
         Min Clan Points
-        <input type="number" name="clanPoints" value={draftFilters.clanPoints} onChange={handleFilterChange} />
+        <input type="number" name="clanPoints" value={Filters.clanPoints} onChange={handleFilterChange} />
       </label>
 
       <label>
         Location
-        <select name="locationId" value={draftFilters.locationId} onChange={handleFilterChange}>
-          <option value="">All Locations</option>
-          {locationOptions.map((location) => (
-            <option key={`${location.id}-${location.name}`} value={location.id}>
+        <select name="location" value={Filters.location} onChange={handleFilterChange}>
+          <option value={null}>All Locations</option>
+          {Locations.map((location) => (
+            <option value={location.name}>
               {location.name}
             </option>
           ))}
@@ -271,7 +145,9 @@ return (
       </div>
     </form>
 
-    <div className="listing-grid">
+
+
+    {/* <div className="listing-grid">
       {visibleClans.map((clan) => (
         <button
           key={clan.clan_tag}
@@ -298,21 +174,10 @@ return (
           </p>
         </button>
       ))}
-    </div>
+    </div> */}
 
-    {canLoadMore && (
-      <div className="listing-load-more-wrap">
-        <button
-          type="button"
-          className="listing-load-more"
-          onClick={handleLoadMore}
-          disabled={loadingMore}
-        >
-          {loadingMore ? "Loading..." : "Load 10 More Clans"}
-        </button>
-      </div>
-    )}
-  </section>
+    
+    </section>
 );
 }
 

@@ -83,12 +83,13 @@ def recruitee_post():
 
     name = filters.get("name", None)
     if name: query["name"] = name
-
+    print(f"\n Filters: \n {filters}")
     requirements = filters.get("requirements", {})
+    print(f"\n Requirements: \n {requirements}")
     min_townhall = requirements.get("townhall", None)
     min_league = requirements.get("league", None)
-    if min_townhall is not None: query["requirements.townhall"] = {"$gte": min_townhall}
-    if min_league is not None: query["requirements.league"] = {"$gte": min_league}
+    if min_townhall != 0: query["requirements.2"] = {"$gte": min_townhall}
+    if min_league != 0: query["requirements.0"] = {"$gte": min_league}
 
     min_clan_level = filters.get("minClanLevel", None)
     if min_clan_level is not None: query["clan_info.clan_level"] = {"$gte": min_clan_level}
@@ -96,23 +97,26 @@ def recruitee_post():
     min_clan_points = filters.get("clanPoints", None)
     if min_clan_points is not None: query["clan_info.clanPoints"] = {"$gte": min_clan_points}
 
-    members = filters.get("members", {})
+    members = requirements.get("members", {})
+    print(f"\n Members: \n {members}")
     min_members = members.get("min", None)
     max_members = members.get("max", None)
-    if min_members is not None or max_members is not None:
+    if min_members != 0 or max_members != 0:
         member_range = {}
-        if min_members is not None: member_range["$gte"] = min_members
-        if max_members is not None: member_range["$lte"] = max_members
+        if min_members != 0: member_range["$gte"] = min_members
+        if max_members != 0: member_range["$lte"] = max_members
         query["clan_info.member_count"] = member_range
-
     war_frequency = filters.get("warFrequency", None)
     if war_frequency: query["clan_info.warFrequency"] = war_frequency
 
-    location_id = filters.get("locationId", None)
-    if location_id is not None: query["clan_info.location.id"] = location_id
+    location = filters.get("location", None)
+    if location is not None: 
+        if location == "All Locations": query.pop("clan_info.location", None)
+        else: query["clan_info.location"] = location
+
 
     requested_limit = _get_requested_limit(DEFAULT_LIMIT)
-
+    print(query)
     data = list(
         clan_collection.find(query, {"_id": 0})
         .sort([("last_updated", -1), ("clan_tag", 1)]).limit(requested_limit)

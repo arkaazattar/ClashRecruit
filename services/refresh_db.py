@@ -10,7 +10,7 @@ from .mongo_db_client import clan_collection
 from celery import Celery
 from celery.signals import worker_ready
 
-THRESHOLD = timedelta(seconds=10)
+THRESHOLD = timedelta(minutes=10)
 n = timedelta(minutes=5)
 
 app = Celery("refresh_db", 
