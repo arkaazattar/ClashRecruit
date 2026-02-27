@@ -16,6 +16,6 @@ except Exception as e:
     sys.exit("Could not connect to DB. Check IP?")
 
 clan_info_db = client["clan_info_db"]
-player_info_db = client["player_info_db"]
+location_collection = clan_info_db["locations"]
 clan_collection = clan_info_db["clans"]
 clan_collection.create_index("expires", expireAfterSeconds=0)

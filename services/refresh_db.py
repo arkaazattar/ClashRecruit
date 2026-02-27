@@ -52,6 +52,9 @@ def refresh_membercount() -> None:
                                     {"last_updated" : datetime.now(timezone.utc),
                                      "clan_info.member_count" : member_count
                                      }})
+    
+    #testing
+    print(len(outdated_entries))
 
 if __name__ == "__main__":
     refresh_membercount()
