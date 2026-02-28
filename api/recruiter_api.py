@@ -16,7 +16,6 @@ class Recruiter:
         response = requests.get(f"https://api.clashofclans.com/v1/clans?name=%23{self.clan_tag}", headers=self.headers)
         self.storage = response.json()
         long_list = self.storage.get("items")
-        
         for i in range(len(long_list)):
             required_townhall = long_list[i].get('requiredTownhallLevel')
             required_builder_trophies = long_list[i].get('requiredBuilderBaseTrophies')
@@ -53,6 +52,9 @@ class Recruiter:
         
         elif request == "member_count":
             rsp['member_count'] = response.get("members")
+
+        elif request == "description":
+            rsp["description"] = response.get("description")
         
         return rsp
 

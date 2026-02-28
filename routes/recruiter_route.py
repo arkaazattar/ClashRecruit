@@ -20,6 +20,7 @@ def recruit():
         return jsonify({
             "oldRequiredTownhall" : user.requirements[2],
             "MAXTOWNHALL" : MAXTOWNHALL,
+            "clanDescription" : user.lookup_clan("description"),
             "status" : existing
         })
     
@@ -35,6 +36,7 @@ def recruit():
     #may need to 403 error if existing
     if data.get("status") == "new":
         expiry = datetime.now(timezone.utc) + timedelta(days=7) 
+        clan_info["description"] = data.get("description")
         data = {
             "requirements": user.requirements,
             "name": clan_info.get("name"),

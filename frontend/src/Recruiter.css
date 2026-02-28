@@ -47,7 +47,8 @@
 }
 
 .recruiter-field input,
-.recruiter-field select {
+.recruiter-field select,
+.recruiter-field textarea {
     border: 1px solid #cbd5e1;
     border-radius: 8px;
     padding: 8px 10px;
@@ -55,6 +56,11 @@
     background: #ffffff;
     width: 100%;
     box-sizing: border-box;
+}
+
+.recruiter-field textarea {
+    resize: vertical;
+    font: inherit;
 }
 
 .recruiter-actions {
@@ -92,6 +98,11 @@
 
 .recruiter-status-card {
     background: #ffffff;
+}
+
+.recruiter-update-box {
+    margin-top: 14px;
+    min-height: 120px;
 }
 
 .recruiter-status-title {

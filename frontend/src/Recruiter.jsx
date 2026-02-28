@@ -9,14 +9,17 @@ function Recruiter() {
   const [requiredLeague, setRequiredLeague] = useState("");
   const [requiredBuilderLeague, setRequiredBuilderLeague] = useState("");
   const [requiredTownhall, setRequiredTownhall] = useState("");
+  const [clanDescription, setClanDescription] = useState("");
   const [maxTownhall, setmaxTownhall] = useState(0);
   const [status, setStatus] = useState(null);
+  const [updateBox, setUpdateBox] = useState(false);
   
   async function getmaxTownhall(){
     const rsp = await fetch("/recruiter")
     const data = await rsp.json()
    setmaxTownhall(data.MAXTOWNHALL) 
    setRequiredTownhall(data.oldRequiredTownhall)
+   setClanDescription(data.clanDescription.description)
    setStatus(data.status)
    setLoading(false);
   }
@@ -35,9 +38,10 @@ function Recruiter() {
         credentials: "include",
         body: JSON.stringify({
           "status" : "new",
-          "requiredLeague" : requiredLeague,
-          "requiredBuilderLeague" : requiredBuilderLeague,
-          "requiredTownhall" : requiredTownhall
+          "requiredLeague" : Number(requiredLeague),
+          "requiredBuilderLeague" : Number(requiredBuilderLeague),
+          "requiredTownhall" : Number(requiredTownhall),
+          "description" : clanDescription
         })
       }  
     )
@@ -48,19 +52,20 @@ function Recruiter() {
   const handleUpdate = async (e) => {
     e.preventDefault()
     
-    const response = await fetch("/recruiter", {
-      method: "POST",
-      headers : {
-        "Content-Type": "application/json"
-      },
-      credentials: "include",
-      body: JSON.stringify({
-        "status" : "update"
-      })
-    })
+    // const response = await fetch("/recruiter", {
+    //   method: "POST",
+    //   headers : {
+    //     "Content-Type": "application/json"
+    //   },
+    //   credentials: "include",
+    //   body: JSON.stringify({
+    //     "status" : "update"
+    //   })
+    // })
 
-    const data = await response.json()
-    setStatus(data.status)
+    // const data = await response.json()
+    // setStatus(data.status)
+    setUpdateBox(true);
   }
   
   if (loading){
@@ -174,6 +179,18 @@ function Recruiter() {
             />
           </div>
         </div>
+        
+        <div className="recruiter-field">
+          <label htmlFor="description">Description</label>
+          <textarea
+            id="description"
+            name="description"
+            rows={4}
+            maxLength="128"
+            defaultValue={clanDescription}
+            onChange={(e) => setClanDescription(e.target.value)}
+          />
+        </div>
 
         <div className="recruiter-actions">
           <button className="recruiter-primary">Submit Listing</button>
@@ -203,6 +220,14 @@ function Recruiter() {
             <button className="recruiter-primary" onClick={handleUpdate}>Update Listing</button>
             <button className="recruiter-secondary" onClick={() => navigate("/dashboard")}>Dashboard</button>
           </div>
+
+          {updateBox && 
+          
+            <div className="recruiter-card recruiter-status-card recruiter-update-box" > 
+              
+            
+            </div>
+          }
         </div>
       </section>
     )
