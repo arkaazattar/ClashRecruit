@@ -85,4 +85,18 @@ def recruit():
         )
         render_data["message"] = "Listing updated successfully."
 
+    elif data.get("status") == "removeListing":
+        deleted = clan_collection.delete_one({
+            "clan_tag": session.get("clan_tag")
+        })
+        if deleted: message = "Successfully deleted entry."
+
+        else: 
+            message = "Failed to delete." 
+            return jsonify(render_data ={"message" : message}), 404
+
+        render_data = {
+            "message" : message
+        }
+
     return jsonify(render_data), 200

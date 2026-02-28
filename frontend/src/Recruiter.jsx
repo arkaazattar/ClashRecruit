@@ -53,6 +53,8 @@ function Recruiter() {
   const [updateBox, setUpdateBox] = useState(false);
   const [updateExpiry, setUpdateExpiry] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeletePendingRefresh, setIsDeletePendingRefresh] = useState(false);
 
   async function getmaxTownhall() {
     const rsp = await fetch("/recruiter");
@@ -62,7 +64,7 @@ function Recruiter() {
     setRequiredLeague(data.oldRequiredLeague);
     setRequiredBuilderLeague(data.oldRequiredBuilderLeague);
     setRequiredTownhall(data.oldRequiredTownhall);
-    setClanDescription(data.clanDescription);
+    setClanDescription(data.clanDescription.description);
     setStatus(data.status);
     setLoading(false);
   }
@@ -70,6 +72,18 @@ function Recruiter() {
   useEffect(() => {
     getmaxTownhall();
   }, []);
+
+  useEffect(() => {
+    if (!isDeletePendingRefresh) {
+      return;
+    }
+
+    const refreshTimer = window.setTimeout(() => {
+      window.location.reload();
+    }, 500);
+
+    return () => window.clearTimeout(refreshTimer);
+  }, [isDeletePendingRefresh]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -114,13 +128,33 @@ function Recruiter() {
         expiry: status,
         updateExpiry: updateExpiry
       })
-    });
-
+    });    
     const data = await response.json();
     setStatus(data.status);
     setUpdateBox(true);
     setSuccessMessage(data.message ?? "");
   };
+
+  const handleDeleteListing = async (e) => {
+    const response = await fetch("/recruiter", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        status: "removeListing"
+      })}
+    )
+    const data = await response.json()
+    setSuccessMessage(data.message)
+    setShowDeleteConfirm(false);
+
+    if (response.ok) {
+      setIsDeletePendingRefresh(true);
+    }
+  }
+
 
   if (loading) {
     return <LoadingScreen />;
@@ -236,6 +270,7 @@ function Recruiter() {
             <button
               className="recruiter-primary"
               type="button"
+              disabled={isDeletePendingRefresh}
               onClick={() => {
                 setUpdateBox(true);
                 setSuccessMessage("");
@@ -245,11 +280,50 @@ function Recruiter() {
             </button>
             <button
               className="recruiter-secondary"
+              disabled={isDeletePendingRefresh}
               onClick={() => navigate("/dashboard")}
             >
               Dashboard
             </button>
+            <button
+              className="recruiter-danger"
+              type="button"
+              disabled={isDeletePendingRefresh}
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              Delete Listing
+            </button>
           </div>
+
+          {showDeleteConfirm && (
+            <div className="recruiter-delete-confirm">
+              <p className="recruiter-delete-confirm-text">
+                Are you sure you want to delete this listing?
+              </p>
+              <div className="recruiter-actions recruiter-delete-actions">
+                <button 
+                  className="recruiter-danger" 
+                  type="button"
+                  disabled={isDeletePendingRefresh}
+                  onClick={handleDeleteListing}
+                  >
+                  Confirm Delete
+                </button>
+                <button
+                  className="recruiter-secondary"
+                  type="button"
+                  disabled={isDeletePendingRefresh}
+                  onClick={() => setShowDeleteConfirm(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {successMessage && (
+            <p className="recruiter-success-message">{successMessage}</p>
+          )}
 
           {updateBox && (
             <form
@@ -338,7 +412,11 @@ function Recruiter() {
                   </div>
 
                   <div className="recruiter-actions recruiter-update-actions">
-                    <button className="recruiter-primary" type="submit">
+                    <button
+                      className="recruiter-primary"
+                      type="submit"
+                      disabled={isDeletePendingRefresh}
+                    >
                       Update Listing
                     </button>
                   </div>
