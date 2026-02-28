@@ -1,8 +1,8 @@
 from flask import Blueprint, request, session, jsonify
+from datetime import datetime, timedelta, timezone
 from ..api.recruiter_api import Recruiter
 from ..config import headers
 from ..services.mongo_db_client import clan_collection
-from datetime import datetime, timedelta, timezone
 from ..services.maxtownhall import refresh
 
 recruiter_bp = Blueprint("recruiter", __name__)
@@ -15,13 +15,26 @@ def recruit():
     user.pull_clan_requirements()
     if request.method == "GET":
         if existing:
-            existing = existing["expires"]
+            required_league = existing["requirements"][0]
+            required_builder_league = existing["requirements"][1]
+            required_townhall = existing["requirements"][2]
+            clan_description = existing["clan_info"]["description"]
+            status = existing["expires"]
+        else:
+            required_league = user.requirements[0]
+            required_builder_league = user.requirements[1]
+            required_townhall = user.requirements[2]
+            clan_description = user.lookup_clan("description")
+            status = None
+
         MAXTOWNHALL = refresh(headers)
         return jsonify({
-            "oldRequiredTownhall" : user.requirements[2],
+            "oldRequiredLeague": required_league,
+            "oldRequiredBuilderLeague": required_builder_league,
+            "oldRequiredTownhall" : required_townhall,
             "MAXTOWNHALL" : MAXTOWNHALL,
-            "clanDescription" : user.lookup_clan("description"),
-            "status" : existing
+            "clanDescription" : clan_description,
+            "status" : status
         })
     
     data = request.get_json()    
@@ -49,16 +62,27 @@ def recruit():
         render_data = data.copy()
         clan_collection.insert_one(data)
         render_data["status"] = expiry
+        render_data["message"] = "Listing created successfully."
 
     elif data.get("status") == "update":
-        expiry = datetime.now(timezone.utc) + timedelta(days=7) 
-        clan_collection.update_one({"clan_tag" : session.get("clan_tag")}, 
-                                   {'$set' : 
-                                    {
-                                     "last_updated" : datetime.now(timezone.utc),
-                                     "expires" : expiry
-                                     }})
         render_data = {}
-        render_data["status"] = expiry
-        
+        query = {
+            "requirements": user.requirements,
+            "clan_info.description": data.get("description"),
+            "last_updated": datetime.now(timezone.utc)
+        }
+
+        if data.get("updateExpiry") is True:
+            expiry = datetime.now(timezone.utc) + timedelta(days=7)
+            query["expires"] = expiry
+            render_data["status"] = expiry
+        else:
+            render_data["status"] = data.get("expiry")
+
+        clan_collection.update_one(
+            {"clan_tag": session.get("clan_tag")},
+            {"$set": query}
+        )
+        render_data["message"] = "Listing updated successfully."
+
     return jsonify(render_data), 200
