@@ -54,7 +54,6 @@ function Recruiter() {
   const [updateExpiry, setUpdateExpiry] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isDeletePendingRefresh, setIsDeletePendingRefresh] = useState(false);
 
   async function getmaxTownhall() {
     const rsp = await fetch("/recruiter");
@@ -72,18 +71,6 @@ function Recruiter() {
   useEffect(() => {
     getmaxTownhall();
   }, []);
-
-  useEffect(() => {
-    if (!isDeletePendingRefresh) {
-      return;
-    }
-
-    const refreshTimer = window.setTimeout(() => {
-      window.location.reload();
-    }, 500);
-
-    return () => window.clearTimeout(refreshTimer);
-  }, [isDeletePendingRefresh]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -107,6 +94,14 @@ function Recruiter() {
     const recruiterData = await recruiterResponse.json();
     setStatus(recruiterData.status);
     setSuccessMessage(recruiterData.message);
+
+    if (recruiterResponse.ok) {
+      window.dispatchEvent(
+        new CustomEvent("listing-status-changed", {
+          detail: { hasActiveListing: true }
+        })
+      );
+    }
   };
 
   const handleUpdate = async (e) => {
@@ -151,7 +146,13 @@ function Recruiter() {
     setShowDeleteConfirm(false);
 
     if (response.ok) {
-      setIsDeletePendingRefresh(true);
+      setStatus(null);
+      setUpdateBox(false);
+      window.dispatchEvent(
+        new CustomEvent("listing-status-changed", {
+          detail: { hasActiveListing: false }
+        })
+      );
     }
   }
 
@@ -270,7 +271,6 @@ function Recruiter() {
             <button
               className="recruiter-primary"
               type="button"
-              disabled={isDeletePendingRefresh}
               onClick={() => {
                 setUpdateBox(true);
                 setSuccessMessage("");
@@ -280,7 +280,6 @@ function Recruiter() {
             </button>
             <button
               className="recruiter-secondary"
-              disabled={isDeletePendingRefresh}
               onClick={() => navigate("/dashboard")}
             >
               Dashboard
@@ -288,7 +287,6 @@ function Recruiter() {
             <button
               className="recruiter-danger"
               type="button"
-              disabled={isDeletePendingRefresh}
               onClick={() => setShowDeleteConfirm(true)}
             >
               Delete Listing
@@ -304,7 +302,6 @@ function Recruiter() {
                 <button 
                   className="recruiter-danger" 
                   type="button"
-                  disabled={isDeletePendingRefresh}
                   onClick={handleDeleteListing}
                   >
                   Confirm Delete
@@ -312,7 +309,6 @@ function Recruiter() {
                 <button
                   className="recruiter-secondary"
                   type="button"
-                  disabled={isDeletePendingRefresh}
                   onClick={() => setShowDeleteConfirm(false)}
                 >
                   Cancel
@@ -415,7 +411,6 @@ function Recruiter() {
                     <button
                       className="recruiter-primary"
                       type="submit"
-                      disabled={isDeletePendingRefresh}
                     >
                       Update Listing
                     </button>
