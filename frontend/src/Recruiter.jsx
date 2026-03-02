@@ -63,7 +63,7 @@ function Recruiter() {
     setRequiredLeague(data.oldRequiredLeague);
     setRequiredBuilderLeague(data.oldRequiredBuilderLeague);
     setRequiredTownhall(data.oldRequiredTownhall);
-    setClanDescription(data.clanDescription.description);
+    setClanDescription(data.clanDescription);
     setStatus(data.status);
     setLoading(false);
   }
@@ -272,11 +272,11 @@ function Recruiter() {
               className="recruiter-primary"
               type="button"
               onClick={() => {
-                setUpdateBox(true);
+                setUpdateBox(!updateBox);
                 setSuccessMessage("");
               }}
             >
-              Update Listing
+              View Listing
             </button>
             <button
               className="recruiter-secondary"

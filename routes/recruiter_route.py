@@ -24,7 +24,7 @@ def recruit():
             required_league = user.requirements[0]
             required_builder_league = user.requirements[1]
             required_townhall = user.requirements[2]
-            clan_description = user.lookup_clan("description")
+            clan_description = user.lookup_clan("description")["description"]
             status = None
 
         MAXTOWNHALL = refresh(headers)

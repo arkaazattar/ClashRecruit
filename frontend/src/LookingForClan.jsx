@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./LookingForClan.css";
 import LoadingScreen from "./components/LoadingScreen";
+import { formatWarFrequency, WAR_FREQUENCY_OPTIONS } from "./utils/warFrequency";
 
 const PAGE_SIZE = 10;
 
@@ -154,15 +155,14 @@ return (
       </label>
 
       <label>
-        War Freq
+        War Frequency
         <select name="warFrequency" value={Filters.warFrequency} onChange={handleFilterChange}>
           <option value="">All</option>
-          <option value="always">Always</option>
-          <option value="oncePerWeek">Once a week</option>
-          <option value="twicePerWeek">Twice a week</option>
-          <option value="rarely">Rarely</option>
-          <option value="never">Never</option>
-          <option value="unknown">Unknown</option>
+          {WAR_FREQUENCY_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
         </select>
       </label>
 
@@ -209,7 +209,7 @@ return (
             <p><strong>Townhall:</strong> {clan.requirements[2]}</p>
             <p><strong>League:</strong> {clan.requirements[0]}</p>
             {clan.clan_info.warFrequency != "unknown" &&
-              <p><strong>War Freq:</strong> {clan.clan_info["warFrequency"]}</p>
+              <p><strong>War Freq:</strong> {formatWarFrequency(clan.clan_info["warFrequency"])}</p>
             }
             <p><strong>Clan Points:</strong> {clan.clan_info["clanPoints"]}</p>
           </div>
