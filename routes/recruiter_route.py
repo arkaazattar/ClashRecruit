@@ -9,6 +9,9 @@ recruiter_bp = Blueprint("recruiter", __name__)
 
 @recruiter_bp.route("/recruiter", methods= ['GET', 'POST'])
 def recruit():
+    if not session.get("recruiter_status"):
+        return jsonify({"message": "Forbidden"}), 403
+ 
     existing = clan_collection.find_one({"clan_tag": session.get("clan_tag")})
     
     user = Recruiter(session.get("player_tag"), session.get("clan_tag"), headers)

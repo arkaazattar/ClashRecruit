@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 from flask import Blueprint, jsonify, session
 from ..services.mongo_db_client import clan_collection
+from ..api.clash_api import API
+from ..config import headers
 
 dashboard_bp = Blueprint("dashboard", __name__)
 
@@ -9,10 +11,18 @@ def dashboard():
         username = session.get("player_name", "Guest")
         recruit_status = bool(session.get("recruiter_status"))
         has_active_listing = False
+        townhall = None
+        townhallWeaponLevel = None
 
-        if username != "Guest" and recruit_status:
-            clan_tag = session.get("clan_tag")
+        if username != "Guest":  
             player_tag = session.get("player_tag")
+            user = API(player_tag, None, headers)
+            user.check_player()
+            townhall = user.townhall
+            townhallWeaponLevel = user.townhallWeaponLevel
+        
+        if recruit_status:
+            clan_tag = session.get("clan_tag")
             now = datetime.now(timezone.utc)
             listing = clan_collection.find_one(
                 {
@@ -27,5 +37,7 @@ def dashboard():
         return jsonify(
             username=username,
             recruit_status=recruit_status,
-            has_active_listing=has_active_listing
+            has_active_listing=has_active_listing,
+            townhall=townhall,
+            townhallWeaponLevel=townhallWeaponLevel
         )

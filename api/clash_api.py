@@ -13,6 +13,7 @@ class API:
         self.league = 0
         self.builder_trophies = 0
         self.townhall = 0
+        self.townhallWeaponLevel = None
     def check_player_api(self):
         
         url = f"https://api.clashofclans.com/v1/players/%23{self.user_tag}/verifytoken"
@@ -31,7 +32,7 @@ class API:
         else: self.reason = self.apistorage  
         return self.token 
     
-    def check_player(self):
+    def check_player(self, api=None):
         if self.user_tag == "Guest":
             self.reason = "User is a Guest"
             return False
@@ -48,7 +49,7 @@ class API:
              self.reason = "Invalid IP"
              return False
         
-        if self.check_player_api() == False: 
+        if api != None and self.check_player_api() == False: 
             return False
 
         self.league = self.storage.get("leagueTier").get("name")
@@ -57,8 +58,9 @@ class API:
         else: self.league = 0
         self.townhall = self.storage.get("townHallLevel")
         self.builder_trophies = self.storage.get("builderBaseTrophies")
-        self.townhall = self.storage.get("townHallLevel")
-        self.builder_trophies = self.storage.get("builderBaseTrophies")
+        
+        if self.townhall <= 17:
+            self.townhallWeaponLevel = self.storage.get("townHallWeaponLevel")
     
         self.recruiter_status = self.recruiting(self.storage)
         self.clantag = self.storage.get("clan", {}).get("tag", None)

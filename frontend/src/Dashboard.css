@@ -3,7 +3,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgb(191, 255, 234);
+    background: #ffffff;
     color: #0f172a;
 }
 
@@ -14,8 +14,17 @@
     gap: 10px;
 }
 
+.dashboard-box {
+    width: min(750px, calc(100% - 32px));
+    background: white;
+    border-width: 5px;
+    border-color: rgb(164, 118, 86);
+    border-style: solid;
+    border-radius: 10px;
+}
+
 .dashboard-welcome {
-    margin: 0 0 2px;
+    margin: 10px;
     font-size: 1.7rem;
     font-weight: 700;
     color: #0f172a;
@@ -30,8 +39,16 @@
 .dashboard-form {
     display: flex;
     flex-direction: row;
+    align-items: center;
     gap: 10px;
     width: min(760px, calc(100% - 32px));
+}
+
+.dashboard-townhall-image {
+    width: 88px;
+    height: 88px;
+    object-fit: contain;
+    flex: 0 0 auto;
 }
 
 .dashboard-btn {
@@ -44,29 +61,40 @@
     width: 100%;
     min-height: 88px;
     box-sizing: border-box;
+    margin: 20px;
 }
 
 .dashboard-btn-primary {
-    background: #1d4ed8;
-    color: #ffffff;
+    background: rgb(164, 118, 86);
+    color: black;
+    border: 5px solid gold;
+    
 }
 
 .dashboard-btn-primary:hover {
-    background: #1e40af;
+    background: rgb(133, 96, 70);
+    border: 5px solid rgb(197, 168, 1);
 }
 
 .dashboard-btn-secondary {
-    background: #1d4ed8;
-    color: #ffffff;
+    background: rgb(164, 118, 86);
+    color: black;
+    border: 5px solid gold;
 }
 
 .dashboard-btn-secondary:hover {
-    background: #1e40af;
+    background: rgb(133, 96, 70);
+    border: 5px solid rgb(197, 168, 1);
 }
 
 @media (max-width: 700px) {
     .dashboard-form {
         flex-direction: column;
         width: min(360px, calc(100% - 32px));
+    }
+
+    .dashboard-townhall-image {
+        width: 120px;
+        height: 120px;
     }
 }

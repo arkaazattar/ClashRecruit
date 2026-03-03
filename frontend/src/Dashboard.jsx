@@ -1,24 +1,85 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import "./Dashboard.css";
 import LoadingScreen from "./components/LoadingScreen";
+import "./Dashboard.css";
+
+const townHallAssets = require.context("./assets", false, /\.webp$/);
+
+function getTownHallAsset(townhallLevel, weaponLevel) {
+  if (!townhallLevel) {
+    return null;
+  }
+
+  const assetNames = weaponLevel
+    ? [`./townhall-${townhallLevel}-${weaponLevel}.webp`, `./townhall-${townhallLevel}.webp`]
+    : [`./townhall-${townhallLevel}.webp`];
+
+  for (const assetName of assetNames) {
+    try {
+      return townHallAssets(assetName);
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
+function preloadImage(src) {
+  if (!src) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.onload = resolve;
+    image.onerror = resolve;
+    image.src = src;
+  });
+}
 
 function Dashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [recruitStatus, setRecruitStatus] = useState(false);
   const [username, setUsername] = useState("Guest");
+  const [townhall, setTownhall] = useState(null);
+  const [townHallImage, setTownHallImage] = useState(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     fetch("/dashboard", {
       credentials: "include",
     })
       .then((res) => res.json())
       .then((data) => {
-        setRecruitStatus(data.recruit_status);
-        setUsername(data.username || "Guest");
-        setLoading(false)
+        const resolvedTownHallImage = getTownHallAsset(
+          data.townhall,
+          data.townhallWeaponLevel
+        );
+
+        preloadImage(resolvedTownHallImage).then(() => {
+          if (!isMounted) {
+            return;
+          }
+
+          setRecruitStatus(data.recruit_status);
+          setUsername(data.username || "Guest");
+          setTownhall(data.townhall);
+          setTownHallImage(resolvedTownHallImage);
+          setLoading(false);
+        });
       })
+      .catch(() => {
+        if (isMounted) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const Recruiter = (e) => {
@@ -36,27 +97,40 @@ function Dashboard() {
   }
   return (
     <div className="Dashboard">
+      
+      {townHallImage && (
+        <img
+          src={townHallImage}
+          alt={`Town Hall level ${townhall}`}
+          className="dashboard-townhall-image"
+        />
+      )}
+
       <section className="dashboard-panel">
-        <p className="dashboard-welcome">Welcome {username}</p>
-        <form className="dashboard-form">
-          {recruitStatus === true && (
+        <div className="dashboard-box">
+          <p className="dashboard-welcome">Welcome {username}</p>
+          
+        
+          <form className="dashboard-form">
+            {recruitStatus === true && (
+              <button
+                type="button"
+                className="dashboard-btn dashboard-btn-primary"
+                onClick={Recruiter}
+              >
+                Recruit!
+              </button>
+            )}
+
             <button
               type="button"
-              className="dashboard-btn dashboard-btn-primary"
-              onClick={Recruiter}
+              className="dashboard-btn dashboard-btn-secondary"
+              onClick={Recruitee}
             >
-              Recruit!
+              Start Searching →
             </button>
-          )}
-
-          <button
-            type="button"
-            className="dashboard-btn dashboard-btn-secondary"
-            onClick={Recruitee}
-          >
-            Looking For Clan
-          </button>
-        </form>
+          </form>
+        </div>
       </section>
     </div>
   );
