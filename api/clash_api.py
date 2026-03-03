@@ -32,7 +32,7 @@ class API:
         else: self.reason = self.apistorage  
         return self.token 
     
-    def check_player(self, api=None):
+    def check_player(self):
         if self.user_tag == "Guest":
             self.reason = "User is a Guest"
             return False
@@ -49,7 +49,7 @@ class API:
              self.reason = "Invalid IP"
              return False
         
-        if api != None and self.check_player_api() == False: 
+        if self.json_data["token"] and self.check_player_api() == False: 
             return False
 
         self.league = self.storage.get("leagueTier").get("name")
