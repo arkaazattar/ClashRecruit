@@ -1,6 +1,7 @@
+import os
 from flask import Flask
 from flask_cors import CORS
-import os
+from .services.clash_api_preflight import run_clash_api_preflight
 from .config import FLASKSECRETKEY
 from .routes.home_route import home_bp
 from .routes.dashboard_route import dashboard_bp
@@ -11,7 +12,8 @@ from .routes.locations_route import locations_bp
 
 app = Flask(__name__)
 app.secret_key = FLASKSECRETKEY
-app.config["TEMPLATES_AUTO_RELOAD"] = True
+if os.getenv("CLASH_DEV_PREFLIGHT", "False").lower() == "true":
+    run_clash_api_preflight()
 
 CORS(
     app,
