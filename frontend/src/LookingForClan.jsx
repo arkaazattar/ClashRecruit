@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./LookingForClan.css";
 import LoadingScreen from "./components/LoadingScreen";
@@ -11,7 +11,8 @@ function toNumberOrNull(value) {
 }
 
 function LookingForClan() {
-    const navigate = useNavigate()
+    const navigate = useNavigate();
+    const hasMountedNameEffect = useRef(false);
     const [Locations, setLocations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [clans, setClans] = useState([]);
@@ -52,6 +53,21 @@ function LookingForClan() {
       }));
     };
 
+    const handleNameChange = (e) => {
+      setFilters({
+        ...Filters,
+        name: e.target.value,
+      });
+    };
+
+    useEffect(() => {
+      if (!hasMountedNameEffect.current) {
+        hasMountedNameEffect.current = true;
+        return;
+      }
+      handleFilterSubmit();
+    }, [Filters.name]);
+
     async function getLocations(){
       const rsp = await fetch("/clash_locations");
       const locations = await rsp.json()
@@ -70,7 +86,7 @@ function LookingForClan() {
     }
 
     const handleFilterSubmit = async (e) => {
-      e.preventDefault();
+      if (e) e.preventDefault();
       setHasAppliedFilters(true);
       const response = await fetch("/recruitee", {
         method: "POST",
@@ -126,7 +142,7 @@ return (
     <form className="looking-filters" onSubmit={handleFilterSubmit}>
       <label>
         Name
-        <input type="text" name="name" value={Filters.name} onChange={handleFilterChange} />
+        <input type="text" name="name" value={Filters.name} onChange={handleNameChange} />
       </label>
 
       <label>
@@ -176,7 +192,7 @@ return (
         <select name="location" value={Filters.location} onChange={handleFilterChange}>
           <option value="">All Locations</option>
           {Locations.map((location) => (
-            <option value={location.name}>
+            <option key={location.id} value={location.name}>
               {location.name}
             </option>
           ))}
