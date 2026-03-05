@@ -13,6 +13,8 @@ function toNumberOrNull(value) {
 function LookingForClan() {
     const navigate = useNavigate();
     const hasMountedNameEffect = useRef(false);
+    const debounceTimerRef = useRef(null);
+    const requestControllerRef = useRef(null);
     const [Locations, setLocations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [clans, setClans] = useState([]);
@@ -31,7 +33,6 @@ function LookingForClan() {
       clanPoints: "",
       location: "",
     });
-    
     useEffect(() => {
       const loadData = async() => {
         await Promise.all(
@@ -44,6 +45,17 @@ function LookingForClan() {
       };
       loadData();
     }, []);
+
+    useEffect(() => {
+      return () => {
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+        }
+        if (requestControllerRef.current) {
+          requestControllerRef.current.abort();
+        }
+      };
+    }, []);
     
     const handleFilterChange = (e) => {
       const { name, value } = e.target;
@@ -54,10 +66,11 @@ function LookingForClan() {
     };
 
     const handleNameChange = (e) => {
-      setFilters({
-        ...Filters,
-        name: e.target.value,
-      });
+      const { value } = e.target;
+      setFilters((prev) => ({
+        ...prev,
+        name: value,
+      }));
     };
 
     useEffect(() => {
@@ -65,7 +78,12 @@ function LookingForClan() {
         hasMountedNameEffect.current = true;
         return;
       }
-      handleFilterSubmit();
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      debounceTimerRef.current = setTimeout(() => {
+        handleFilterSubmit();
+      }, 250);
     }, [Filters.name]);
 
     async function getLocations(){
@@ -86,38 +104,68 @@ function LookingForClan() {
     }
 
     const handleFilterSubmit = async (e) => {
-      if (e) e.preventDefault();
+      if (e) {
+        e.preventDefault();
+      }
+
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      if (requestControllerRef.current) {
+        requestControllerRef.current.abort();
+      }
+      const controller = new AbortController();
+      requestControllerRef.current = controller;
+
       setHasAppliedFilters(true);
-      const response = await fetch("/recruitee", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          filters: {
-            name: Filters.name,
-            minClanLevel: toNumberOrNull(Filters.minClanLevel),
-            clanPoints: toNumberOrNull(Filters.clanPoints),
-            warFrequency: Filters.warFrequency || null,
-            location: Filters.location || null,
-            requirements: {
-              townhall: toNumberOrNull(Filters.minTownhall),
-              league: toNumberOrNull(Filters.minLeague),
-              members: {
-                max: toNumberOrNull(Filters.maxMembers),
-                min: toNumberOrNull(Filters.minMembers),
+
+      try {
+        const response = await fetch("/recruitee", {
+          method: "POST",
+          signal: controller.signal,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            filters: {
+              name: Filters.name,
+              minClanLevel: toNumberOrNull(Filters.minClanLevel),
+              clanPoints: toNumberOrNull(Filters.clanPoints),
+              warFrequency: Filters.warFrequency || null,
+              location: Filters.location || null,
+              requirements: {
+                townhall: toNumberOrNull(Filters.minTownhall),
+                league: toNumberOrNull(Filters.minLeague),
+                members: {
+                  max: toNumberOrNull(Filters.maxMembers),
+                  min: toNumberOrNull(Filters.minMembers),
+                },
               },
             },
-          },
-        }),
-      });
+          }),
+        });
 
-      const data = await response.json();
-      setClans(data);
-      setHasMore(false);
-      setOffset(data.length);
-      setIsLoadingMore(false);
+        const data = await response.json();
+        if (controller.signal.aborted) {
+          return;
+        }
+        setClans(data);
+        setHasMore(false);
+        setOffset(data.length);
+        setIsLoadingMore(false);
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          throw error;
+        }
+      } finally {
+        if (requestControllerRef.current === controller) {
+          requestControllerRef.current = null;
+        }
+      }
     };
+
+
 
     const handleLoadMore = async () => {
       if (!hasMore || isLoadingMore || hasAppliedFilters) {
