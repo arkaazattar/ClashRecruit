@@ -93,29 +93,35 @@ function Header() {
             <div className="header-right">
                 <span className="header-divider" aria-hidden="true">|</span>
                 <div className="dropdown" ref={dropdownRef}>
-                    <button className="user-button" onClick={toggleDropdown}>
+                    <button
+                        className="user-button"
+                        onClick={toggleDropdown}
+                        aria-expanded={open}
+                        aria-haspopup="menu"
+                    >
                         {user} ▾
                     </button>
 
-                    {open && (
-                        <div className="dropdown-menu">
-                            {isLoggedIn ?(
-                                <button onClick={handleLogout} className="dropdown-item">
-                                    Logout
-                                </button>
-                            ): (
-                                <button onClick={handleSignin} className="dropdown-item"> 
-                                    Login
-                                </button>
-                            )}
+                    <div
+                        className={`dropdown-menu ${open ? "is-open" : "is-closed"}`}
+                        aria-hidden={!open}
+                    >
+                        {hasActiveListing && (
+                            <button onClick={handleListings} className="dropdown-item">
+                                My Listings
+                            </button>
+                        )}
+                        {isLoggedIn ?(
+                            <button onClick={handleLogout} className="dropdown-item">
+                                Logout
+                            </button>
+                        ): (
+                            <button onClick={handleSignin} className="dropdown-item"> 
+                                Login
+                            </button>
+                        )}
 
-                            {hasActiveListing && (
-                                <button onClick={handleListings} className="dropdown-item">
-                                    My Listings
-                                </button>
-                            )}
-                        </div>
-                    )}
+                    </div>
                 </div>
             </div>
         </header>

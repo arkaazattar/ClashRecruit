@@ -27,7 +27,6 @@ def dashboard():
             listing = clan_collection.find_one(
                 {
                     "clan_tag": clan_tag,
-                    "player_tag": player_tag,
                     "expires": {"$gt": now}
                 },
                 {"_id": 1}

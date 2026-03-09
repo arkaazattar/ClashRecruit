@@ -301,34 +301,31 @@ function Recruiter() {
             </button>
           </div>
 
-          {showDeleteConfirm && (
-            <div className="recruiter-delete-confirm">
-              <p className="recruiter-delete-confirm-text">
-                Are you sure you want to delete this listing?
-              </p>
-              <div className="recruiter-actions recruiter-delete-actions">
-                <button 
-                  className="recruiter-danger" 
-                  type="button"
-                  onClick={handleDeleteListing}
-                  >
-                  Confirm Delete
-                </button>
-                <button
-                  className="recruiter-secondary"
-                  type="button"
-                  onClick={() => setShowDeleteConfirm(false)}
+          <div
+            className={`recruiter-delete-confirm ${showDeleteConfirm ? "is-open" : ""}`}
+            aria-hidden={!showDeleteConfirm}
+          >
+            <p className="recruiter-delete-confirm-text">
+              Are you sure you want to delete this listing?
+            </p>
+            <div className="recruiter-actions recruiter-delete-actions">
+              <button 
+                className="recruiter-danger" 
+                type="button"
+                onClick={handleDeleteListing}
                 >
-                  Cancel
-                </button>
-              </div>
+                Confirm Delete
+              </button>
+              <button
+                className="recruiter-secondary"
+                type="button"
+                onClick={() => setShowDeleteConfirm(false)}
+              >
+                Cancel
+              </button>
             </div>
-          )}
-
-          {successMessage && (
-            <p className="recruiter-success-message">{successMessage}</p>
-          )}
-
+          </div>
+          
           <form
             className="recruiter-card recruiter-status-card recruiter-update-box"
             onSubmit={handleUpdate}
