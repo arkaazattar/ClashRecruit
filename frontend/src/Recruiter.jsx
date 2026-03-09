@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { useOutletContext } from "react-router-dom";
 import "./Recruiter.css";
 import LoadingScreen from "./components/LoadingScreen";
 import { leagueOptions } from "./utils/recruiter";
 
 function Recruiter() {
   const navigate = useNavigate();
+  const { recruitStatus } = useOutletContext();
   const [loading, setLoading] = useState(true);
   const [requiredLeague, setRequiredLeague] = useState("");
   const [requiredBuilderLeague, setRequiredBuilderLeague] = useState("");
@@ -23,16 +25,7 @@ function Recruiter() {
 
     async function loadRecruiterPage() {
       try {
-        const dashboardResponse = await fetch("/dashboard", {
-          credentials: "include"
-        });
-        const dashboardData = await dashboardResponse.json();
-
-        if (!isMounted) {
-          return;
-        }
-
-        if (!dashboardData.recruit_status) {
+        if (!recruitStatus) {
           navigate("/dashboard");
           return;
         }
@@ -75,7 +68,7 @@ function Recruiter() {
     return () => {
       isMounted = false;
     };
-  }, [navigate]);
+  }, [navigate, recruitStatus]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

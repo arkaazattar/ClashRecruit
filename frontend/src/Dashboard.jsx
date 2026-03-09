@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
+import { useOutletContext } from "react-router-dom";
 import LoadingScreen from "./components/LoadingScreen";
 import "./Dashboard.css";
 
@@ -41,46 +42,30 @@ function preloadImage(src) {
 function Dashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [recruitStatus, setRecruitStatus] = useState(false);
-  const [username, setUsername] = useState("Guest");
-  const [townhall, setTownhall] = useState(null);
   const [townHallImage, setTownHallImage] = useState(null);
+  const { user, townhall, townhallWeaponLevel, recruitStatus } = useOutletContext();
 
   useEffect(() => {
     let isMounted = true;
 
-    fetch("/dashboard", {
-      credentials: "include",
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        const resolvedTownHallImage = getTownHallAsset(
-          data.townhall,
-          data.townhallWeaponLevel
-        );
+    const resolvedTownHallImage = getTownHallAsset(
+      townhall,
+      townhallWeaponLevel
+    );
 
-        preloadImage(resolvedTownHallImage).then(() => {
-          if (!isMounted) {
-            return;
-          }
+    preloadImage(resolvedTownHallImage).then(() => {
+      if (!isMounted) {
+        return;
+      }
 
-          setRecruitStatus(data.recruit_status);
-          setUsername(data.username || "Guest");
-          setTownhall(data.townhall);
-          setTownHallImage(resolvedTownHallImage);
-          setLoading(false);
-        });
-      })
-      .catch(() => {
-        if (isMounted) {
-          setLoading(false);
-        }
-      });
+      setTownHallImage(resolvedTownHallImage);
+      setLoading(false);
+    });
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [townhall, townhallWeaponLevel]);
 
   const Recruiter = (e) => {
     e.preventDefault();
@@ -108,7 +93,7 @@ function Dashboard() {
 
       <section className="dashboard-panel">
         <div className="dashboard-box">
-          <p className="dashboard-welcome">Welcome {username}</p>
+          <p className="dashboard-welcome">Welcome {user}</p>
           
         
           <form className="dashboard-form">
