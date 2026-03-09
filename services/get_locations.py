@@ -12,8 +12,9 @@ def update_location_collection():
     list_of_locations = get_locations(headers)
 
     for location in list_of_locations:
+        if location["name"] == "":
+            continue
         if not location_collection.find_one({"id" : location.get("id")}):
-            print(location)    
             location_collection.insert_one(            
                 location
                 )
