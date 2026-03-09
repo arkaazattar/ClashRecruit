@@ -26,23 +26,6 @@
     padding: 16px;
 }
 
-@keyframes recruiter-card-animation {
-    0% {
-        opacity: 0;
-        max-height: 0;
-        padding-top: 0;
-        padding-bottom: 0;
-        margin-top: 0;
-    }
-    100% {
-        opacity: 1;
-        max-height: 700px;
-        padding-top: 16px;
-        padding-bottom: 16px;
-        margin-top: 14px;
-    }
-}
-
 .recruiter-fields {
     display: grid;
     grid-template-columns: repeat(3, minmax(170px, 1fr));
@@ -135,12 +118,48 @@
     background: #ffffff;
 }
 
+.recruiter-listing-toggle-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.recruiter-listing-toggle {
+    display: inline-flex;
+    align-items: center;
+}
+
+.recruiter-listing-toggle-input:checked ~ .recruiter-actions .recruiter-listing-toggle {
+    background: #1d4ed8;
+}
+
 .recruiter-update-box {
-    margin-top: 14px;
-    min-height: 120px;
-    animation: recruiter-card-animation 0.2s;
-    max-height: 700px;
+    min-height: 0;
+    max-height: 0;
+    margin-top: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-color: transparent;
+    opacity: 0;
     overflow: hidden;
+    pointer-events: none;
+    transition:
+        max-height 0.15s ease,
+        margin-top 0.15s ease,
+        padding-top 0.15s ease,
+        padding-bottom 0.15s ease,
+        opacity 0.05s ease,
+        border-color 0.05s ease;
+}
+
+.recruiter-listing-toggle-input:checked ~ .recruiter-update-box {
+    max-height: 700px;
+    margin-top: 14px;
+    padding-top: 16px;
+    padding-bottom: 16px;
+    border-color: #d8e0ea;
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .recruiter-status-title {
