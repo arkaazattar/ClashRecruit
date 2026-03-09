@@ -9,15 +9,35 @@ function toNumberOrNull(value) {
     return value === "" || value === null ? null : Number(value);
 }
 
+function buildFilterPayload(Filters) {
+  return {
+    filters: {
+      name: Filters.name,
+      minClanLevel: toNumberOrNull(Filters.minClanLevel),
+      clanPoints: toNumberOrNull(Filters.clanPoints),
+      warFrequency: Filters.warFrequency || null,
+      location: Filters.location || null,
+      requirements: {
+        townhall: toNumberOrNull(Filters.minTownhall),
+        league: toNumberOrNull(Filters.minLeague),
+        members: {
+          max: toNumberOrNull(Filters.maxMembers),
+          min: toNumberOrNull(Filters.minMembers),
+        },
+      },
+    },
+  };
+}
+
 function LookingForClan() {
     const navigate = useNavigate()
     const [Locations, setLocations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [clans, setClans] = useState([]);
-    const [offset, setOffset] = useState(0);
-    const [hasMore, setHasMore] = useState(true);
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalResults, setTotalResults] = useState(0);
     const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
+    const [appliedFilterPayload, setAppliedFilterPayload] = useState(null);
     const [Filters, setFilters] = useState({
       name: "",
       minTownhall: "",
@@ -32,12 +52,12 @@ function LookingForClan() {
     
     useEffect(() => {
       const loadData = async() => {
-        await Promise.all(
-          [
-            getClans(0, false),
-            getLocations()
-          ]
-        );
+        const response = await fetch(`/recruitee?limit=${PAGE_SIZE}&offset=0`);
+        const payload = await response.json();
+        setClans(payload.items || []);
+        setTotalResults(payload.total || 0);
+        setCurrentPage(1);
+        await getLocations();
         setLoading(false);
       };
       loadData();
@@ -56,60 +76,48 @@ function LookingForClan() {
       const locations = await rsp.json()
       setLocations(locations)
     }
-    async function getClans(nextOffset = 0, append = false){
-      const rsp = await fetch(`/recruitee?limit=${PAGE_SIZE}&offset=${nextOffset}`)
-      const data = await rsp.json()
-      if (append) {
-        setClans((prev) => [...prev, ...data])
-      } else {
-        setClans(data)
-      }
-      setOffset(nextOffset + data.length)
-      setHasMore(data.length === PAGE_SIZE)
+
+    async function fetchClanPage(page, filterPayload = appliedFilterPayload) {
+      const offset = (page - 1) * PAGE_SIZE;
+      const url = `/recruitee?limit=${PAGE_SIZE}&offset=${offset}`;
+      const response = filterPayload
+        ? await fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(filterPayload),
+          })
+        : await fetch(url);
+
+      const payload = await response.json();
+      setClans(payload.items || []);
+      setTotalResults(payload.total || 0);
+      setCurrentPage(page);
     }
 
     const handleFilterSubmit = async (e) => {
       e.preventDefault();
       setHasAppliedFilters(true);
-      const response = await fetch("/recruitee", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          filters: {
-            name: Filters.name,
-            minClanLevel: toNumberOrNull(Filters.minClanLevel),
-            clanPoints: toNumberOrNull(Filters.clanPoints),
-            warFrequency: Filters.warFrequency || null,
-            location: Filters.location || null,
-            requirements: {
-              townhall: toNumberOrNull(Filters.minTownhall),
-              league: toNumberOrNull(Filters.minLeague),
-              members: {
-                max: toNumberOrNull(Filters.maxMembers),
-                min: toNumberOrNull(Filters.minMembers),
-              },
-            },
-          },
-        }),
-      });
-
-      const data = await response.json();
-      setClans(data);
-      setHasMore(false);
-      setOffset(data.length);
-      setIsLoadingMore(false);
+      const payload = buildFilterPayload(Filters);
+      setAppliedFilterPayload(payload);
+      await fetchClanPage(1, payload);
     };
 
-    const handleLoadMore = async () => {
-      if (!hasMore || isLoadingMore || hasAppliedFilters) {
+    const handlePageChange = async (nextPage) => {
+      if (nextPage < 1 || nextPage > totalPages || nextPage === currentPage) {
         return;
       }
-      setIsLoadingMore(true);
-      await getClans(offset, true);
-      setIsLoadingMore(false);
+
+      if (hasAppliedFilters) {
+        await fetchClanPage(nextPage, appliedFilterPayload);
+      } else {
+        await fetchClanPage(nextPage, null);
+      }
     };
+
+    const totalPages = Math.max(1, Math.ceil(totalResults / PAGE_SIZE));
+    const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
 
 if (loading){
   return <LoadingScreen />;
@@ -176,7 +184,7 @@ return (
         <select name="location" value={Filters.location} onChange={handleFilterChange}>
           <option value="">All Locations</option>
           {Locations.map((location) => (
-            <option value={location.name}>
+            <option key={location.id ?? location.name} value={location.name}>
               {location.name}
             </option>
           ))}
@@ -208,7 +216,7 @@ return (
           <div className="listing-stats">
             <p><strong>Townhall:</strong> {clan.requirements[2]}</p>
             <p><strong>League:</strong> {clan.requirements[0]}</p>
-            {clan.clan_info.warFrequency != "unknown" &&
+            {clan.clan_info.warFrequency !== "unknown" &&
               <p><strong>War Freq:</strong> {clan.clan_info["warFrequency"]}</p>
             }
             <p><strong>Clan Points:</strong> {clan.clan_info["clanPoints"]}</p>
@@ -220,16 +228,18 @@ return (
         </button>
       ))}
     </div>
-    {!hasAppliedFilters && hasMore && (
-      <div className="listing-load-more-wrap">
-        <button
-          type="button"
-          className="listing-load-more"
-          onClick={handleLoadMore}
-          disabled={isLoadingMore}
-        >
-          {isLoadingMore ? "Loading..." : "Load More"}
-        </button>
+    {pageNumbers.length > 1 && (
+      <div className="listing-pagination-wrap">
+        {pageNumbers.map((pageNumber) => (
+          <button
+            key={pageNumber}
+            type="button"
+            className={`listing-page-btn ${pageNumber === currentPage ? "is-active" : ""}`}
+            onClick={() => handlePageChange(pageNumber)}
+          >
+            {pageNumber}
+          </button>
+        ))}
       </div>
     )}
 
