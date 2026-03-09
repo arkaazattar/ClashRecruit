@@ -215,24 +215,34 @@
     cursor: default;
 }
 
-.listing-load-more-wrap {
+.listing-pagination-wrap {
     margin-top: 20px;
     display: flex;
     justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
-.listing-load-more {
-    border: none;
+.listing-page-btn {
+    border: 1px solid #cbd5e1;
     border-radius: 10px;
-    padding: 11px 18px;
+    min-width: 42px;
+    padding: 9px 12px;
     font-size: 0.95rem;
     cursor: pointer;
-    background: #0f172a;
-    color: #ffffff;
+    background: #ffffff;
+    color: #0f172a;
 }
 
-.listing-load-more:hover {
-    background: #1e293b;
+.listing-page-btn:hover {
+    border-color: #2563eb;
+    color: #1d4ed8;
+}
+
+.listing-page-btn.is-active {
+    border-color: #0f172a;
+    background: #0f172a;
+    color: #ffffff;
 }
 
 @media (max-width: 820px) {
