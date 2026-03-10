@@ -1,4 +1,5 @@
 import Header from './Header.jsx';
+import Footer from './Footer.jsx'
 import { Outlet } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 
@@ -60,7 +61,7 @@ const Layout = () => {
             <main>
                 <Outlet context={{ user, townhall, townhallWeaponLevel,  recruitStatus }} />
             </main>
-
+            <Footer />
         </div>
     )
 }
