@@ -107,12 +107,11 @@ def recruitee_post():
     war_frequency = filters.get("warFrequency", None)
     if war_frequency: query["clan_info.warFrequency"] = war_frequency
 
-    location = filters.get("location", None)
-    if location:
-        query["clan_info.location"] = location
+    location_id = filters.get("location_id", None)
+    if location_id:
+        query["clan_info.location.id"] = int(location_id)
 
     requested_limit = _get_requested_limit(DEFAULT_LIMIT)
-    print(query)
     data = list(
         clan_collection.find(query, {"_id": 0})
         .sort([("last_updated", -1), ("clan_tag", 1)]).limit(requested_limit)

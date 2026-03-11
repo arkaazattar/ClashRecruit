@@ -7,7 +7,7 @@ import { leagueOptions } from "./utils/recruiter";
 
 function Recruiter() {
   const navigate = useNavigate();
-  const { recruitStatus } = useOutletContext();
+  const { recruitStatus, dashboardLoaded } = useOutletContext();
   const [loading, setLoading] = useState(true);
   const [requiredLeague, setRequiredLeague] = useState("");
   const [requiredBuilderLeague, setRequiredBuilderLeague] = useState("");
@@ -25,6 +25,10 @@ function Recruiter() {
 
     async function loadRecruiterPage() {
       try {
+        if (!dashboardLoaded) {
+          return;
+        }
+
         if (!recruitStatus) {
           navigate("/dashboard");
           return;
@@ -55,6 +59,7 @@ function Recruiter() {
         setRequiredTownhall(recruiterData.oldRequiredTownhall);
         setClanDescription(recruiterData.clanDescription);
         setStatus(recruiterData.status);
+        setListing(recruiterData.status ? "Close Listing" : "View Listing");
         setLoading(false);
       } catch {
         if (isMounted) {
@@ -68,7 +73,7 @@ function Recruiter() {
     return () => {
       isMounted = false;
     };
-  }, [navigate, recruitStatus]);
+  }, [navigate, recruitStatus, dashboardLoaded]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -91,6 +96,7 @@ function Recruiter() {
 
     const recruiterData = await recruiterResponse.json();
     setStatus(recruiterData.status);
+    setListing(recruiterData.status ? "Close Listing" : "View Listing");
     setSuccessMessage(recruiterData.message);
 
     if (recruiterResponse.ok) {
@@ -144,6 +150,7 @@ function Recruiter() {
 
     if (response.ok) {
       setStatus(null);
+      setListing("View Listing");
       window.dispatchEvent(
         new CustomEvent("listing-status-changed", {
           detail: { hasActiveListing: false }
@@ -256,6 +263,7 @@ function Recruiter() {
             id="recruiter-view-listing-toggle"
             className="recruiter-listing-toggle-input"
             type="checkbox"
+            defaultChecked={Boolean(status)}
             onChange={(e) => {
               setListing(e.target.checked ? "Close Listing" : "View Listing");
               setSuccessMessage("");

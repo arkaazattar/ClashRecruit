@@ -133,7 +133,7 @@ function LookingForClan() {
               minClanLevel: toNumberOrNull(Filters.minClanLevel),
               clanPoints: toNumberOrNull(Filters.clanPoints),
               warFrequency: Filters.warFrequency || null,
-              location: Filters.location || null,
+              location_id: Filters.location || null,
               requirements: {
                 townhall: toNumberOrNull(Filters.minTownhall),
                 league: toNumberOrNull(Filters.minLeague),
@@ -240,7 +240,7 @@ return (
         <select name="location" value={Filters.location} onChange={handleFilterChange}>
           <option value="">All Locations</option>
           {Locations.map((location) => (
-            <option key={location.id} value={location.name}>
+            <option key={location.id} value={location.id}>
               {location.name}
             </option>
           ))}

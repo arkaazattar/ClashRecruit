@@ -43,9 +43,14 @@ function Dashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [townHallImage, setTownHallImage] = useState(null);
-  const { user, townhall, townhallWeaponLevel, recruitStatus } = useOutletContext();
+  const { user, townhall, townhallWeaponLevel, recruitStatus, dashboardLoaded } = useOutletContext();
 
   useEffect(() => {
+    if (!dashboardLoaded) {
+      setLoading(true);
+      return;
+    }
+
     let isMounted = true;
 
     const resolvedTownHallImage = getTownHallAsset(
@@ -65,15 +70,13 @@ function Dashboard() {
     return () => {
       isMounted = false;
     };
-  }, [townhall, townhallWeaponLevel]);
+  }, [dashboardLoaded, townhall, townhallWeaponLevel]);
 
-  const Recruiter = (e) => {
-    e.preventDefault();
+  const Recruiter = () => {
     navigate("/recruit");
   };
 
-  const Recruitee = (e) => {
-    e.preventDefault();
+  const Recruitee = () => {
     navigate("/looking-for-clan");
   };
 

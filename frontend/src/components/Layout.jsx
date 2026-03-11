@@ -10,6 +10,7 @@ const Layout = () => {
     const [recruitStatus, setRecruitStatus] = useState(false);
     const [townhall, setTownhall] = useState(null);
     const [townhallWeaponLevel, setTownhallWeaponLevel] = useState(0);
+    const [dashboardLoaded, setDashboardLoaded] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -25,6 +26,8 @@ const Layout = () => {
                     setHasActiveListing(Boolean(data.has_active_listing));
                     setRecruitStatus(Boolean(data.recruit_status));
                     setTownhall(data.townhall);
+                    setTownhallWeaponLevel(data.townhallWeaponLevel);
+                    setDashboardLoaded(true);
 
                     sessionStorage.setItem("player_name", username);
                 })
@@ -32,6 +35,7 @@ const Layout = () => {
                     if (!isMounted) return;
                     setHasActiveListing(false);
                     setRecruitStatus(false);
+                    setDashboardLoaded(true);
                 });
         };
 
@@ -56,10 +60,10 @@ const Layout = () => {
     }, []);
 
     return (
-        <div>
+        <div className="app-shell">
             <Header user={user} hasActiveListing={hasActiveListing}/>
             <main>
-                <Outlet context={{ user, townhall, townhallWeaponLevel,  recruitStatus }} />
+                <Outlet context={{ user, townhall, townhallWeaponLevel, recruitStatus, dashboardLoaded }} />
             </main>
             <Footer />
         </div>
