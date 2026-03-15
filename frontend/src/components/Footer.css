@@ -4,7 +4,7 @@
     align-items: center;
     border-top: solid 1px #d7dbe0;
     padding: 14px 24px;
-    background: #f8fafc;
+    background: rgba(255, 250, 241, 0.9);
     justify-content: center;
     gap: 6px;
 }

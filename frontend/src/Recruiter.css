@@ -2,10 +2,12 @@
     padding: 24px;
     max-width: 900px;
     margin: 0 auto;
+    background: transparent;
 }
 
 .recruiter-loading {
     padding: 24px;
+    background: transparent;
 }
 
 .recruiter-header h2 {

@@ -2,10 +2,12 @@
     padding: 24px;
     max-width: 1100px;
     margin: 0 auto;
+    background: transparent;
 }
 
 .looking-loading {
     padding: 24px;
+    background: transparent;
 }
 
 .looking-header h2 {

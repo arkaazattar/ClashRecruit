@@ -85,40 +85,65 @@ function Dashboard() {
   }
   return (
     <div className="Dashboard">
-      
-      {townHallImage && (
-        <img
-          src={townHallImage}
-          alt={`Town Hall level ${townhall}`}
-          className="dashboard-townhall-image"
-        />
-      )}
+      <section className="dashboard-layout">
+        <div className="dashboard-hero">
+          <div className="dashboard-townhall-shell">
+            {townHallImage ? (
+              <img
+                src={townHallImage}
+                alt={`Town Hall level ${townhall}`}
+                className="dashboard-townhall-image"
+              />
+            ) : null}
+          </div>
 
-      <section className="dashboard-panel">
-        <div className="dashboard-box">
-          <p className="dashboard-welcome">Welcome {user}</p>
-          
-        
-          <form className="dashboard-form">
-            {recruitStatus === true && (
+          <div className="dashboard-panel">
+            <p className="dashboard-eyebrow">Player dashboard</p>
+            <h1 className="dashboard-welcome">Welcome {user}</h1>
+
+            <div className="dashboard-actions">
+              {recruitStatus === true && (
+                <button
+                  type="button"
+                  className="dashboard-btn dashboard-btn-primary"
+                  onClick={Recruiter}
+                >
+                  Start Recruiting
+                </button>
+              )}
+
               <button
                 type="button"
-                className="dashboard-btn dashboard-btn-primary"
-                onClick={Recruiter}
+                className="dashboard-btn dashboard-btn-secondary"
+                onClick={Recruitee}
               >
-                Recruit!
+                Looking For Clan
               </button>
-            )}
-
-            <button
-              type="button"
-              className="dashboard-btn dashboard-btn-secondary"
-              onClick={Recruitee}
-            >
-              Start Searching →
-            </button>
-          </form>
+            </div>
+          </div>
         </div>
+
+        <section className="dashboard-stats-panel">
+          <div className="dashboard-stats-header">
+            <h2>More stats from API</h2>
+            <p>
+              If not in clan : current league | builder base stats | player level and player tag  
+            </p>
+            <p>
+              If in clan add: clan icon + name | position in clan | member count/stats 
+            </p>
+
+            <p>
+              If guest: LOGIN BUTTON
+            </p>
+          </div>
+
+          <div className="dashboard-stats-placeholder">
+            <div className="dashboard-placeholder-block" />
+            <div className="dashboard-placeholder-block dashboard-placeholder-wide" />
+            <div className="dashboard-placeholder-block" />
+          </div>
+        </section>
       </section>
     </div>
   );

@@ -3,98 +3,219 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #ffffff;
-    color: #0f172a;
+    padding: 32px 20px 40px;
+    background: transparent;
+    color: #2f2418;
+}
+
+.dashboard-layout {
+    width: min(920px, 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+.dashboard-hero {
+    display: grid;
+    grid-template-columns: minmax(120px, 180px) minmax(0, 1fr);
+    align-items: center;
+    gap: 28px;
+}
+
+.dashboard-townhall-shell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 170px;
+}
+
+.dashboard-townhall-image,
+.dashboard-townhall-placeholder {
+    width: min(165px, 100%);
+    aspect-ratio: 1;
+    object-fit: contain;
+}
+
+.dashboard-townhall-placeholder {
+    display: grid;
+    place-items: center;
+    border: 3px dashed #cf9e5d;
+    border-radius: 28px;
+    background: rgba(255, 248, 235, 0.8);
+    color: #8f6431;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
 .dashboard-panel {
-    width: min(900px, calc(100% - 32px));
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    position: relative;
+    background: rgba(255, 253, 246, 0.96);
+    border: 3px solid #b47b41;
+    border-radius: 28px;
+    padding: 22px 24px 24px;
+    box-shadow: 0 18px 40px rgba(139, 87, 32, 0.12);
 }
 
-.dashboard-box {
-    width: min(750px, calc(100% - 32px));
-    background: white;
-    border-width: 5px;
-    border-color: rgb(164, 118, 86);
-    border-style: solid;
-    border-radius: 10px;
+.dashboard-ribbon::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    width: 18px;
+    height: 18px;
+    background: #fffaf1;
+    border-left: 2px solid #ffbf7f;
+    border-bottom: 2px solid #ffbf7f;
+    transform: translateX(-50%) rotate(-45deg);
+}
+
+.dashboard-eyebrow {
+    margin: 0 0 10px;
+    color: #9b6f3f;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
 }
 
 .dashboard-welcome {
-    margin: 10px;
-    font-size: 1.7rem;
-    font-weight: 700;
-    color: #0f172a;
-}
-
-.dashboard-panel h1 {
     margin: 0;
-    font-size: clamp(1.7rem, 3.8vw, 2.25rem);
-    color: #0f172a;
+    font-size: clamp(1.45rem, 3vw, 1.95rem);
+    font-weight: 800;
+    color: #26180b;
 }
 
-.dashboard-form {
+.dashboard-subtitle {
+    margin: 8px 0 0;
+    max-width: 30rem;
+    color: #6f5333;
+    font-size: 0.92rem;
+    line-height: 1.45;
+}
+
+.dashboard-actions {
     display: flex;
-    flex-direction: row;
     align-items: center;
-    gap: 10px;
-    width: min(760px, calc(100% - 32px));
-}
-
-.dashboard-townhall-image {
-    width: 88px;
-    height: 88px;
-    object-fit: contain;
-    flex: 0 0 auto;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
 }
 
 .dashboard-btn {
-    border: none;
-    border-radius: 8px;
-    padding: 20px 22px;
-    font-size: 1.05rem;
-    font-weight: 600;
+    border-radius: 14px;
+    padding: 12px 18px;
+    font-size: 0.92rem;
+    font-weight: 700;
     cursor: pointer;
-    width: 100%;
-    min-height: 88px;
     box-sizing: border-box;
-    margin: 20px;
+    min-width: 175px;
+    transition: transform 160ms ease, box-shadow 160ms ease;
 }
 
 .dashboard-btn-primary {
-    background: rgb(164, 118, 86);
-    color: black;
-    border: 5px solid gold;
-    
+    background: #f7ead1;
+    color: #5f4018;
+    border: 2px solid #d5b07a;
+    box-shadow: 0 12px 20px rgba(145, 105, 54, 0.14);
 }
 
 .dashboard-btn-primary:hover {
-    background: rgb(133, 96, 70);
-    border: 5px solid rgb(197, 168, 1);
+    background: #fbeed8;
+    transform: translateY(-1px);
 }
 
 .dashboard-btn-secondary {
-    background: rgb(164, 118, 86);
-    color: black;
-    border: 5px solid gold;
+    background: #f7ead1;
+    color: #5f4018;
+    border: 2px solid #d5b07a;
+    box-shadow: 0 12px 20px rgba(145, 105, 54, 0.14);
 }
 
 .dashboard-btn-secondary:hover {
-    background: rgb(133, 96, 70);
-    border: 5px solid rgb(197, 168, 1);
+    background: #fbeed8;
+    transform: translateY(-1px);
+}
+
+.dashboard-stats-panel {
+    background: rgba(255, 253, 246, 0.96);
+    border: 3px solid #b47b41;
+    border-radius: 32px;
+    padding: 24px;
+    box-shadow: 0 18px 40px rgba(139, 87, 32, 0.1);
+}
+
+.dashboard-stats-header h2 {
+    margin: 0;
+    font-size: clamp(1.35rem, 2.7vw, 1.8rem);
+    color: #26180b;
+}
+
+.dashboard-stats-header p {
+    margin: 8px 0 0;
+    color: #775736;
+    font-size: 0.9rem;
+}
+
+.dashboard-stats-placeholder {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 20px;
+}
+
+.dashboard-placeholder-block {
+    min-height: 104px;
+    border: 2px dashed #d8bc90;
+    border-radius: 18px;
+    background:
+        linear-gradient(135deg, rgba(255, 245, 225, 0.95), rgba(252, 239, 211, 0.7));
+}
+
+.dashboard-placeholder-wide {
+    min-height: 140px;
 }
 
 @media (max-width: 700px) {
-    .dashboard-form {
-        flex-direction: column;
-        width: min(360px, calc(100% - 32px));
+    .Dashboard {
+        padding: 28px 16px 36px;
     }
 
-    .dashboard-townhall-image {
-        width: 120px;
-        height: 120px;
+    .dashboard-hero {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+
+    .dashboard-townhall-shell {
+        min-height: 0;
+    }
+
+    .dashboard-townhall-image,
+    .dashboard-townhall-placeholder {
+        width: min(145px, 50vw);
+    }
+
+    .dashboard-panel,
+    .dashboard-stats-panel {
+        padding: 20px 18px;
+    }
+
+    .dashboard-ribbon {
+        right: 24px;
+        height: 60px;
+    }
+
+    .dashboard-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .dashboard-btn {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .dashboard-stats-placeholder {
+        grid-template-columns: 1fr;
     }
 }
