@@ -1,4 +1,14 @@
 import requests
+from typing import Literal
+
+REQUESTOPTIONS = Literal[
+    "expLevel",
+    "leagueTier",
+    "builderBaseLeague",
+    "builderHallLevel",
+    "clan"
+]
+
 class API:
     def __init__(self, user_tag, api, headers):
         self.headers = headers
@@ -32,7 +42,7 @@ class API:
         else: self.reason = self.apistorage  
         return self.token 
     
-    def check_player(self):
+    def check_player(self, request: list[REQUESTOPTIONS] | None = None):
         if self.user_tag == "Guest":
             self.reason = "User is a Guest"
             return False
@@ -67,6 +77,19 @@ class API:
         if self.clantag: 
             self.clantag = self.clantag[1:]            
         self.user_name = self.storage.get("name")
+
+        if request:
+            response = {
+                "player_tag": self.user_tag
+            }
+            for request_key in request:
+                response[request_key] = self.storage.get(request_key, None)
+
+            if response.get("clan", None):
+                response["clan"]["role"] = self.storage.get("role")
+                
+            return response
+
         return True
     
     def recruiting(self, data : dict): 
@@ -74,7 +97,6 @@ class API:
         
         clan_tag = data.get("clan", {}).get("tag", 0)
         if(clan_tag == 0):
-            print("not in clan")
             return False
         
         if(data["role"].lower() not in roles):

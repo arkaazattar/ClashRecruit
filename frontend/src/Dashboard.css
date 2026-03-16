@@ -29,27 +29,13 @@
     min-height: 170px;
 }
 
-.dashboard-townhall-image,
-.dashboard-townhall-placeholder {
+.dashboard-townhall-image {
     width: min(165px, 100%);
     aspect-ratio: 1;
     object-fit: contain;
 }
 
-.dashboard-townhall-placeholder {
-    display: grid;
-    place-items: center;
-    border: 3px dashed #cf9e5d;
-    border-radius: 28px;
-    background: rgba(255, 248, 235, 0.8);
-    color: #8f6431;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
 .dashboard-panel {
-    position: relative;
     background: rgba(255, 253, 246, 0.96);
     border: 3px solid #b47b41;
     border-radius: 28px;
@@ -57,17 +43,23 @@
     box-shadow: 0 18px 40px rgba(139, 87, 32, 0.12);
 }
 
-.dashboard-ribbon::after {
-    content: "";
-    position: absolute;
-    bottom: -2px;
-    left: 50%;
-    width: 18px;
-    height: 18px;
-    background: #fffaf1;
-    border-left: 2px solid #ffbf7f;
-    border-bottom: 2px solid #ffbf7f;
-    transform: translateX(-50%) rotate(-45deg);
+.dashboard-panel-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding-right: 50px;
+}
+
+.dashboard-panel-copy {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.dashboard-panel-badge {
+    height: 84px;
+    object-fit: contain;
+    flex: 0 0 auto;
 }
 
 .dashboard-eyebrow {
@@ -84,14 +76,6 @@
     font-size: clamp(1.45rem, 3vw, 1.95rem);
     font-weight: 800;
     color: #26180b;
-}
-
-.dashboard-subtitle {
-    margin: 8px 0 0;
-    max-width: 30rem;
-    color: #6f5333;
-    font-size: 0.92rem;
-    line-height: 1.45;
 }
 
 .dashboard-actions {
@@ -151,12 +135,6 @@
     color: #26180b;
 }
 
-.dashboard-stats-header p {
-    margin: 8px 0 0;
-    color: #775736;
-    font-size: 0.9rem;
-}
-
 .dashboard-stats-placeholder {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -170,10 +148,49 @@
     border-radius: 18px;
     background:
         linear-gradient(135deg, rgba(255, 245, 225, 0.95), rgba(252, 239, 211, 0.7));
+    padding: 14px 16px;
+    box-sizing: border-box;
 }
 
 .dashboard-placeholder-wide {
     min-height: 140px;
+}
+
+.dashboard-stat-box-content {
+    height: 100%;
+    overflow-y: auto;
+}
+
+.dashboard-stat-box-title {
+    margin: 0 0 10px;
+    color: #8f6a41;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.dashboard-stat-line,
+.dashboard-stat-empty {
+    margin: 0 0 8px;
+    color: #5f4018;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.dashboard-stat-line:last-child,
+.dashboard-stat-empty:last-child {
+    margin-bottom: 0;
+}
+
+.dashboard-stats-login-btn {
+    min-width: 0;
+}
+
+.dashboard-guest-login-wrap {
+    display: flex;
+    justify-content: center;
+    width: 100%;
 }
 
 @media (max-width: 700px) {
@@ -190,8 +207,7 @@
         min-height: 0;
     }
 
-    .dashboard-townhall-image,
-    .dashboard-townhall-placeholder {
+    .dashboard-townhall-image {
         width: min(145px, 50vw);
     }
 
@@ -199,15 +215,18 @@
     .dashboard-stats-panel {
         padding: 20px 18px;
     }
-
-    .dashboard-ribbon {
-        right: 24px;
-        height: 60px;
-    }
-
     .dashboard-actions {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    .dashboard-panel-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .dashboard-panel-badge {
+        align-self: center;
     }
 
     .dashboard-btn {

@@ -40,3 +40,21 @@ def dashboard():
             townhall=townhall,
             townhallWeaponLevel=townhallWeaponLevel
         )
+
+@dashboard_bp.route("/dashboard/user-info")
+def dashboard_user_info():
+        player_tag = session.get("player_tag", "Guest")
+
+        if player_tag == "Guest":
+            return jsonify({})
+
+        user = API(player_tag, None, headers)
+        stats = user.check_player([
+            "expLevel",
+            "leagueTier",
+            "builderBaseLeague",
+            "builderHallLevel",
+            "clan"
+        ])
+
+        return jsonify(stats or {})
