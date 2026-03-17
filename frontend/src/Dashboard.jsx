@@ -61,7 +61,6 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [townHallImage, setTownHallImage] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
-  const [userInfoLoading, setUserInfoLoading] = useState(false);
   const { user, townhall, townhallWeaponLevel, recruitStatus, dashboardLoaded } = useOutletContext();
 
   useEffect(() => {
@@ -80,7 +79,6 @@ function Dashboard() {
 
     if (user === "Guest") {
       setUserInfo(null);
-      setUserInfoLoading(false);
       preloadImage(resolvedTownHallImage).then(() => {
         if (!isMounted) {
           return;
@@ -94,8 +92,6 @@ function Dashboard() {
         isMounted = false;
       };
     }
-
-    setUserInfoLoading(true);
 
     Promise.all([
       preloadImage(resolvedTownHallImage).then(() => resolvedTownHallImage),
@@ -117,7 +113,6 @@ function Dashboard() {
           return;
         }
 
-        setUserInfoLoading(false);
         setLoading(false);
       });
 
@@ -218,45 +213,49 @@ function Dashboard() {
         ) : (
           <section className="dashboard-stats-panel">
             <div className="dashboard-stats-header">
-              <h2>More stats from API</h2>
+              <h2>Player Stats</h2>
             </div>
 
-            <div className="dashboard-stats-placeholder">
-              <div className="dashboard-placeholder-block">
+            <div className="dashboard-carousel">
+              <div className="dashboard-carousel-item">
                 <div className="dashboard-stat-box-content">
-                  <p className="dashboard-stat-box-title">Player</p>
-                  {userInfoLoading ? (
-                    <p className="dashboard-stat-empty">Loading...</p>
-                  ) : (
-                    <>
-                      <p className="dashboard-stat-line"><strong>Player Tag:</strong> {playerTag}</p>
-                      <p className="dashboard-stat-line"><strong>Player Level:</strong> {playerLevel}</p>
-                      <p className="dashboard-stat-line"><strong>League:</strong> {leagueName}</p>
-                    </>
-                  )}
+                  <p className="dashboard-stat-box-title">Player Tag</p>
+                  <p className="dashboard-stat-line">#{playerTag}</p>
                 </div>
               </div>
 
-              <div className="dashboard-placeholder-block dashboard-placeholder-wide">
+              <div className="dashboard-carousel-item">
                 <div className="dashboard-stat-box-content">
-                  <p className="dashboard-stat-box-title">Builder Base</p>
-                  {userInfoLoading ? (
-                    <p className="dashboard-stat-empty">Loading...</p>
-                  ) : (
-                    <>
-                      <p className="dashboard-stat-line"><strong>Builder League:</strong> {builderLeagueName}</p>
-                      <p className="dashboard-stat-line"><strong>Builder Hall:</strong> {builderHallLevel}</p>
-                    </>
-                  )}
+                  <p className="dashboard-stat-box-title">Player Level</p>
+                  <p className="dashboard-stat-line">{playerLevel}</p>
                 </div>
               </div>
 
-              <div className="dashboard-placeholder-block">
+              <div className="dashboard-carousel-item">
+                <div className="dashboard-stat-box-content">
+                  <p className="dashboard-stat-box-title">League</p>
+                  <p className="dashboard-stat-line">{leagueName}</p>
+                </div>
+              </div>
+
+              <div className="dashboard-carousel-item">
+                <div className="dashboard-stat-box-content">
+                  <p className="dashboard-stat-box-title">Builder League</p>
+                  <p className="dashboard-stat-line">{builderLeagueName}</p>
+                </div>
+              </div>
+
+              <div className="dashboard-carousel-item">
+                <div className="dashboard-stat-box-content">
+                  <p className="dashboard-stat-box-title">Builder Hall</p>
+                  <p className="dashboard-stat-line">{builderHallLevel}</p>
+                </div>
+              </div>
+
+              <div className="dashboard-carousel-item">
                 <div className="dashboard-stat-box-content">
                   <p className="dashboard-stat-box-title">Clan</p>
-                  {userInfoLoading ? (
-                    <p className="dashboard-stat-empty">Loading...</p>
-                  ) : clanName ? (
+                  {clanName ? (
                     <>
                       <p className="dashboard-stat-line"><strong>Name:</strong> {clanName}</p>
                       <p className="dashboard-stat-line"><strong>Tag:</strong> {clanTag}</p>

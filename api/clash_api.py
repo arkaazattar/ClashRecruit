@@ -82,12 +82,16 @@ class API:
             response = {
                 "player_tag": self.user_tag
             }
+
             for request_key in request:
                 response[request_key] = self.storage.get(request_key, None)
 
             if response.get("clan", None):
                 response["clan"]["role"] = self.storage.get("role")
-                
+                response["num_items"] = 6
+            else:
+                response["num_items"] = 5
+
             return response
 
         return True

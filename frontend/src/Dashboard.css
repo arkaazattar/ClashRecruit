@@ -135,6 +135,53 @@
     color: #26180b;
 }
 
+.dashboard-carousel {
+    display: flex;
+    gap: 14px;
+    margin-top: 20px;
+    overflow-x: auto;
+    padding: 2px 2px 8px;
+}
+
+.dashboard-carousel::-webkit-scrollbar {
+    height: 7px;
+}
+
+.dashboard-carousel::-webkit-scrollbar-track {
+    background-color: #d4b88c;
+    border-radius: 10px;
+}
+
+.dashboard-carousel::-webkit-scrollbar-thumb {
+    background-color: #b19366;
+    border-radius: 10px;
+    border: none;
+}
+
+.dashboard-carousel::-webkit-scrollbar-thumb:hover {
+    background: #c68a4d;
+}
+
+.dashboard-carousel::-webkit-scrollbar-thumb:active {
+    background: #b47b41;
+}
+
+.dashboard-carousel::-webkit-scrollbar-button {
+    display: none;
+}
+
+.dashboard-carousel-item {
+    flex: 0 0 36%;
+    min-height: 120px;
+    border: 2px dashed #d8bc90;
+    border-radius: 18px;
+    background:
+        linear-gradient(135deg, rgba(255, 245, 225, 0.95), rgba(252, 239, 211, 0.7));
+    padding: 14px 16px;
+    box-sizing: border-box;
+}
+
+
 .dashboard-stats-placeholder {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -232,6 +279,10 @@
     .dashboard-btn {
         width: 100%;
         min-width: 0;
+    }
+
+    .dashboard-carousel-item {
+        flex-basis: 78%;
     }
 
     .dashboard-stats-placeholder {
