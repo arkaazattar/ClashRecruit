@@ -8,7 +8,7 @@ function Footer() {
             <label> 
                 This material is unofficial and is not endorsed by Supercell.
                 For more information see Supercell's Fan Content Policy:{' '}
-                <a href="https://supercell.com/en/fan-content-policy/">www.supercell.com/fan-content-policy</a>.
+                <a target="_blank" href="https://supercell.com/en/fan-content-policy/" rel="noopener noreferrer">www.supercell.com/fan-content-policy</a>.
             </label>
         </div>
     )

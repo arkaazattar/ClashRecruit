@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import "./LookingForClan.css";
-import LoadingScreen from "./components/LoadingScreen";
 import { formatWarFrequency, WAR_FREQUENCY_OPTIONS } from "./utils/warFrequency";
+import usePageTitle from "./hooks/usePageTitle"
+import LoadingScreen from "./components/LoadingScreen";
+import "./LookingForClan.css";
 
 const PAGE_SIZE = 10;
 
@@ -11,6 +12,8 @@ function toNumberOrNull(value) {
 }
 
 function LookingForClan() {
+    usePageTitle("Find a Clan | ClashRecruit")
+    
     const navigate = useNavigate();
     const hasMountedNameEffect = useRef(false);
     const debounceTimerRef = useRef(null);

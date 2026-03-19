@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useOutletContext } from "react-router-dom";
 import LoadingScreen from "./components/LoadingScreen";
+import usePageTitle from "./hooks/usePageTitle";
 import "./Dashboard.css";
 
 const townHallAssets = require.context("./assets", false, /\.webp$/);
@@ -57,6 +58,8 @@ function normalizeUserInfo(data) {
 }
 
 function Dashboard() {
+  usePageTitle("Dashboard | ClashRecruit")
+
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [townHallImage, setTownHallImage] = useState(null);

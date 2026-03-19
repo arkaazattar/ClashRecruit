@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useOutletContext } from "react-router-dom";
-import "./Recruiter.css";
-import LoadingScreen from "./components/LoadingScreen";
 import { leagueOptions } from "./utils/recruiter";
+import usePageTitle from "./hooks/usePageTitle"
+import LoadingScreen from "./components/LoadingScreen";
+import "./Recruiter.css";
 
 function Recruiter() {
+  usePageTitle("Recruit | ClashRecruit")
   const navigate = useNavigate();
   const { recruitStatus, dashboardLoaded } = useOutletContext();
   const [loading, setLoading] = useState(true);

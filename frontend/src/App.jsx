@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import "./App.css";
+import usePageTitle from "./hooks/usePageTitle";
 
 function App() {
+  usePageTitle("ClashRecruit");
   const [playerTag, setPlayerTag] = useState("");
   const [apiToken, setApiToken] = useState("");
   const [error, setError] = useState("");

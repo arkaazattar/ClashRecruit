@@ -6,6 +6,7 @@ function Header({ user , hasActiveListing}) {
     const [open, setOpen] = useState(false);
     const navigate = useNavigate();
     const isLoggedIn = Boolean(user && user !== "Guest");
+    const displayUser = user || "Guest";
     const dropdownRef = useRef(null);
 
     useEffect(() => {
@@ -41,6 +42,11 @@ function Header({ user , hasActiveListing}) {
         setOpen(false);
         navigate("/recruit");
     };
+    
+    const handleFindClan = () => {
+        setOpen(false);
+        navigate("/looking-for-clan")
+    }
 
     return (
         <header className="header">
@@ -57,13 +63,21 @@ function Header({ user , hasActiveListing}) {
                         aria-expanded={open}
                         aria-haspopup="menu"
                     >
-                        {user} ▾
+                        <span className="user-button-copy">
+                            <span className="user-button-label">
+                                {isLoggedIn ? 'Signed in as' : 'Browsing as'}
+                            </span>
+                            <span className="user-button-name">{displayUser} ▾</span>
+                        </span>
                     </button>
 
                     <div
                         className={`dropdown-menu ${open ? "is-open" : "is-closed"}`}
                         aria-hidden={!open}
-                    >
+                    >       
+                    <button onClick={handleFindClan} className="dropdown-item">
+                            Find a Clan
+                    </button>
                         {hasActiveListing && (
                             <button onClick={handleListings} className="dropdown-item">
                                 My Listings
