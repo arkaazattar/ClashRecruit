@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import "./App.css";
+import { AUTH_STATUS_CHANGED_EVENT } from "./utils/appEvents";
 import usePageTitle from "./hooks/usePageTitle";
+import "./Login.css";
 
-function App() {
+function Login() {
   usePageTitle("ClashRecruit");
   const [playerTag, setPlayerTag] = useState("");
   const [apiToken, setApiToken] = useState("");
@@ -29,7 +30,8 @@ function App() {
       const guestData = await guestResponse.json();
       if (guestData.message === false) {
         sessionStorage.setItem("player_name", "Guest");
-        navigate("/dashboard");
+        window.dispatchEvent(new CustomEvent(AUTH_STATUS_CHANGED_EVENT));
+        navigate("/");
       } else {
         setError("Guest login failed. Please try again.");
       }
@@ -58,7 +60,8 @@ function App() {
       const data = await response.json();
       if (data.message === true) {
         sessionStorage.setItem("player_name", data.player_name);
-        navigate("/dashboard");
+        window.dispatchEvent(new CustomEvent(AUTH_STATUS_CHANGED_EVENT));
+        navigate("/");
       } else {
         setError(data.receivedPlayerTag || "Login failed.");
       }
@@ -104,4 +107,4 @@ function App() {
   );
 }
 
-export default App;
+export default Login;

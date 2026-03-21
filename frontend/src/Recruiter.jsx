@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useOutletContext } from "react-router-dom";
 import { leagueOptions } from "./utils/recruiter";
+import { LISTING_STATUS_CHANGED_EVENT } from "./utils/appEvents";
 import usePageTitle from "./hooks/usePageTitle"
 import LoadingScreen from "./components/LoadingScreen";
 import "./Recruiter.css";
@@ -9,7 +10,7 @@ import "./Recruiter.css";
 function Recruiter() {
   usePageTitle("Recruit | ClashRecruit")
   const navigate = useNavigate();
-  const { recruitStatus, dashboardLoaded } = useOutletContext();
+  const { recruitStatus, sessionStateLoaded } = useOutletContext();
   const [loading, setLoading] = useState(true);
   const [requiredLeague, setRequiredLeague] = useState("");
   const [requiredBuilderLeague, setRequiredBuilderLeague] = useState("");
@@ -27,12 +28,12 @@ function Recruiter() {
 
     async function loadRecruiterPage() {
       try {
-        if (!dashboardLoaded) {
+        if (!sessionStateLoaded) {
           return;
         }
 
         if (!recruitStatus) {
-          navigate("/dashboard");
+          navigate("/");
           return;
         }
 
@@ -45,7 +46,7 @@ function Recruiter() {
         }
 
         if (recruiterResponse.status === 403) {
-          navigate("/dashboard");
+          navigate("/");
           return;
         }
 
@@ -65,7 +66,7 @@ function Recruiter() {
         setLoading(false);
       } catch {
         if (isMounted) {
-          navigate("/dashboard");
+          navigate("/");
         }
       }
     }
@@ -75,7 +76,7 @@ function Recruiter() {
     return () => {
       isMounted = false;
     };
-  }, [navigate, recruitStatus, dashboardLoaded]);
+  }, [navigate, recruitStatus, sessionStateLoaded]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -103,7 +104,7 @@ function Recruiter() {
 
     if (recruiterResponse.ok) {
       window.dispatchEvent(
-        new CustomEvent("listing-status-changed", {
+        new CustomEvent(LISTING_STATUS_CHANGED_EVENT, {
           detail: { hasActiveListing: true }
         })
       );
@@ -154,7 +155,7 @@ function Recruiter() {
       setStatus(null);
       setListing("View Listing");
       window.dispatchEvent(
-        new CustomEvent("listing-status-changed", {
+        new CustomEvent(LISTING_STATUS_CHANGED_EVENT, {
           detail: { hasActiveListing: false }
         })
       );
@@ -291,9 +292,9 @@ function Recruiter() {
             </label>
             <button
               className="recruiter-secondary"
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate("/")}
             >
-              Dashboard
+              Homepage
             </button>
             <button
               className="recruiter-danger"

@@ -55,7 +55,7 @@ function ClanDetails() {
 
     return (
         <section className="clan-details-page">
-            <button className="clan-back-btn" type="button" onClick={() => navigate("/looking-for-clan/")}>
+            <button className="clan-back-btn" type="button" onClick={() => navigate("/looking-for-clan")}>
                 Back to listings
             </button>
 
