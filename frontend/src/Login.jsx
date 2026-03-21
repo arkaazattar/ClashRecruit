@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { AUTH_STATUS_CHANGED_EVENT } from "./utils/appEvents";
 import usePageTitle from "./hooks/usePageTitle";
+import clashrecruit_api_token from "./assets/clashrecruit_api_token.gif"
 import "./Login.css";
 
 function Login() {
@@ -72,37 +73,62 @@ function Login() {
 
   return (
     <div className="App">
-      <form onSubmit={handleSubmit} className="login-form">
-        <input
-          id="playerTag"
-          required
-          type="text"
-          autoComplete="on"
-          placeholder="Player Tag"
-          pattern="[A-Za-z0-9]+"
-          title="Player Tag must contain only letters and numbers."
-          value={playerTag}
-          onChange={(e) => setPlayerTag(e.target.value)}
-        />
+      <div className="login-container">
+        <div className="login-left">
+          <h2 className="login-help-title">Having trouble finding your API token?</h2>
+          <img
+            src={clashrecruit_api_token}
+            alt="Animated guide showing where to find your Clash of Clans API token"
+            className="login-help-image"
+          />
+          <p className="login-help-copy">
+            Use this guide to find your API token in Clash of Clans, then paste it into the sign-in form.
+          </p>
+        </div>
+        
+        <div className="Divider" />
 
-        <input
-          id="apiToken"
-          required
-          type="text"
-          autoComplete="off"
-          placeholder="API Token"
-          value={apiToken}
-          onChange={(e) => setApiToken(e.target.value)}
-        />
+        <div className="login-right">
+          <div className="login-intro">
+            <h1 className="login-title">Sign in to ClashRecruit</h1>
+            <p className="login-subtitle">
+              Enter your player tag and API token to access your dashboard.
+            </p>
+          </div>
 
-        {error && <p className="login-error">{error}</p>}
+          <form onSubmit={handleSubmit} className="login-form">
+            <input
+              id="playerTag"
+              required
+              type="text"
+              autoComplete="on"
+              placeholder="Player Tag"
+              pattern="[A-Za-z0-9]+"
+              title="Player Tag must contain only letters and numbers."
+              value={playerTag}
+              onChange={(e) => setPlayerTag(e.target.value)}
+            />
 
-        <button type="submit" className="primary-btn">Submit</button>
-      </form>
+            <input
+              id="apiToken"
+              required
+              type="text"
+              autoComplete="off"
+              placeholder="API Token"
+              value={apiToken}
+              onChange={(e) => setApiToken(e.target.value)}
+            />
 
-      <button onClick={guesthandleSubmit} type="button" className="ghost-btn">
-        Continue as Guest
-      </button>
+            {error && <p className="login-error">{error}</p>}
+
+            <button type="submit" className="primary-btn">Submit</button>
+          </form>
+
+          <button onClick={guesthandleSubmit} type="button" className="ghost-btn">
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -27,9 +27,10 @@
 }
 
 .header-divider {
-    color: #64748b;
-    font-size: 1.25rem;
-    line-height: 1;
+    width: 1px;
+    height: 28px;
+    background: #cbd5e1;
+    border-radius: 999px;
 }
 
 .dropdown {
