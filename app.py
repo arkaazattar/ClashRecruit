@@ -4,7 +4,7 @@ from flask_cors import CORS
 from .services.clash_api_preflight import run_clash_api_preflight
 from .config import FLASKSECRETKEY
 from .routes.home_route import home_bp
-from .routes.dashboard_route import dashboard_bp
+from .routes.session_state_route import session_state_bp
 from .routes.recruiter_route import recruiter_bp
 from .routes.recruitee_route import recruitee_bp
 from .routes.search_clans_route import search_clans_bp
@@ -22,7 +22,7 @@ CORS(
 )
 
 app.register_blueprint(home_bp)
-app.register_blueprint(dashboard_bp)
+app.register_blueprint(session_state_bp)
 app.register_blueprint(recruiter_bp)
 app.register_blueprint(recruitee_bp)
 app.register_blueprint(search_clans_bp)

@@ -42,3 +42,8 @@ def home():
         "player_name" : name,
         "clan_tag" : clan_tag
     })
+
+@home_bp.route("/logout", methods=["POST"])
+def logout():
+    session.clear()
+    return jsonify({"message": True})

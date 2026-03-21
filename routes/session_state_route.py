@@ -4,10 +4,10 @@ from ..services.mongo_db_client import clan_collection
 from ..api.clash_api import API
 from ..config import headers
 
-dashboard_bp = Blueprint("dashboard", __name__)
+session_state_bp = Blueprint("session_state", __name__)
 
-@dashboard_bp.route("/dashboard")
-def dashboard():
+@session_state_bp.route("/session-state")
+def session_state():
         username = session.get("player_name", "Guest")
         recruit_status = bool(session.get("recruiter_status"))
         has_active_listing = False
@@ -41,8 +41,8 @@ def dashboard():
             townhallWeaponLevel=townhallWeaponLevel
         )
 
-@dashboard_bp.route("/dashboard/user-info")
-def dashboard_user_info():
+@session_state_bp.route("/session-state/user-info")
+def session_state_user_info():
         player_tag = session.get("player_tag", "Guest")
 
         if player_tag == "Guest":

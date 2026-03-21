@@ -1,6 +1,7 @@
 import './Header.css';
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
+import { AUTH_STATUS_CHANGED_EVENT } from '../utils/appEvents';
 
 function Header({ user , hasActiveListing}) {
     const [open, setOpen] = useState(false);
@@ -27,15 +28,22 @@ function Header({ user , hasActiveListing}) {
         setOpen(prev => !prev);
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
         sessionStorage.removeItem("player_name");
         setOpen(false);
+
+        await fetch("/logout", {
+            method: "POST",
+            credentials: "include"
+        });
+
+        window.dispatchEvent(new CustomEvent(AUTH_STATUS_CHANGED_EVENT));
         navigate("/");
     };
     
     const handleSignin = () => {
         setOpen(false);
-        navigate("/");
+        navigate("/login");
     };
     
     const handleListings = () => {
@@ -50,12 +58,12 @@ function Header({ user , hasActiveListing}) {
 
     return (
         <header className="header">
-            <Link to='/dashboard' className='logo'>
+            <Link to='/' className='logo'>
                 ClashRecruit
             </Link>
 
             <div className="header-right">
-                <span className="header-divider" aria-hidden="true">|</span>
+                <span className="header-divider" aria-hidden="true"></span>
                 <div className="dropdown" ref={dropdownRef}>
                     <button
                         className="user-button"

@@ -64,10 +64,10 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [townHallImage, setTownHallImage] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
-  const { user, townhall, townhallWeaponLevel, recruitStatus, dashboardLoaded } = useOutletContext();
+  const { user, townhall, townhallWeaponLevel, recruitStatus, sessionStateLoaded } = useOutletContext();
 
   useEffect(() => {
-    if (!dashboardLoaded) {
+    if (!sessionStateLoaded) {
       setLoading(true);
       return;
     }
@@ -98,7 +98,7 @@ function Dashboard() {
 
     Promise.all([
       preloadImage(resolvedTownHallImage).then(() => resolvedTownHallImage),
-      fetch("/dashboard/user-info", { credentials: "include" })
+      fetch("/session-state/user-info", { credentials: "include" })
         .then((res) => res.json())
         .then((data) => normalizeUserInfo(data))
         .catch(() => null),
@@ -122,7 +122,7 @@ function Dashboard() {
     return () => {
       isMounted = false;
     };
-  }, [dashboardLoaded, townhall, townhallWeaponLevel, user]);
+  }, [sessionStateLoaded, townhall, townhallWeaponLevel, user]);
 
   const Recruiter = () => {
     navigate("/recruit");
@@ -133,7 +133,7 @@ function Dashboard() {
   };
 
   const Login = () => {
-    navigate("/");
+    navigate("/login");
   };
 
   const dashboardUserInfo = userInfo || normalizeUserInfo({});

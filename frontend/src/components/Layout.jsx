@@ -2,6 +2,10 @@ import Header from './Header.jsx';
 import Footer from './Footer.jsx'
 import { Outlet } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import {
+    AUTH_STATUS_CHANGED_EVENT,
+    LISTING_STATUS_CHANGED_EVENT
+} from '../utils/appEvents';
 
 
 const Layout = () => {
@@ -10,13 +14,22 @@ const Layout = () => {
     const [recruitStatus, setRecruitStatus] = useState(false);
     const [townhall, setTownhall] = useState(null);
     const [townhallWeaponLevel, setTownhallWeaponLevel] = useState(0);
-    const [dashboardLoaded, setDashboardLoaded] = useState(false);
+    const [sessionStateLoaded, setSessionStateLoaded] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
 
-        const loadDashboardState = () => {
-            fetch("/dashboard", { credentials: "include" })
+        const loadSessionState = ({ resetBeforeLoad = false } = {}) => {
+            if (resetBeforeLoad) {
+                setUser(sessionStorage.getItem("player_name"));
+                setHasActiveListing(false);
+                setRecruitStatus(false);
+                setTownhall(null);
+                setTownhallWeaponLevel(0);
+                setSessionStateLoaded(false);
+            }
+
+            fetch("/session-state", { credentials: "include" })
                 .then((res) => res.json())
                 .then((data) => {
                     if (!isMounted) return;
@@ -27,7 +40,7 @@ const Layout = () => {
                     setRecruitStatus(Boolean(data.recruit_status));
                     setTownhall(data.townhall);
                     setTownhallWeaponLevel(data.townhallWeaponLevel);
-                    setDashboardLoaded(true);
+                    setSessionStateLoaded(true);
 
                     sessionStorage.setItem("player_name", username);
                 })
@@ -35,7 +48,7 @@ const Layout = () => {
                     if (!isMounted) return;
                     setHasActiveListing(false);
                     setRecruitStatus(false);
-                    setDashboardLoaded(true);
+                    setSessionStateLoaded(true);
                 });
         };
 
@@ -47,15 +60,21 @@ const Layout = () => {
                 return;
             }
 
-            loadDashboardState();
+            loadSessionState();
         };
 
-        loadDashboardState();
-        window.addEventListener("listing-status-changed", handleListingStatusChanged);
+        const handleAuthStatusChanged = () => {
+            loadSessionState({ resetBeforeLoad: true });
+        };
+
+        loadSessionState();
+        window.addEventListener(LISTING_STATUS_CHANGED_EVENT, handleListingStatusChanged);
+        window.addEventListener(AUTH_STATUS_CHANGED_EVENT, handleAuthStatusChanged);
 
         return () => {
             isMounted = false;
-            window.removeEventListener("listing-status-changed", handleListingStatusChanged);
+            window.removeEventListener(LISTING_STATUS_CHANGED_EVENT, handleListingStatusChanged);
+            window.removeEventListener(AUTH_STATUS_CHANGED_EVENT, handleAuthStatusChanged);
         };
     }, []);
 
@@ -63,7 +82,7 @@ const Layout = () => {
         <div className="app-shell">
             <Header user={user} hasActiveListing={hasActiveListing}/>
             <main>
-                <Outlet context={{ user, townhall, townhallWeaponLevel, recruitStatus, dashboardLoaded }} />
+                <Outlet context={{ user, townhall, townhallWeaponLevel, recruitStatus, sessionStateLoaded }} />
             </main>
             <Footer />
         </div>
