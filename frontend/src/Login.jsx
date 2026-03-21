@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { AUTH_STATUS_CHANGED_EVENT } from "./utils/appEvents";
 import usePageTitle from "./hooks/usePageTitle";
-import clashrecruit_api_token from "./assets/clashrecruit_api_token.gif"
+import clashrecruit_api_token_mp4 from "./assets/clashrecruit_api_token.mp4";
 import "./Login.css";
 
 function Login() {
@@ -76,11 +76,17 @@ function Login() {
       <div className="login-container">
         <div className="login-left">
           <h2 className="login-help-title">Having trouble finding your API token?</h2>
-          <img
-            src={clashrecruit_api_token}
-            alt="Animated guide showing where to find your Clash of Clans API token"
-            className="login-help-image"
-          />
+          <video
+            className="login-help-media"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            aria-label="Animated guide showing where to find your Clash of Clans API token"
+          >
+            <source src={clashrecruit_api_token_mp4} type="video/mp4" />
+          </video>
           <p className="login-help-copy">
             Use this guide to find your API token in Clash of Clans, then paste it into the sign-in form.
           </p>
