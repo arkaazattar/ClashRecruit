@@ -1,16 +1,51 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { AUTH_STATUS_CHANGED_EVENT } from "./utils/appEvents";
 import usePageTitle from "./hooks/usePageTitle";
+import LoadingScreen from "./components/LoadingScreen";
 import clashrecruit_api_token_mp4 from "./assets/clashrecruit_api_token.mp4";
 import "./Login.css";
 
 function Login() {
   usePageTitle("ClashRecruit");
+  const [isVideoReady, setIsVideoReady] = useState(false);
   const [playerTag, setPlayerTag] = useState("");
   const [apiToken, setApiToken] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+
+  useEffect(() => {
+    let mounted = true;
+    const preloadVideo = document.createElement("video");
+    preloadVideo.preload = "auto";
+    preloadVideo.muted = true;
+    preloadVideo.playsInline = true;
+    preloadVideo.src = clashrecruit_api_token_mp4;
+
+    const markReady = () => {
+      if (mounted) {
+        setIsVideoReady(true);
+      }
+    };
+
+    if (preloadVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+      markReady();
+      return () => {
+        mounted = false;
+      };
+    }
+
+    preloadVideo.addEventListener("loadeddata", markReady, { once: true });
+    preloadVideo.addEventListener("error", markReady, { once: true });
+    preloadVideo.load();
+
+    return () => {
+      mounted = false;
+      preloadVideo.removeEventListener("loadeddata", markReady);
+      preloadVideo.removeEventListener("error", markReady);
+      preloadVideo.src = "";
+    };
+  }, []);
 
   const guesthandleSubmit = async (e) => {
     e.preventDefault();
@@ -70,6 +105,10 @@ function Login() {
       setError("Network error. Please try again.");
     }
   };
+
+  if (!isVideoReady) {
+    return <LoadingScreen />;
+  }
 
   return (
     <div className="App">
