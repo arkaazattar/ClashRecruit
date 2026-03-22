@@ -1,5 +1,5 @@
 import "./ClanDetails.css";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 function normalizeLocation(rawLocation) {
@@ -9,13 +9,36 @@ function normalizeLocation(rawLocation) {
     return "";
 }
 
+function getDetails(clanInfo) {
+    return clanInfo.clan_info || {
+        badge: clanInfo.badgeUrls?.large || clanInfo.badgeUrls?.medium || clanInfo.badgeUrls?.small || "",
+        name: clanInfo.name,
+        location: clanInfo.location,
+        description: clanInfo.description,
+        clan_level: clanInfo.clanLevel,
+        member_count: clanInfo.members,
+        type: clanInfo.type,
+        warFrequency: clanInfo.warFrequency,
+        clanPoints: clanInfo.clanPoints,
+    };
+}
+
 function ClanDetails() {
     const { clanTag } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const [clanInfo, setClanInfo] = useState(null);
     const [error, setError] = useState("");
+    const stateClanInfo = location.state?.clanInfo;
+    const isRandomMode = location.state?.isRandomMode;
 
     useEffect(() => {
+        if (stateClanInfo) {
+            setClanInfo(stateClanInfo);
+            setError("");
+            return;
+        }
+
         fetch("/recruitee", {
             method: "POST",
             headers: {
@@ -39,7 +62,7 @@ function ClanDetails() {
             .catch((err) => {
                 setError(err.message);
             });
-    }, [clanTag]);
+    }, [clanTag, stateClanInfo]);
 
     if (error) {
         return <section className="clan-details-page">{error}</section>;
@@ -50,7 +73,8 @@ function ClanDetails() {
     }
 
     const requirements = clanInfo.requirements || [];
-    const details = clanInfo.clan_info || {};
+    const details = getDetails(clanInfo);
+    const clanIdentifier = clanInfo.clan_tag || clanInfo.tag || clanTag;
 
     return (
         <section className="clan-details-page">
@@ -60,9 +84,9 @@ function ClanDetails() {
 
             <div className="clan-details-card">
                 <div className="clan-details-header">
-                    <img className="clan-badge" src={details.badge} alt="Clan badge" />
+                    {details.badge && <img className="clan-badge" src={details.badge} alt="Clan badge" />}
                     <div>
-                        <h2>{clanInfo.name || details.name || clanInfo.clan_tag}</h2>
+                        <h2>{clanInfo.name || details.name || clanIdentifier}</h2>
                         <p className="clan-location">{normalizeLocation(details.location) || "Unknown location"}</p>
                     </div>
                 </div>
@@ -81,10 +105,11 @@ function ClanDetails() {
                 </div>
 
                 <div className="clan-meta">
-                    <p><strong>Clan Tag:</strong> {clanInfo.clan_tag}</p>
-                    <p><strong>Posted by:</strong> {clanInfo.player_tag}</p>
-                    <p><strong>Last updated:</strong> {new Date(clanInfo.last_updated).toLocaleDateString()}</p>
-                    <p><strong>Expires:</strong> {new Date(clanInfo.expires).toLocaleDateString()}</p>
+                    <p><strong>Clan Tag:</strong> {clanIdentifier}</p>
+                    {!isRandomMode && clanInfo.player_tag && <p><strong>Posted by:</strong> {clanInfo.player_tag}</p>}
+                    {!isRandomMode && clanInfo.last_updated && <p><strong>Last updated:</strong> {new Date(clanInfo.last_updated).toLocaleDateString()}</p>}
+                    {!isRandomMode && clanInfo.expires && <p><strong>Expires:</strong> {new Date(clanInfo.expires).toLocaleDateString()}</p>}
+                    {isRandomMode && <p><strong>Source:</strong> Clash of Clans API</p>}
                 </div>
             </div>
         </section>

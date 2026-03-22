@@ -29,15 +29,71 @@ function buildFilterPayload(Filters) {
   };
 }
 
+function buildRandomFilterPayload(Filters, locations) {
+  const selectedLocation = locations.find((location) => location.name === Filters.location);
+
+  return Object.fromEntries(
+    Object.entries({
+      limit: PAGE_SIZE,
+      name: Filters.name || undefined,
+      minMembers: toNumberOrNull(Filters.minMembers),
+      maxMembers: toNumberOrNull(Filters.maxMembers),
+      minClanLevel: toNumberOrNull(Filters.minClanLevel),
+      minClanPoints: toNumberOrNull(Filters.clanPoints),
+      warFrequency: Filters.warFrequency || undefined,
+      locationId: selectedLocation?.id,
+    }).filter(([, value]) => value !== undefined && value !== null && value !== "")
+  );
+}
+
+function getClanKey(clan, index) {
+  return clan.clan_tag || clan.tag || `clan-${index}`;
+}
+
+function getClanName(clan) {
+  return clan.name || clan.clan_info?.name || clan.clan_tag || clan.tag || "Unknown clan";
+}
+
+function getClanLocation(clan) {
+  return clan.clan_info?.location?.name || clan.location?.name || clan.location || "Unknown location";
+}
+
+function getClanDescription(clan) {
+  return clan.clan_info?.description || clan.description || "No description provided.";
+}
+
+function getPrimaryStat(clan, isRandomMode) {
+  return isRandomMode ? clan.clanLevel ?? "N/A" : clan.requirements?.[2] ?? "N/A";
+}
+
+function getSecondaryStat(clan, isRandomMode) {
+  return isRandomMode ? clan.members ?? "N/A" : clan.requirements?.[0] ?? "N/A";
+}
+
+function getWarFrequency(clan) {
+  return clan.clan_info?.warFrequency || clan.warFrequency || "unknown";
+}
+
+function getClanPoints(clan) {
+  return clan.clan_info?.clanPoints ?? clan.clanPoints ?? "N/A";
+}
+
+function getClanTag(clan, index) {
+  return (clan.clan_tag || clan.tag || `clan-${index}`).replace(/^#/, "");
+}
+
 function LookingForClan() {
     const navigate = useNavigate()
     const [Locations, setLocations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [clans, setClans] = useState([]);
+    const [randomClans, setRandomClans] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalResults, setTotalResults] = useState(0);
     const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
     const [appliedFilterPayload, setAppliedFilterPayload] = useState(null);
+    const [isRandomMode, setIsRandomMode] = useState(false);
+    const [randomError, setRandomError] = useState("");
     const [Filters, setFilters] = useState({
       name: "",
       minTownhall: "",
@@ -96,8 +152,27 @@ function LookingForClan() {
       setCurrentPage(page);
     }
 
+    async function fetchRandomClans() {
+      const payload = buildRandomFilterPayload(Filters, Locations);
+      const response = await fetch("/search_clans", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json();
+      setRandomClans(data.items || []);
+      setRandomError((data.items || []).length ? "" : "No random clans matched these filters.");
+    }
+
     const handleFilterSubmit = async (e) => {
       e.preventDefault();
+      if (isRandomMode) {
+        await fetchRandomClans();
+        return;
+      }
+
       setHasAppliedFilters(true);
       const payload = buildFilterPayload(Filters);
       setAppliedFilterPayload(payload);
@@ -118,6 +193,7 @@ function LookingForClan() {
 
     const totalPages = Math.max(1, Math.ceil(totalResults / PAGE_SIZE));
     const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
+    const displayedClans = isRandomMode ? randomClans : clans;
 
 if (loading){
   return <LoadingScreen />;
@@ -128,6 +204,23 @@ return (
     <div className="looking-header">
       <h2>Find a Clan</h2>
       <p>Browse active listings that match your profile.</p>
+    </div>
+
+    <div className="looking-mode-toggle">
+      <button
+        type="button"
+        className={`looking-mode-btn ${!isRandomMode ? "is-active" : ""}`}
+        onClick={() => setIsRandomMode(false)}
+      >
+        Browse Listings
+      </button>
+      <button
+        type="button"
+        className={`looking-mode-btn ${isRandomMode ? "is-active" : ""}`}
+        onClick={() => setIsRandomMode(true)}
+      >
+        Browse Random Clans
+      </button>
     </div>
 
     <form className="looking-filters" onSubmit={handleFilterSubmit}>
@@ -201,34 +294,45 @@ return (
 
 
     <div className="listing-grid">
-      {clans.map((clan) => (
+      {isRandomMode && randomError && (
+        <div className="looking-empty-state">
+          <p>{randomError}</p>
+        </div>
+      )}
+
+      {displayedClans.map((clan, index) => (
         <button
-          key={clan.clan_tag}
+          key={getClanKey(clan, index)}
           type="button"
           className="listing-card"
-          onClick={() => navigate(`/looking-for-clan/${clan.clan_tag}`, {clanTag:clan.clan_tag})}
+          onClick={() => navigate(`/looking-for-clan/${getClanTag(clan, index)}/`, {
+            state: {
+              clanInfo: clan,
+              isRandomMode,
+            },
+          })}
         >
           <div className="listing-top">
-            <h3>{clan.name || clan.clan_info?.name || clan.clan_tag}</h3>
-            <span className="listing-location">{(clan.clan_info.location["name"])}</span>
+            <h3>{getClanName(clan)}</h3>
+            <span className="listing-location">{getClanLocation(clan)}</span>
           </div>
 
           <div className="listing-stats">
-            <p><strong>Townhall:</strong> {clan.requirements[2]}</p>
-            <p><strong>League:</strong> {clan.requirements[0]}</p>
-            {clan.clan_info.warFrequency !== "unknown" &&
-              <p><strong>War Freq:</strong> {clan.clan_info["warFrequency"]}</p>
+            <p><strong>{isRandomMode ? "Clan Level" : "Townhall"}:</strong> {getPrimaryStat(clan, isRandomMode)}</p>
+            <p><strong>{isRandomMode ? "Members" : "League"}:</strong> {getSecondaryStat(clan, isRandomMode)}</p>
+            {getWarFrequency(clan) !== "unknown" &&
+              <p><strong>War Freq:</strong> {getWarFrequency(clan)}</p>
             }
-            <p><strong>Clan Points:</strong> {clan.clan_info["clanPoints"]}</p>
+            <p><strong>Clan Points:</strong> {getClanPoints(clan)}</p>
           </div>
 
           <p className="listing-description">
-            {clan.clan_info["description"] || "No description provided."}
+            {getClanDescription(clan)}
           </p>
         </button>
       ))}
     </div>
-    {pageNumbers.length > 1 && (
+    {!isRandomMode && pageNumbers.length > 1 && (
       <div className="listing-pagination-wrap">
         {pageNumbers.map((pageNumber) => (
           <button
