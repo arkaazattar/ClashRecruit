@@ -8,6 +8,7 @@ import Recruiter from './Recruiter'
 import LookingForClan from './LookingForClan';
 import Layout from "./components/Layout"
 import ClanDetails from "./ClanDetails"
+import Temp from "./Temp"
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -15,6 +16,7 @@ root.render(
       <Routes>
 
         <Route element={<Layout />}>
+          <Route path="/temp" element={<Temp />} />
           <Route path="/" element={<Dashboard />} />
           <Route path="/login" element={<Login />} />
           <Route path="/recruit" element={<Recruiter/>} />

@@ -59,7 +59,7 @@ function normalizeUserInfo(data) {
 
 function Dashboard() {
   usePageTitle("Dashboard | ClashRecruit")
-
+  
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [townHallImage, setTownHallImage] = useState(null);
@@ -71,6 +71,7 @@ function Dashboard() {
       setLoading(true);
       return;
     }
+    fetch("/database_count")
 
     let isMounted = true;
     setLoading(true);

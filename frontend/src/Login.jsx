@@ -22,6 +22,7 @@ function Login() {
     preloadVideo.playsInline = true;
     preloadVideo.src = clashrecruit_api_token_mp4;
 
+
     const markReady = () => {
       if (mounted) {
         setIsVideoReady(true);
