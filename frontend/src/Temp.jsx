@@ -23,6 +23,7 @@ function Temp() {
     const [clans, setClans] = useState([]);
     const [copiedClanTag, setCopiedClanTag] = useState("");
     const copyResetTimerRef = useRef(null);
+    const featuredClansRef = useRef(null);
     const navigate = useNavigate();   
 
     useEffect(() => {
@@ -75,6 +76,9 @@ function Temp() {
     }, []);
 
     const previewClans = clans.slice(0, 4);
+    const scrollToFeatured = () => {
+        featuredClansRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
 
     if (Loading) {
         return <LoadingScreen />
@@ -89,21 +93,59 @@ function Temp() {
                     </div>
 
                     <div className="temp-subtitle">
-                        Find active clan listings fast, compare entry requirements, and move straight into your next home.
+                            text text text text
                     </div>
                     <span className="clan-count-title">
                         <span className="clan-count-dot" aria-hidden="true" />
                         {numClans} active clan listings
                     </span>
 
+                    
                     <div className="temp-buttons">
                         <button type="button" className="temp-btn temp-btn-primary" onClick={Search}>Search for Clans</button>
                         <button type="button" className="temp-btn temp-btn-secondary" onClick={ListClan}>List your clan</button>
                     </div>
                 </div>
+
+                <div className="temp-block">
+                    <div className="temp-cards">
+                        <h3 className="temp-card-title">Looking for a clan?</h3>
+                        <p className="temp-card-copy">
+                            Browse active listings
+                            <br />
+                            by requirements
+                            <br />
+                            and war style.
+                        </p>
+                        <p className="temp-card-link">→ Search for clans</p>
+                    </div>
+                    <div className="temp-cards">
+                        <h3 className="temp-card-title">Recruiting players?</h3>
+                        <p className="temp-card-copy">
+                            Post your clan and
+                            <br />
+                            make it easier to
+                            <br />
+                            discover.
+                        </p>
+                        <p className="temp-card-link">→ List your clan</p>
+                    </div>
+                </div>
+
+                <div className="temp-scroll-cue-wrap">
+                    <button
+                        type="button"
+                        className="temp-scroll-cue"
+                        onClick={scrollToFeatured}
+                        aria-label="Browse featured clans"
+                    >
+                        <span className="temp-scroll-cue-icon" aria-hidden="true">↓</span>
+                    </button>
+                    <p className="temp-scroll-cue-label">Browse featured clans</p>
+                </div>
             </section>
 
-            <section className="temp-clans">
+            <section className="temp-clans" ref={featuredClansRef}>
                 <h2 className="temp-clans-title">Featured Clans</h2>
 
                 <div className="temp-clans-strip">

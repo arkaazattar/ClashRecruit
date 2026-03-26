@@ -46,39 +46,39 @@
   flex-direction: column;
   align-items: flex-start;
   text-align: left;
-  gap: 14px;
+  gap: 18px;
 }
 
 .temp-title {
   margin: 0;
-  font-size: clamp(2.35rem, 5vw, 3.8rem);
+  font-size: clamp(2.9rem, 6vw, 4.75rem);
   font-weight: 820;
   letter-spacing: -0.02em;
-  line-height: 1.01;
+  line-height: 0.98;
   color: var(--temp-text-primary);
 }
 
 .temp-subtitle {
   margin: 0;
-  max-width: 58ch;
-  font-size: clamp(1rem, 1.45vw, 1.13rem);
-  line-height: 1.55;
+  max-width: 62ch;
+  font-size: clamp(1.08rem, 1.75vw, 1.4rem);
+  line-height: 1.5;
   color: var(--temp-text-secondary);
 }
 
 .clan-count-title {
-  margin-top: 4px;
+  margin-top: 8px;
   display: inline-flex;
   align-items: center;
-  gap: 0.48rem;
+  gap: 0.56rem;
   color: var(--temp-text-secondary);
-  font-size: 0.83rem;
+  font-size: 1rem;
   font-weight: 700;
   line-height: 1;
   background: rgba(255, 255, 255, 0.82);
   border: 1px solid var(--temp-border);
   border-radius: 999px;
-  padding: 7px 11px;
+  padding: 10px 14px;
 }
 
 .clan-count-dot {
@@ -111,20 +111,60 @@
 .temp-buttons {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   flex-wrap: wrap;
-  margin-top: 8px;
+  margin-top: 10px;
+}
+
+.temp-block {
+  display: flex;
+  gap: 14px;
+  margin-left: auto;
+  padding-left: 120px;
+  flex: 0 0 auto;
+  align-items: flex-start;
+}
+
+.temp-cards {
+  width: 210px;
+  padding: 8px 10px;
+  background-color: white;
+  border: 2px solid var(--temp-border);
+  border-radius: 10px;
+}
+
+.temp-card-title {
+  margin: 0 0 10px;
+  color: #2d2218;
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1.12;
+}
+
+.temp-card-copy {
+  margin: 0;
+  color: #46392d;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.temp-card-link {
+  margin: 14px 0 0;
+  color: #8b672f;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .temp-btn {
   border-radius: 9px;
-  padding: 12px 18px;
-  font-size: 0.93rem;
+  padding: 15px 22px;
+  font-size: 1.08rem;
   font-weight: 710;
   letter-spacing: 0.01em;
   cursor: pointer;
   box-sizing: border-box;
-  min-width: 190px;
+  min-width: 230px;
   border: 1px solid transparent;
   box-shadow: 0 3px 8px var(--temp-shadow);
   transition:
@@ -280,36 +320,42 @@
 }
 
 .temp-scroll-cue {
-  position: absolute;
-  left: 50%;
-  bottom: 18px;
-  transform: translateX(-50%);
-  border: none;
-  background: transparent;
-  color: rgba(93, 79, 66, 0.78);
-  padding: 4px;
+  border: 1px solid rgba(190, 162, 127, 0.7);
+  background: rgba(255, 251, 243, 0.94);
+  color: rgba(93, 79, 66, 0.82);
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   border-radius: 999px;
   cursor: pointer;
+  box-shadow: 0 4px 10px rgba(84, 60, 37, 0.12);
+}
+
+.temp-scroll-cue-wrap {
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
 .temp-scroll-cue-icon {
   display: inline-block;
-  font-size: 1.05rem;
+  font-size: 1.28rem;
   line-height: 1;
-  animation: temp-scroll-bounce 1.8s ease-in-out infinite;
 }
 
-@keyframes temp-scroll-bounce {
-  0%,
-  100% {
-    transform: translateY(0);
-    opacity: 0.58;
-  }
-
-  50% {
-    transform: translateY(5px);
-    opacity: 0.9;
-  }
+.temp-scroll-cue-label {
+  margin: 0;
+  color: rgba(70, 55, 41, 0.9);
+  font-size: 0.95rem;
+  font-weight: 530;
 }
 
 .temp-clans {
@@ -503,11 +549,33 @@
   }
 
   .temp-btn {
-    min-width: 170px;
+    min-width: 185px;
+    font-size: 0.98rem;
+    padding: 13px 18px;
   }
 
   .temp-clans {
     padding: 30px 16px 34px;
+  }
+
+  .temp-title {
+    font-size: clamp(2.35rem, 11vw, 3.25rem);
+  }
+
+  .temp-subtitle {
+    font-size: clamp(1rem, 4.2vw, 1.14rem);
+  }
+
+  .clan-count-title {
+    font-size: 0.9rem;
+  }
+
+  .temp-scroll-cue-wrap {
+    bottom: 14px;
+  }
+
+  .temp-scroll-cue-label {
+    font-size: 0.89rem;
   }
 }
 
@@ -517,7 +585,7 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
+@media (prefers-reduced-motion: no-preference) {
   .clan-count-dot,
   .temp-scroll-cue-icon {
     animation: none;
