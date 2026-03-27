@@ -2,6 +2,7 @@ import './Header.css';
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { AUTH_STATUS_CHANGED_EVENT } from '../utils/appEvents';
+import logoWithoutText from '../assets/logo_without_text.png';
 
 function Header({ user , hasActiveListing}) {
     const [open, setOpen] = useState(false);
@@ -59,7 +60,7 @@ function Header({ user , hasActiveListing}) {
     return (
         <header className="header">
             <Link to='/' className='logo'>
-                ClashRecruit
+                <img src={logoWithoutText} alt="ClashRecruit logo" className="logo-image" />
             </Link>
 
             <div className="header-right">

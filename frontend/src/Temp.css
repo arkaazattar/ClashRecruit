@@ -5,8 +5,8 @@
   --temp-surface-soft: #f7efe0;
   --temp-text-primary: #201913;
   --temp-text-secondary: #594b3f;
-  --temp-red: #8e2f2f;
-  --temp-red-hover: #742626;
+  --temp-red: #b33a32;
+  --temp-red-hover: #922a24;
   --temp-gold: #c8a04d;
   --temp-border: #d4b985;
   --temp-shadow: rgba(32, 25, 19, 0.1);
@@ -149,19 +149,25 @@
 }
 
 .temp-card-link {
+  display: inline-block;
   margin: 14px 0 0;
   color: #8b672f;
   font-size: 1.1rem;
   font-weight: 700;
   line-height: 1.2;
+  text-decoration: none;
 }
 
 .temp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 9px;
   padding: 15px 22px;
   font-size: 1.08rem;
   font-weight: 710;
   letter-spacing: 0.01em;
+  text-decoration: none;
   cursor: pointer;
   box-sizing: border-box;
   min-width: 230px;
@@ -189,14 +195,14 @@
 }
 
 .temp-btn-secondary {
-  background: var(--temp-surface);
-  border-color: #c6a56a;
-  color: var(--temp-text-primary);
+  background: #ffffff;
+  border-color: var(--temp-gold);
+  color: #7a241f;
 }
 
 .temp-btn-secondary:hover {
-  background: var(--temp-surface-soft);
-  border-color: #b4904c;
+  background: #fff2ef;
+  border-color: #b99245;
   transform: translateY(-1px);
   box-shadow: 0 5px 12px var(--temp-shadow-strong);
 }
@@ -210,7 +216,6 @@
 .temp-btn:focus-visible,
 .temp-copy-btn:focus-visible,
 .temp-scroll-cue:focus-visible {
-  outline: 2px solid var(--temp-red);
   outline-offset: 2px;
 }
 
@@ -395,6 +400,14 @@
   flex-direction: column;
   gap: 10px;
   transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+}
+
+.temp-clan-card-link {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: inherit;
+  text-decoration: none;
 }
 
 .temp-clan-card:hover {
@@ -585,9 +598,10 @@
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
+@media (prefers-reduced-motion: reduce) {
   .clan-count-dot,
-  .temp-scroll-cue-icon {
+  .temp-scroll-cue-icon,
+  .temp-scroll-cue {
     animation: none;
   }
 }

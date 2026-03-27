@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { Link } from "react-router-dom";
 import LoadingScreen from "./components/LoadingScreen";
 import { formatWarFrequency } from "./utils/warFrequency";
 import { leagueOptions } from "./utils/recruiter";
@@ -24,7 +24,6 @@ function Temp() {
     const [copiedClanTag, setCopiedClanTag] = useState("");
     const copyResetTimerRef = useRef(null);
     const featuredClansRef = useRef(null);
-    const navigate = useNavigate();   
 
     useEffect(() => {
         async function loadTempPage(){
@@ -43,14 +42,6 @@ function Temp() {
 
         loadTempPage();
     }, [])
-
-    const Search = () => {
-        navigate("/looking-for-clan")
-    }
-
-    const ListClan = () => {
-        navigate("/login")
-    }
 
     const copyClan = async (clanTag) => {
         try {
@@ -102,8 +93,8 @@ function Temp() {
 
                     
                     <div className="temp-buttons">
-                        <button type="button" className="temp-btn temp-btn-primary" onClick={Search}>Search for Clans</button>
-                        <button type="button" className="temp-btn temp-btn-secondary" onClick={ListClan}>List your clan</button>
+                        <Link to="/looking-for-clan" className="temp-btn temp-btn-primary">Search for Clans</Link>
+                        <Link to="/login" className="temp-btn temp-btn-secondary">List your clan</Link>
                     </div>
                 </div>
 
@@ -117,7 +108,7 @@ function Temp() {
                             <br />
                             and war style.
                         </p>
-                        <p className="temp-card-link">→ Search for clans</p>
+                        <Link to="/looking-for-clan" className="temp-card-link">→ Search for clans</Link>
                     </div>
                     <div className="temp-cards">
                         <h3 className="temp-card-title">Recruiting players?</h3>
@@ -128,7 +119,7 @@ function Temp() {
                             <br />
                             discover.
                         </p>
-                        <p className="temp-card-link">→ List your clan</p>
+                        <Link to="/login" className="temp-card-link">→ List your clan</Link>
                     </div>
                 </div>
 
@@ -151,29 +142,30 @@ function Temp() {
                 <div className="temp-clans-strip">
                     {previewClans.map((clan) => (
                         <article key={clan.clan_tag} className="temp-clan-card">
-                            <div className="temp-clan-card-top">
-                                <img
-                                    className="temp-clan-badge"
-                                    src={clan.clan_info?.badge}
-                                    alt={`${clan.name || clan.clan_info?.name || clan.clan_tag} badge`}
-                                />
-                                <div className="temp-clan-heading">
-                                    <h3 className="temp-clan-name">{clan.name || clan.clan_info?.name || clan.clan_tag}</h3>
-                                    <p className="temp-clan-meta">
-                                        <span>{clan.clan_info?.location?.name || "Unknown"}</span>
-                                        <span>Level {clan.clan_info?.clan_level ?? "?"}</span>
-                                        <span>{clan.clan_info?.member_count ?? "?"}/50</span>
-                                    </p>
+                            <Link to={`/looking-for-clan/${clan.clan_tag}`} className="temp-clan-card-link">
+                                <div className="temp-clan-card-top">
+                                    <img
+                                        className="temp-clan-badge"
+                                        src={clan.clan_info?.badge}
+                                        alt={`${clan.name || clan.clan_info?.name || clan.clan_tag} badge`}
+                                    />
+                                    <div className="temp-clan-heading">
+                                        <h3 className="temp-clan-name">{clan.name || clan.clan_info?.name || clan.clan_tag}</h3>
+                                        <p className="temp-clan-meta">
+                                            <span>{clan.clan_info?.location?.name || "Unknown"}</span>
+                                            <span>Level {clan.clan_info?.clan_level ?? "?"}</span>
+                                            <span>{clan.clan_info?.member_count ?? "?"}/50</span>
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
-
-                            <div className="temp-clan-chips">
-                                <span className="temp-chip temp-chip-th">TH{clan.requirements?.[2] ?? "?"}+</span>
-                                <span className="temp-chip temp-chip-league">{getLeagueLabel(clan.requirements?.[0])}</span>
-                                {clan.clan_info?.warFrequency && clan.clan_info?.warFrequency !== "unknown" ? (
-                                    <span className="temp-chip temp-chip-war">War: {formatWarFrequency(clan.clan_info?.warFrequency)}</span>
-                                ) : null}
-                            </div>
+                                <div className="temp-clan-chips">
+                                    <span className="temp-chip temp-chip-th">TH{clan.requirements?.[2] ?? "?"}+</span>
+                                    <span className="temp-chip temp-chip-league">{getLeagueLabel(clan.requirements?.[0])}</span>
+                                    {clan.clan_info?.warFrequency && clan.clan_info?.warFrequency !== "unknown" ? (
+                                        <span className="temp-chip temp-chip-war">War: {formatWarFrequency(clan.clan_info?.warFrequency)}</span>
+                                    ) : null}
+                                </div>
+                            </Link>
 
                             <p className="temp-clan-footnote">
                                 <button
@@ -189,9 +181,9 @@ function Temp() {
                 </div>
 
                 <div className="temp-load-more-wrap">
-                    <button type="button" className="temp-btn temp-btn-primary" onClick={Search}>
+                    <Link to="/looking-for-clan" className="temp-btn temp-btn-primary">
                         See More
-                    </button>
+                    </Link>
                 </div>
             </section>
 
