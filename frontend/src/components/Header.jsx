@@ -7,8 +7,9 @@ import logoWithoutText from '../assets/logo_without_text.png';
 function Header({ user , hasActiveListing}) {
     const [open, setOpen] = useState(false);
     const navigate = useNavigate();
-    const isLoggedIn = Boolean(user && user !== "Guest");
-    const displayUser = user || "Guest";
+    const normalizedUser = user === "Guest" ? null : user;
+    const isLoggedIn = Boolean(normalizedUser);
+    const displayUser = normalizedUser || "Guest";
     const dropdownRef = useRef(null);
 
     useEffect(() => {
@@ -64,6 +65,11 @@ function Header({ user , hasActiveListing}) {
             </Link>
 
             <div className="header-right">
+                {isLoggedIn && (
+                    <Link to="/dashboard" className="header-nav-link">
+                        Dashboard
+                    </Link>
+                )}
                 <span className="header-divider" aria-hidden="true"></span>
                 <div className="dropdown" ref={dropdownRef}>
                     <button
@@ -83,7 +89,7 @@ function Header({ user , hasActiveListing}) {
                     <div
                         className={`dropdown-menu ${open ? "is-open" : "is-closed"}`}
                         aria-hidden={!open}
-                    >       
+                    >
                     <button onClick={handleFindClan} className="dropdown-item">
                             Find a Clan
                     </button>

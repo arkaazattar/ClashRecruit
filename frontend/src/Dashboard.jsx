@@ -65,13 +65,13 @@ function Dashboard() {
   const [townHallImage, setTownHallImage] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
   const { user, townhall, townhallWeaponLevel, recruitStatus, sessionStateLoaded } = useOutletContext();
+  const normalizedUser = user === "Guest" ? null : user;
 
   useEffect(() => {
     if (!sessionStateLoaded) {
       setLoading(true);
       return;
     }
-    fetch("/database_count")
 
     let isMounted = true;
     setLoading(true);
@@ -80,22 +80,6 @@ function Dashboard() {
       townhall,
       townhallWeaponLevel
     );
-
-    if (user === "Guest") {
-      setUserInfo(null);
-      preloadImage(resolvedTownHallImage).then(() => {
-        if (!isMounted) {
-          return;
-        }
-
-        setTownHallImage(resolvedTownHallImage);
-        setLoading(false);
-      });
-
-      return () => {
-        isMounted = false;
-      };
-    }
 
     Promise.all([
       preloadImage(resolvedTownHallImage).then(() => resolvedTownHallImage),
@@ -123,7 +107,7 @@ function Dashboard() {
     return () => {
       isMounted = false;
     };
-  }, [sessionStateLoaded, townhall, townhallWeaponLevel, user]);
+  }, [sessionStateLoaded, townhall, townhallWeaponLevel, normalizedUser]);
 
   const Recruiter = () => {
     navigate("/recruit");
@@ -131,10 +115,6 @@ function Dashboard() {
 
   const Recruitee = () => {
     navigate("/looking-for-clan");
-  };
-
-  const Login = () => {
-    navigate("/login");
   };
 
   const dashboardUserInfo = userInfo || normalizeUserInfo({});
@@ -170,7 +150,7 @@ function Dashboard() {
             <div className="dashboard-panel-content">
               <div className="dashboard-panel-copy">
                 <p className="dashboard-eyebrow">Player dashboard</p>
-                <h1 className="dashboard-welcome">Welcome {user}</h1>
+                <h1 className="dashboard-welcome">Welcome {normalizedUser || "Player"}</h1>
 
                 <div className="dashboard-actions">
                   {recruitStatus === true && (
@@ -204,75 +184,63 @@ function Dashboard() {
           </div>
         </div>
 
-        {user === "Guest" ? (
-          <div className="dashboard-guest-login-wrap">
-            <button
-              type="button"
-              className="dashboard-btn dashboard-btn-secondary dashboard-stats-login-btn"
-              onClick={Login}
-            >
-              Login
-            </button>
+        <section className="dashboard-stats-panel">
+          <div className="dashboard-stats-header">
+            <h2>Player Stats</h2>
           </div>
-        ) : (
-          <section className="dashboard-stats-panel">
-            <div className="dashboard-stats-header">
-              <h2>Player Stats</h2>
-            </div>
 
-            <div className="dashboard-carousel">
-              <div className="dashboard-carousel-item">
-                <div className="dashboard-stat-box-content">
-                  <p className="dashboard-stat-box-title">Player Tag</p>
-                  <p className="dashboard-stat-line">#{playerTag}</p>
-                </div>
-              </div>
-
-              <div className="dashboard-carousel-item">
-                <div className="dashboard-stat-box-content">
-                  <p className="dashboard-stat-box-title">Player Level</p>
-                  <p className="dashboard-stat-line">{playerLevel}</p>
-                </div>
-              </div>
-
-              <div className="dashboard-carousel-item">
-                <div className="dashboard-stat-box-content">
-                  <p className="dashboard-stat-box-title">League</p>
-                  <p className="dashboard-stat-line">{leagueName}</p>
-                </div>
-              </div>
-
-              <div className="dashboard-carousel-item">
-                <div className="dashboard-stat-box-content">
-                  <p className="dashboard-stat-box-title">Builder League</p>
-                  <p className="dashboard-stat-line">{builderLeagueName}</p>
-                </div>
-              </div>
-
-              <div className="dashboard-carousel-item">
-                <div className="dashboard-stat-box-content">
-                  <p className="dashboard-stat-box-title">Builder Hall</p>
-                  <p className="dashboard-stat-line">{builderHallLevel}</p>
-                </div>
-              </div>
-
-              <div className="dashboard-carousel-item">
-                <div className="dashboard-stat-box-content">
-                  <p className="dashboard-stat-box-title">Clan</p>
-                  {clanName ? (
-                    <>
-                      <p className="dashboard-stat-line"><strong>Name:</strong> {clanName}</p>
-                      <p className="dashboard-stat-line"><strong>Tag:</strong> {clanTag}</p>
-                      <p className="dashboard-stat-line"><strong>Role:</strong> {clanRole || "N/A"}</p>
-                    </>
-                  ) : (
-                    <p className="dashboard-stat-empty">Not currently in a clan.</p>
-                  )}
-                </div>
+          <div className="dashboard-carousel">
+            <div className="dashboard-carousel-item">
+              <div className="dashboard-stat-box-content">
+                <p className="dashboard-stat-box-title">Player Tag</p>
+                <p className="dashboard-stat-line">#{playerTag}</p>
               </div>
             </div>
-          </section>
-        )}
+
+            <div className="dashboard-carousel-item">
+              <div className="dashboard-stat-box-content">
+                <p className="dashboard-stat-box-title">Player Level</p>
+                <p className="dashboard-stat-line">{playerLevel}</p>
+              </div>
+            </div>
+
+            <div className="dashboard-carousel-item">
+              <div className="dashboard-stat-box-content">
+                <p className="dashboard-stat-box-title">League</p>
+                <p className="dashboard-stat-line">{leagueName}</p>
+              </div>
+            </div>
+
+            <div className="dashboard-carousel-item">
+              <div className="dashboard-stat-box-content">
+                <p className="dashboard-stat-box-title">Builder League</p>
+                <p className="dashboard-stat-line">{builderLeagueName}</p>
+              </div>
+            </div>
+
+            <div className="dashboard-carousel-item">
+              <div className="dashboard-stat-box-content">
+                <p className="dashboard-stat-box-title">Builder Hall</p>
+                <p className="dashboard-stat-line">{builderHallLevel}</p>
+              </div>
+            </div>
+
+            <div className="dashboard-carousel-item">
+              <div className="dashboard-stat-box-content">
+                <p className="dashboard-stat-box-title">Clan</p>
+                {clanName ? (
+                  <>
+                    <p className="dashboard-stat-line"><strong>Name:</strong> {clanName}</p>
+                    <p className="dashboard-stat-line"><strong>Tag:</strong> {clanTag}</p>
+                    <p className="dashboard-stat-line"><strong>Role:</strong> {clanRole || "N/A"}</p>
+                  </>
+                ) : (
+                  <p className="dashboard-stat-empty">Not currently in a clan.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
       </section>
     </div>
   );

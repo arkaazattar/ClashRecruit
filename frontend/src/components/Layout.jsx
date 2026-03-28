@@ -7,9 +7,20 @@ import {
     LISTING_STATUS_CHANGED_EVENT
 } from '../utils/appEvents';
 
+function normalizeUser(userValue) {
+    if (!userValue || userValue === "Guest" || userValue === "null" || userValue === "undefined") {
+        return null;
+    }
+
+    return userValue;
+}
+
+function readStoredUser() {
+    return normalizeUser(sessionStorage.getItem("player_name"));
+}
 
 const Layout = () => {
-    const [user, setUser] = useState(() => sessionStorage.getItem("player_name"));
+    const [user, setUser] = useState(() => readStoredUser());
     const [hasActiveListing, setHasActiveListing] = useState(false);
     const [recruitStatus, setRecruitStatus] = useState(false);
     const [townhall, setTownhall] = useState(null);
@@ -21,7 +32,7 @@ const Layout = () => {
 
         const loadSessionState = ({ resetBeforeLoad = false } = {}) => {
             if (resetBeforeLoad) {
-                setUser(sessionStorage.getItem("player_name"));
+                setUser(readStoredUser());
                 setHasActiveListing(false);
                 setRecruitStatus(false);
                 setTownhall(null);
@@ -34,7 +45,7 @@ const Layout = () => {
                 .then((data) => {
                     if (!isMounted) return;
 
-                    const username = data.username;
+                    const username = normalizeUser(data.username);
                     setUser(username);
                     setHasActiveListing(Boolean(data.has_active_listing));
                     setRecruitStatus(Boolean(data.recruit_status));
@@ -42,12 +53,20 @@ const Layout = () => {
                     setTownhallWeaponLevel(data.townhallWeaponLevel);
                     setSessionStateLoaded(true);
 
-                    sessionStorage.setItem("player_name", username);
+                    if (username) {
+                        sessionStorage.setItem("player_name", username);
+                    } else {
+                        sessionStorage.removeItem("player_name");
+                    }
                 })
                 .catch(() => {
                     if (!isMounted) return;
+                    setUser(null);
                     setHasActiveListing(false);
                     setRecruitStatus(false);
+                    setTownhall(null);
+                    setTownhallWeaponLevel(0);
+                    sessionStorage.removeItem("player_name");
                     setSessionStateLoaded(true);
                 });
         };

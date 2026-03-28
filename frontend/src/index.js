@@ -1,6 +1,5 @@
-import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useOutletContext } from 'react-router-dom';
 import './index.css';
 import Login from './Login';
 import Dashboard from './Dashboard';
@@ -9,6 +8,22 @@ import LookingForClan from './LookingForClan';
 import Layout from "./components/Layout"
 import ClanDetails from "./ClanDetails"
 import Temp from "./Temp"
+import LoadingScreen from "./components/LoadingScreen";
+
+function DashboardRouteGuard() {
+  const { user, sessionStateLoaded } = useOutletContext();
+  const normalizedUser = user === "Guest" ? null : user;
+
+  if (!sessionStateLoaded) {
+    return <LoadingScreen />;
+  }
+
+  if (!normalizedUser) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Dashboard />;
+}
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -17,7 +32,8 @@ root.render(
 
         <Route element={<Layout />}>
           <Route path="/temp" element={<Temp />} />
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={<Temp />} />
+          <Route path="/dashboard" element={<DashboardRouteGuard />} />
           <Route path="/login" element={<Login />} />
           <Route path="/recruit" element={<Recruiter/>} />
           <Route path="/looking-for-clan" element={<LookingForClan/>}/>

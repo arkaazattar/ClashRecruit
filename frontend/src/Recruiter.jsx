@@ -33,7 +33,7 @@ function Recruiter() {
         }
 
         if (!recruitStatus) {
-          navigate("/");
+          navigate("/dashboard");
           return;
         }
 
@@ -46,7 +46,7 @@ function Recruiter() {
         }
 
         if (recruiterResponse.status === 403) {
-          navigate("/");
+          navigate("/dashboard");
           return;
         }
 
@@ -66,7 +66,7 @@ function Recruiter() {
         setLoading(false);
       } catch {
         if (isMounted) {
-          navigate("/");
+          navigate("/dashboard");
         }
       }
     }
@@ -292,9 +292,10 @@ function Recruiter() {
             </label>
             <button
               className="recruiter-secondary"
-              onClick={() => navigate("/")}
+              type="button"
+              onClick={() => navigate("/dashboard")}
             >
-              Homepage
+              Dashboard
             </button>
             <button
               className="recruiter-danger"

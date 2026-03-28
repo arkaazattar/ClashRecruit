@@ -275,7 +275,7 @@ return (
           <div className="listing-stats">
             <p><strong>Townhall:</strong> {clan.requirements[2]}</p>
             <p><strong>League:</strong> {clan.requirements[0]}</p>
-            {clan.clan_info.warFrequency != "unknown" &&
+            {clan.clan_info.warFrequency !== "unknown" &&
               <p><strong>War Freq:</strong> {formatWarFrequency(clan.clan_info["warFrequency"])}</p>
             }
             <p><strong>Clan Points:</strong> {clan.clan_info["clanPoints"]}</p>

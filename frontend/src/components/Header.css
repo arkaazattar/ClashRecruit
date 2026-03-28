@@ -26,6 +26,20 @@
     gap: 10px;
 }
 
+.header-nav-link {
+    text-decoration: none;
+    color: #0f172a;
+    font-size: 0.92rem;
+    font-weight: 400;
+    padding: 8px 10px;
+    border-radius: 5px;
+}
+
+.header-nav-link:hover,
+.header-nav-link:focus-visible {
+    background: #eff6ff;
+}
+
 .header-divider {
     width: 1px;
     height: 28px;

@@ -48,35 +48,6 @@ function Login() {
     };
   }, []);
 
-  const guesthandleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-
-    try {
-      const guestResponse = await fetch("/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          playerTag: "Guest",
-          apiToken: "None",
-        }),
-      });
-      const guestData = await guestResponse.json();
-      if (guestData.message === false) {
-        sessionStorage.setItem("player_name", "Guest");
-        window.dispatchEvent(new CustomEvent(AUTH_STATUS_CHANGED_EVENT));
-        navigate("/");
-      } else {
-        setError("Guest login failed. Please try again.");
-      }
-    } catch {
-      setError("Network error. Please try again.");
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -96,7 +67,11 @@ function Login() {
 
       const data = await response.json();
       if (data.message === true) {
-        sessionStorage.setItem("player_name", data.player_name);
+        if (data.player_name) {
+          sessionStorage.setItem("player_name", data.player_name);
+        } else {
+          sessionStorage.removeItem("player_name");
+        }
         window.dispatchEvent(new CustomEvent(AUTH_STATUS_CHANGED_EVENT));
         navigate("/");
       } else {
@@ -138,7 +113,7 @@ function Login() {
           <div className="login-intro">
             <h1 className="login-title">Sign in to ClashRecruit</h1>
             <p className="login-subtitle">
-              Enter your player tag and API token to access your dashboard.
+              Enter your player tag and API token to access ClashRecruit.
             </p>
           </div>
 
@@ -170,8 +145,8 @@ function Login() {
             <button type="submit" className="primary-btn">Submit</button>
           </form>
 
-          <button onClick={guesthandleSubmit} type="button" className="ghost-btn">
-            Back to Dashboard
+          <button onClick={() => navigate("/")} type="button" className="ghost-btn">
+            Back to Homepage
           </button>
         </div>
       </div>
