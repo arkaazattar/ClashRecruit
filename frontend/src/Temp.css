@@ -523,9 +523,33 @@
   color: var(--temp-red);
 }
 
-.temp-copy-btn.is-copied {
-  color: var(--temp-status);
-  font-weight: 700;
+.temp-copy-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.temp-copy-inline {
+  border-radius: 999px;
+  border: 1px solid #a8cfaa;
+  background: #eaf8e7;
+  color: #356036;
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  min-width: 62px;
+  box-sizing: border-box;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 180ms ease, visibility 0s linear 180ms;
+}
+
+.temp-copy-inline.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 180ms ease, visibility 0s linear 0s;
 }
 
 .temp-load-more-wrap {

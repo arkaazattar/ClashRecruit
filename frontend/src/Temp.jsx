@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import LoadingScreen from "./components/LoadingScreen";
 import { formatWarFrequency } from "./utils/warFrequency";
 import { leagueOptions } from "./utils/recruiter";
@@ -18,6 +18,7 @@ function getLeagueLabel(leagueValue) {
 }
 
 function Temp() {
+    const { user } = useOutletContext();
     const [Loading, setLoading] = useState(true);
     const [numClans, setNumClans] = useState(0);
     const [clans, setClans] = useState([]);
@@ -67,6 +68,9 @@ function Temp() {
     }, []);
 
     const previewClans = clans.slice(0, 4);
+    const isLoggedIn = Boolean(user && user !== "Guest");
+    const listClanPath = isLoggedIn ? "/dashboard" : "/login";
+
     const scrollToFeatured = () => {
         featuredClansRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     };
@@ -94,7 +98,7 @@ function Temp() {
                     
                     <div className="temp-buttons">
                         <Link to="/looking-for-clan" className="temp-btn temp-btn-primary">Search for Clans</Link>
-                        <Link to="/login" className="temp-btn temp-btn-secondary">List your clan</Link>
+                        <Link to={listClanPath} className="temp-btn temp-btn-secondary">List your clan</Link>
                     </div>
                 </div>
 
@@ -119,7 +123,7 @@ function Temp() {
                             <br />
                             discover.
                         </p>
-                        <Link to="/login" className="temp-card-link">→ List your clan</Link>
+                        <Link to={listClanPath} className="temp-card-link">→ List your clan</Link>
                     </div>
                 </div>
 
@@ -168,13 +172,18 @@ function Temp() {
                             </Link>
 
                             <p className="temp-clan-footnote">
-                                <button
-                                    type="button"
-                                    className={`temp-copy-btn${copiedClanTag === clan.clan_tag ? " is-copied" : ""}`}
-                                    onClick={() => copyClan(clan.clan_tag)}
-                                >
-                                    {copiedClanTag === clan.clan_tag ? "Copied!" : `#${clan.clan_tag}`}
-                                </button>
+                                <span className="temp-copy-wrap">
+                                    <button
+                                        type="button"
+                                        className="temp-copy-btn"
+                                        onClick={() => copyClan(clan.clan_tag)}
+                                    >
+                                        {`#${clan.clan_tag}`}
+                                    </button>
+                                    <span className={`temp-copy-inline${copiedClanTag === clan.clan_tag ? " is-visible" : ""}`}>
+                                        ✓ Copied
+                                    </span>
+                                </span>
                             </p>
                         </article>
                     ))}

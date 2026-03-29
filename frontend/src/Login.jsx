@@ -73,7 +73,7 @@ function Login() {
           sessionStorage.removeItem("player_name");
         }
         window.dispatchEvent(new CustomEvent(AUTH_STATUS_CHANGED_EVENT));
-        navigate("/");
+        navigate("/dashboard");
       } else {
         setError(data.receivedPlayerTag || "Login failed.");
       }

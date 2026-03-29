@@ -101,7 +101,7 @@ const Layout = () => {
         <div className="app-shell">
             <Header user={user} hasActiveListing={hasActiveListing}/>
             <main>
-                <Outlet context={{ user, townhall, townhallWeaponLevel, recruitStatus, sessionStateLoaded }} />
+                <Outlet context={{ user, townhall, townhallWeaponLevel, recruitStatus, hasActiveListing, sessionStateLoaded }} />
             </main>
             <Footer />
         </div>

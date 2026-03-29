@@ -13,6 +13,7 @@ def session_state():
         has_active_listing = False
         townhall = None
         townhallWeaponLevel = None
+        clan_tag = session.get("clan_tag")
 
         if username != "Guest":  
             player_tag = session.get("player_tag")
@@ -20,9 +21,9 @@ def session_state():
             user.check_player()
             townhall = user.townhall
             townhallWeaponLevel = user.townhallWeaponLevel
+            clan_tag = user.clantag or clan_tag
         
-        if recruit_status:
-            clan_tag = session.get("clan_tag")
+        if clan_tag:
             now = datetime.now(timezone.utc)
             listing = clan_collection.find_one(
                 {
