@@ -342,8 +342,11 @@ function Dashboard() {
   }
   return (
     <div className="Dashboard">
+      <div className="dashboard-atmosphere" aria-hidden="true" />
       <section className="dashboard-layout">
         <section className="dashboard-hero">
+          <div className="dashboard-hero-layer dashboard-hero-layer-one" aria-hidden="true" />
+          <div className="dashboard-hero-layer dashboard-hero-layer-two" aria-hidden="true" />
           <aside className="dashboard-hero-left">
             <div className="dashboard-townhall-shell">
               {townHallImage ? (
@@ -397,6 +400,7 @@ function Dashboard() {
               <div className="dashboard-clan-placeholder">Clan Badge</div>
             )}
             <p className="dashboard-clan-name">{clanDisplay}</p>
+            <p className="dashboard-clan-role">{clanRole}</p>
           </aside>
         </section>
 
@@ -510,7 +514,7 @@ function Dashboard() {
                   if (!savedClanTagForRoute) {
                     return (
                       <div key={savedClanName} className="dashboard-saved-item">
-                        <div>
+                        <div className="dashboard-saved-item-content">
                           <p className="dashboard-saved-name">{savedClanName}</p>
                           <p className="dashboard-saved-meta">{savedClanMeta}</p>
                         </div>
@@ -524,10 +528,11 @@ function Dashboard() {
                       to={`/looking-for-clan/${savedClanTagForRoute}`}
                       className="dashboard-saved-item dashboard-saved-item-clickable"
                     >
-                      <div>
+                      <div className="dashboard-saved-item-content">
                         <p className="dashboard-saved-name">{savedClanName}</p>
                         <p className="dashboard-saved-meta">{savedClanMeta}</p>
                       </div>
+                      <span className="dashboard-saved-row-icon" aria-hidden="true">›</span>
                     </Link>
                   );
                 })}
@@ -542,9 +547,6 @@ function Dashboard() {
                   </button>
                 )}
 
-                <Link to="/looking-for-clan" className="dashboard-link-btn dashboard-saved-footer-btn">
-                  View Clan Search
-                </Link>
               </div>
             </article>
 
@@ -584,7 +586,7 @@ function Dashboard() {
                 if (!savedClanTagForRoute) {
                   return (
                     <div key={`modal-${savedClanName}`} className="dashboard-saved-item">
-                      <div>
+                      <div className="dashboard-saved-item-content">
                         <p className="dashboard-saved-name">{savedClanName}</p>
                         <p className="dashboard-saved-meta">{savedClanMeta}</p>
                       </div>
@@ -598,10 +600,11 @@ function Dashboard() {
                     to={`/looking-for-clan/${savedClanTagForRoute}`}
                     className="dashboard-saved-item dashboard-saved-item-clickable"
                   >
-                    <div>
+                    <div className="dashboard-saved-item-content">
                       <p className="dashboard-saved-name">{savedClanName}</p>
                       <p className="dashboard-saved-meta">{savedClanMeta}</p>
                     </div>
+                    <span className="dashboard-saved-row-icon" aria-hidden="true">›</span>
                   </Link>
                 );
               })}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useOutletContext } from "react-router-dom";
 import { leagueOptions } from "./utils/recruiter";
@@ -22,6 +22,7 @@ function Recruiter() {
   const [successMessage, setSuccessMessage] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [Listing, setListing] = useState("View Listing");
+  const deleteNavigateTimerRef = useRef(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -75,6 +76,9 @@ function Recruiter() {
 
     return () => {
       isMounted = false;
+      if (deleteNavigateTimerRef.current) {
+        clearTimeout(deleteNavigateTimerRef.current);
+      }
     };
   }, [navigate, recruitStatus, sessionStateLoaded]);
 
@@ -152,13 +156,14 @@ function Recruiter() {
     setShowDeleteConfirm(false);
 
     if (response.ok) {
-      setStatus(null);
-      setListing("View Listing");
       window.dispatchEvent(
         new CustomEvent(LISTING_STATUS_CHANGED_EVENT, {
           detail: { hasActiveListing: false }
         })
       );
+      deleteNavigateTimerRef.current = setTimeout(() => {
+        navigate("/dashboard");
+      }, 1200);
     }
   }
 
