@@ -3,7 +3,7 @@ import { Link, useOutletContext } from "react-router-dom";
 import LoadingScreen from "./components/LoadingScreen";
 import { formatWarFrequency } from "./utils/warFrequency";
 import { leagueOptions } from "./utils/recruiter";
-import "./Temp.css";
+import "./Landing.css";
 
 const leagueLabelByValue = new Map(leagueOptions.map((option) => [option.value, option.label]));
 
@@ -17,7 +17,7 @@ function getLeagueLabel(leagueValue) {
     return label === "Legend League" ? label : `${label}+`;
 }
 
-function Temp() {
+function Landing() {
     const { user } = useOutletContext();
     const [Loading, setLoading] = useState(true);
     const [numClans, setNumClans] = useState(0);
@@ -27,7 +27,7 @@ function Temp() {
     const featuredClansRef = useRef(null);
 
     useEffect(() => {
-        async function loadTempPage(){
+        async function loadLandingPage(){
             try {
                 const countResponse = await fetch("/database_count");
                 const countData = await countResponse.json();
@@ -41,7 +41,7 @@ function Temp() {
             }
         }
 
-        loadTempPage();
+        loadLandingPage();
     }, [])
 
     const copyClan = async (clanTag) => {
@@ -80,14 +80,14 @@ function Temp() {
     }
 
     return (
-        <div className="temp">
-            <section className="temp-hero">
-                <div className="temp-hero-content">
-                    <div className="temp-title">
+        <div className="landing">
+            <section className="landing-hero">
+                <div className="landing-hero-content">
+                    <div className="landing-title">
                         ClashRecruit
                     </div>
 
-                    <div className="temp-subtitle">
+                    <div className="landing-subtitle">
                             text text text text
                     </div>
                     <span className="clan-count-title">
@@ -96,91 +96,91 @@ function Temp() {
                     </span>
 
                     
-                    <div className="temp-buttons">
-                        <Link to="/looking-for-clan" className="temp-btn temp-btn-primary">Search for Clans</Link>
-                        <Link to={listClanPath} className="temp-btn temp-btn-secondary">List your clan</Link>
+                    <div className="landing-buttons">
+                        <Link to="/looking-for-clan" className="landing-btn landing-btn-primary">Search for Clans</Link>
+                        <Link to={listClanPath} className="landing-btn landing-btn-secondary">List your clan</Link>
                     </div>
                 </div>
 
-                <div className="temp-block">
-                    <div className="temp-cards">
-                        <h3 className="temp-card-title">Looking for a clan?</h3>
-                        <p className="temp-card-copy">
+                <div className="landing-block">
+                    <div className="landing-cards">
+                        <h3 className="landing-card-title">Looking for a clan?</h3>
+                        <p className="landing-card-copy">
                             Browse active listings
                             <br />
                             by requirements
                             <br />
                             and war style.
                         </p>
-                        <Link to="/looking-for-clan" className="temp-card-link">→ Search for clans</Link>
+                        <Link to="/looking-for-clan" className="landing-card-link">→ Search for clans</Link>
                     </div>
-                    <div className="temp-cards">
-                        <h3 className="temp-card-title">Recruiting players?</h3>
-                        <p className="temp-card-copy">
+                    <div className="landing-cards">
+                        <h3 className="landing-card-title">Recruiting players?</h3>
+                        <p className="landing-card-copy">
                             Post your clan and
                             <br />
                             make it easier to
                             <br />
                             discover.
                         </p>
-                        <Link to={listClanPath} className="temp-card-link">→ List your clan</Link>
+                        <Link to={listClanPath} className="landing-card-link">→ List your clan</Link>
                     </div>
                 </div>
 
-                <div className="temp-scroll-cue-wrap">
+                <div className="landing-scroll-cue-wrap">
                     <button
                         type="button"
-                        className="temp-scroll-cue"
+                        className="landing-scroll-cue"
                         onClick={scrollToFeatured}
                         aria-label="Browse featured clans"
                     >
-                        <span className="temp-scroll-cue-icon" aria-hidden="true">↓</span>
+                        <span className="landing-scroll-cue-icon" aria-hidden="true">↓</span>
                     </button>
-                    <p className="temp-scroll-cue-label">Browse featured clans</p>
+                    <p className="landing-scroll-cue-label">Browse featured clans</p>
                 </div>
             </section>
 
-            <section className="temp-clans" ref={featuredClansRef}>
-                <h2 className="temp-clans-title">Featured Clans</h2>
+            <section className="landing-clans" ref={featuredClansRef}>
+                <h2 className="landing-clans-title">Featured Clans</h2>
 
-                <div className="temp-clans-strip">
+                <div className="landing-clans-strip">
                     {previewClans.map((clan) => (
-                        <article key={clan.clan_tag} className="temp-clan-card">
-                            <Link to={`/looking-for-clan/${clan.clan_tag}`} className="temp-clan-card-link">
-                                <div className="temp-clan-card-top">
+                        <article key={clan.clan_tag} className="landing-clan-card">
+                            <Link to={`/looking-for-clan/${clan.clan_tag}`} className="landing-clan-card-link">
+                                <div className="landing-clan-card-top">
                                     <img
-                                        className="temp-clan-badge"
+                                        className="landing-clan-badge"
                                         src={clan.clan_info?.badge}
                                         alt={`${clan.name || clan.clan_info?.name || clan.clan_tag} badge`}
                                     />
-                                    <div className="temp-clan-heading">
-                                        <h3 className="temp-clan-name">{clan.name || clan.clan_info?.name || clan.clan_tag}</h3>
-                                        <p className="temp-clan-meta">
+                                    <div className="landing-clan-heading">
+                                        <h3 className="landing-clan-name">{clan.name || clan.clan_info?.name || clan.clan_tag}</h3>
+                                        <p className="landing-clan-meta">
                                             <span>{clan.clan_info?.location?.name || "Unknown"}</span>
                                             <span>Level {clan.clan_info?.clan_level ?? "?"}</span>
                                             <span>{clan.clan_info?.member_count ?? "?"}/50</span>
                                         </p>
                                     </div>
                                 </div>
-                                <div className="temp-clan-chips">
-                                    <span className="temp-chip temp-chip-th">TH{clan.requirements?.[2] ?? "?"}+</span>
-                                    <span className="temp-chip temp-chip-league">{getLeagueLabel(clan.requirements?.[0])}</span>
+                                <div className="landing-clan-chips">
+                                    <span className="landing-chip landing-chip-th">TH{clan.requirements?.[2] ?? "?"}+</span>
+                                    <span className="landing-chip landing-chip-league">{getLeagueLabel(clan.requirements?.[0])}</span>
                                     {clan.clan_info?.warFrequency && clan.clan_info?.warFrequency !== "unknown" ? (
-                                        <span className="temp-chip temp-chip-war">War: {formatWarFrequency(clan.clan_info?.warFrequency)}</span>
+                                        <span className="landing-chip landing-chip-war">War: {formatWarFrequency(clan.clan_info?.warFrequency)}</span>
                                     ) : null}
                                 </div>
                             </Link>
 
-                            <p className="temp-clan-footnote">
-                                <span className="temp-copy-wrap">
+                            <p className="landing-clan-footnote">
+                                <span className="landing-copy-wrap">
                                     <button
                                         type="button"
-                                        className="temp-copy-btn"
+                                        className="landing-copy-btn"
                                         onClick={() => copyClan(clan.clan_tag)}
                                     >
                                         {`#${clan.clan_tag}`}
                                     </button>
-                                    <span className={`temp-copy-inline${copiedClanTag === clan.clan_tag ? " is-visible" : ""}`}>
+                                    <span className={`landing-copy-inline${copiedClanTag === clan.clan_tag ? " is-visible" : ""}`}>
                                         ✓ Copied
                                     </span>
                                 </span>
@@ -189,8 +189,8 @@ function Temp() {
                     ))}
                 </div>
 
-                <div className="temp-load-more-wrap">
-                    <Link to="/looking-for-clan" className="temp-btn temp-btn-primary">
+                <div className="landing-load-more-wrap">
+                    <Link to="/looking-for-clan" className="landing-btn landing-btn-primary">
                         See More
                     </Link>
                 </div>
@@ -200,4 +200,4 @@ function Temp() {
     )
 }
 
-export default Temp;
+export default Landing;

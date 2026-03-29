@@ -7,7 +7,7 @@ import Recruiter from './Recruiter'
 import LookingForClan from './LookingForClan';
 import Layout from "./components/Layout"
 import ClanDetails from "./ClanDetails"
-import Temp from "./Temp"
+import Landing from "./Landing"
 import LoadingScreen from "./components/LoadingScreen";
 
 function DashboardRouteGuard() {
@@ -31,8 +31,8 @@ root.render(
       <Routes>
 
         <Route element={<Layout />}>
-          <Route path="/temp" element={<Temp />} />
-          <Route path="/" element={<Temp />} />
+          <Route path="/landing" element={<Landing />} />
+          <Route path="/" element={<Landing />} />
           <Route path="/dashboard" element={<DashboardRouteGuard />} />
           <Route path="/login" element={<Login />} />
           <Route path="/recruit" element={<Recruiter/>} />

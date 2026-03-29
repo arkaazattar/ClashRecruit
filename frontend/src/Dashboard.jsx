@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router";
-import { useOutletContext } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import LoadingScreen from "./components/LoadingScreen";
 import usePageTitle from "./hooks/usePageTitle";
 import "./Dashboard.css";
@@ -80,13 +79,28 @@ function normalizeTagValue(tagValue) {
   return String(tagValue).trim().replace(/^#+/, "");
 }
 
+function normalizeSavedClanTag(tagValue) {
+  if (!tagValue) {
+    return null;
+  }
+
+  const normalized = String(tagValue).trim().replace(/^#+/, "");
+  if (!normalized) {
+    return null;
+  }
+
+  return normalized;
+}
+
 function Dashboard() {
   usePageTitle("Dashboard | ClashRecruit")
-  
-  const navigate = useNavigate();
+
   const [loading, setLoading] = useState(true);
   const [townHallImage, setTownHallImage] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
+  const [savedClans, setSavedClans] = useState([]);
+  const [savedClansError, setSavedClansError] = useState("");
+  const [savedClansModalOpen, setSavedClansModalOpen] = useState(false);
   const [copiedTag, setCopiedTag] = useState("");
   const copyResetTimerRef = useRef(null);
   const { user, townhall, townhallWeaponLevel, recruitStatus, hasActiveListing, sessionStateLoaded } = useOutletContext();
@@ -112,14 +126,31 @@ function Dashboard() {
         .then((res) => res.json())
         .then((data) => normalizeUserInfo(data))
         .catch(() => null),
+      fetch("/saved-clans", { credentials: "include" })
+        .then(async (res) => {
+          if (!res.ok) {
+            throw new Error("Saved clans are temporarily unavailable.");
+          }
+          return res.json();
+        })
+        .then((data) => {
+          const savedClanList = Array.isArray(data.saved_clans) ? data.saved_clans : [];
+          return { savedClanList, savedError: "" };
+        })
+        .catch((error) => ({
+          savedClanList: [],
+          savedError: error.message || "Saved clans are temporarily unavailable.",
+        })),
     ])
-      .then(([nextTownHallImage, nextUserInfo]) => {
+      .then(([nextTownHallImage, nextUserInfo, nextSaved]) => {
         if (!isMounted) {
           return;
         }
 
         setTownHallImage(nextTownHallImage);
         setUserInfo(nextUserInfo);
+        setSavedClans(nextSaved.savedClanList);
+        setSavedClansError(nextSaved.savedError);
       })
       .finally(() => {
         if (!isMounted) {
@@ -133,14 +164,6 @@ function Dashboard() {
       isMounted = false;
     };
   }, [sessionStateLoaded, townhall, townhallWeaponLevel, normalizedUser]);
-
-  const Recruiter = () => {
-    navigate("/recruit");
-  };
-
-  const Recruitee = () => {
-    navigate("/looking-for-clan");
-  };
 
   const copyTag = async (tag) => {
     if (!tag) {
@@ -180,6 +203,17 @@ function Dashboard() {
   const canManageListing = canRecruit;
   const listingExists = Boolean(hasActiveListing);
   const listingChip = getListingChipMeta();
+  const hasSavedClans = savedClans.length > 0;
+  const savedClansPreview = savedClans.slice(0, 2);
+  const remainingSavedClansCount = Math.max(savedClans.length - savedClansPreview.length, 0);
+
+  const openSavedClansModal = () => {
+    setSavedClansModalOpen(true);
+  };
+
+  const closeSavedClansModal = () => {
+    setSavedClansModalOpen(false);
+  };
 
   function getListingChipMeta() {
     if (!isInClan) {
@@ -199,9 +233,9 @@ function Dashboard() {
             <p className="dashboard-listing-text">Join a clan to unlock recruiting features.</p>
           </div>
           <div className="dashboard-listing-actions">
-            <button type="button" className="dashboard-link-btn dashboard-listing-btn is-primary" onClick={Recruitee}>
+            <Link to="/looking-for-clan" className="dashboard-link-btn dashboard-listing-btn is-primary">
               Find a Clan
-            </button>
+            </Link>
           </div>
         </>
       );
@@ -214,9 +248,9 @@ function Dashboard() {
             <p className="dashboard-listing-text">Your clan doesn&apos;t have an active recruiting listing.</p>
           </div>
           <div className="dashboard-listing-actions">
-            <button type="button" className="dashboard-link-btn dashboard-listing-btn is-primary" onClick={Recruitee}>
+            <Link to="/looking-for-clan" className="dashboard-link-btn dashboard-listing-btn is-primary">
               Browse Listings
-            </button>
+            </Link>
           </div>
           <p className="dashboard-listing-helper">You need to be Elder or higher to create one.</p>
         </>
@@ -230,9 +264,9 @@ function Dashboard() {
             <p className="dashboard-listing-text">Your clan already has an active recruiting listing.</p>
           </div>
           <div className="dashboard-listing-actions">
-            <button type="button" className="dashboard-link-btn dashboard-listing-btn is-primary" onClick={Recruitee}>
+            <Link to="/looking-for-clan" className="dashboard-link-btn dashboard-listing-btn is-primary">
               Browse Listings
-            </button>
+            </Link>
           </div>
           <p className="dashboard-listing-helper">You need to be Elder or higher to manage it.</p>
         </>
@@ -246,12 +280,12 @@ function Dashboard() {
             <p className="dashboard-listing-text">Create a listing to start receiving interested players.</p>
           </div>
           <div className="dashboard-listing-actions">
-            <button type="button" className="dashboard-link-btn dashboard-listing-btn is-primary" onClick={Recruiter}>
+            <Link to="/recruit" className="dashboard-link-btn dashboard-listing-btn is-primary">
               Create Listing
-            </button>
-            <button type="button" className="dashboard-link-btn dashboard-listing-btn" onClick={Recruitee}>
+            </Link>
+            <Link to="/looking-for-clan" className="dashboard-link-btn dashboard-listing-btn">
               Browse Listings
-            </button>
+            </Link>
           </div>
         </>
       );
@@ -263,12 +297,12 @@ function Dashboard() {
           <p className="dashboard-listing-text">Your recruiting listing is live and visible to players.</p>
         </div>
         <div className="dashboard-listing-actions">
-          <button type="button" className="dashboard-link-btn dashboard-listing-btn is-primary" onClick={Recruiter}>
+          <Link to="/recruit" className="dashboard-link-btn dashboard-listing-btn is-primary">
             Manage Listing
-          </button>
-          <button type="button" className="dashboard-link-btn dashboard-listing-btn" onClick={Recruitee}>
+          </Link>
+          <Link to="/looking-for-clan" className="dashboard-link-btn dashboard-listing-btn">
             Browse Listings
-          </button>
+          </Link>
         </div>
       </>
     );
@@ -281,6 +315,27 @@ function Dashboard() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!savedClansModalOpen) {
+      return undefined;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    const handleEscClose = (event) => {
+      if (event.key === "Escape") {
+        closeSavedClansModal();
+      }
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleEscClose);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleEscClose);
+    };
+  }, [savedClansModalOpen]);
 
   if (loading) {
     return <LoadingScreen />;
@@ -313,22 +368,20 @@ function Dashboard() {
             </div>
 
             <div className="dashboard-actions">
-              <button
-                type="button"
+              <Link
+                to="/looking-for-clan"
                 className="dashboard-btn dashboard-btn-primary"
-                onClick={Recruitee}
               >
                 Look for Clans
-              </button>
+              </Link>
 
               {canRecruit && (
-                <button
-                  type="button"
+                <Link
+                  to="/recruit"
                   className="dashboard-btn dashboard-btn-secondary"
-                  onClick={Recruiter}
                 >
                   Recruit
-                </button>
+                </Link>
               )}
             </div>
           </div>
@@ -401,7 +454,7 @@ function Dashboard() {
           <aside className="dashboard-secondary-column">
             <article className="dashboard-section-card dashboard-current-clan-card">
               <header className="dashboard-section-header">
-                <h2>Current Clan</h2>
+                <h2>Your Clan</h2>
               </header>
               <div className="dashboard-current-clan-grid">
                 <div className="dashboard-current-clan-row">
@@ -439,27 +492,123 @@ function Dashboard() {
                 <h2>Saved Clans</h2>
               </header>
               <div className="dashboard-saved-list">
-                <div className="dashboard-saved-item">
-                  <p className="dashboard-saved-name">Saved Clan</p>
-                  <p className="dashboard-saved-meta">Quick access</p>
-                </div>
-                <div className="dashboard-saved-item">
-                  <p className="dashboard-saved-name">Saved Clan</p>
-                  <p className="dashboard-saved-meta">Quick access</p>
-                </div>
-                <div className="dashboard-saved-item">
-                  <p className="dashboard-saved-name">Saved Clan</p>
-                  <p className="dashboard-saved-meta">Quick access</p>
-                </div>
-                <button type="button" className="dashboard-link-btn dashboard-saved-footer-btn" onClick={Recruitee}>
+                {savedClansError && (
+                  <p className="dashboard-saved-empty">{savedClansError}</p>
+                )}
+
+                {!savedClansError && !hasSavedClans && (
+                  <p className="dashboard-saved-empty">Save clans from search to keep a shortlist here.</p>
+                )}
+
+                {!savedClansError && hasSavedClans && savedClansPreview.map((savedClan) => {
+                  const savedClanTag = normalizeSavedClanTag(savedClan.clan_tag);
+                  const savedClanTagForRoute = savedClanTag || "";
+                  const savedClanName = savedClan.name || savedClan.clan_info?.name || savedClanTag || "Saved Clan";
+                  const savedClanLocation = savedClan.clan_info?.location?.name;
+                  const savedClanMeta = savedClanLocation || (savedClan.listing_available ? "Listing active" : "Listing unavailable");
+
+                  if (!savedClanTagForRoute) {
+                    return (
+                      <div key={savedClanName} className="dashboard-saved-item">
+                        <div>
+                          <p className="dashboard-saved-name">{savedClanName}</p>
+                          <p className="dashboard-saved-meta">{savedClanMeta}</p>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <Link
+                      key={savedClanTagForRoute}
+                      to={`/looking-for-clan/${savedClanTagForRoute}`}
+                      className="dashboard-saved-item dashboard-saved-item-clickable"
+                    >
+                      <div>
+                        <p className="dashboard-saved-name">{savedClanName}</p>
+                        <p className="dashboard-saved-meta">{savedClanMeta}</p>
+                      </div>
+                    </Link>
+                  );
+                })}
+
+                {!savedClansError && remainingSavedClansCount > 0 && (
+                  <p className="dashboard-saved-more">{`+${remainingSavedClansCount} more saved`}</p>
+                )}
+
+                {!savedClansError && hasSavedClans && (
+                  <button type="button" className="dashboard-link-btn dashboard-saved-footer-btn" onClick={openSavedClansModal}>
+                    {`View all ${savedClans.length} saved clans`}
+                  </button>
+                )}
+
+                <Link to="/looking-for-clan" className="dashboard-link-btn dashboard-saved-footer-btn">
                   View Clan Search
-                </button>
+                </Link>
               </div>
             </article>
 
           </aside>
         </section>
       </section>
+
+      {savedClansModalOpen && (
+        <div className="dashboard-saved-modal-overlay" onClick={closeSavedClansModal} role="presentation">
+          <section
+            className="dashboard-saved-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Saved Clans"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="dashboard-saved-modal-header">
+              <h2>Saved Clans</h2>
+              <button
+                type="button"
+                className="dashboard-saved-modal-close"
+                onClick={closeSavedClansModal}
+                aria-label="Close saved clans modal"
+              >
+                <span aria-hidden="true">×</span>
+              </button>
+            </header>
+
+            <div className="dashboard-saved-modal-list">
+              {savedClans.map((savedClan) => {
+                const savedClanTag = normalizeSavedClanTag(savedClan.clan_tag);
+                const savedClanTagForRoute = savedClanTag || "";
+                const savedClanName = savedClan.name || savedClan.clan_info?.name || savedClanTag || "Saved Clan";
+                const savedClanLocation = savedClan.clan_info?.location?.name;
+                const savedClanMeta = savedClanLocation || (savedClan.listing_available ? "Listing active" : "Listing unavailable");
+
+                if (!savedClanTagForRoute) {
+                  return (
+                    <div key={`modal-${savedClanName}`} className="dashboard-saved-item">
+                      <div>
+                        <p className="dashboard-saved-name">{savedClanName}</p>
+                        <p className="dashboard-saved-meta">{savedClanMeta}</p>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <Link
+                    key={`modal-${savedClanTagForRoute}`}
+                    to={`/looking-for-clan/${savedClanTagForRoute}`}
+                    className="dashboard-saved-item dashboard-saved-item-clickable"
+                  >
+                    <div>
+                      <p className="dashboard-saved-name">{savedClanName}</p>
+                      <p className="dashboard-saved-meta">{savedClanMeta}</p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
