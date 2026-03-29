@@ -9,6 +9,7 @@ from .routes.recruiter_route import recruiter_bp
 from .routes.recruitee_route import recruitee_bp
 from .routes.search_clans_route import search_clans_bp
 from .routes.locations_route import locations_bp
+from .routes.saved_clans_route import saved_clans_bp
 
 app = Flask(__name__)
 app.secret_key = FLASKSECRETKEY
@@ -27,6 +28,7 @@ app.register_blueprint(recruiter_bp)
 app.register_blueprint(recruitee_bp)
 app.register_blueprint(search_clans_bp)
 app.register_blueprint(locations_bp)
+app.register_blueprint(saved_clans_bp)
 
 if __name__ == "__main__":
     app.run(port=5000)
