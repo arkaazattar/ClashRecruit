@@ -113,14 +113,14 @@ In frontend/package.json:
 This allows frontend requests like:
 
 ```
-fetch("/dashboard", { 
+fetch("/session-state", { 
     credentials: "include" 
 })
 ```
 
 to be forwarded automatically to:
 
-http://127.0.0.1:5000/dashboard
+http://127.0.0.1:5000/session-state
 
 This avoids hardcoding backend URLs and prevents CORS issues during local development.
 

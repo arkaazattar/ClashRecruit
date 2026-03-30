@@ -1,4 +1,14 @@
 import requests
+from typing import Literal
+
+REQUESTOPTIONS = Literal[
+    "expLevel",
+    "leagueTier",
+    "builderBaseLeague",
+    "builderHallLevel",
+    "clan"
+]
+
 class API:
     def __init__(self, user_tag, api, headers):
         self.headers = headers
@@ -13,6 +23,7 @@ class API:
         self.league = 0
         self.builder_trophies = 0
         self.townhall = 0
+        self.townhallWeaponLevel = None
     def check_player_api(self):
         
         url = f"https://api.clashofclans.com/v1/players/%23{self.user_tag}/verifytoken"
@@ -31,7 +42,7 @@ class API:
         else: self.reason = self.apistorage  
         return self.token 
     
-    def check_player(self):
+    def check_player(self, request: list[REQUESTOPTIONS] | None = None):
         if self.user_tag == "Guest":
             self.reason = "User is a Guest"
             return False
@@ -48,7 +59,7 @@ class API:
              self.reason = "Invalid IP"
              return False
         
-        if self.check_player_api() == False: 
+        if self.json_data["token"] and self.check_player_api() == False: 
             return False
 
         self.league = self.storage.get("leagueTier").get("name")
@@ -57,14 +68,32 @@ class API:
         else: self.league = 0
         self.townhall = self.storage.get("townHallLevel")
         self.builder_trophies = self.storage.get("builderBaseTrophies")
-        self.townhall = self.storage.get("townHallLevel")
-        self.builder_trophies = self.storage.get("builderBaseTrophies")
+        
+        if self.townhall <= 17:
+            self.townhallWeaponLevel = self.storage.get("townHallWeaponLevel")
     
         self.recruiter_status = self.recruiting(self.storage)
         self.clantag = self.storage.get("clan", {}).get("tag", None)
         if self.clantag: 
             self.clantag = self.clantag[1:]            
         self.user_name = self.storage.get("name")
+
+        if request:
+            response = {
+                "player_tag": self.user_tag
+            }
+
+            for request_key in request:
+                response[request_key] = self.storage.get(request_key, None)
+
+            if response.get("clan", None):
+                response["clan"]["role"] = self.storage.get("role")
+                response["num_items"] = 6
+            else:
+                response["num_items"] = 5
+
+            return response
+
         return True
     
     def recruiting(self, data : dict): 
@@ -72,7 +101,6 @@ class API:
         
         clan_tag = data.get("clan", {}).get("tag", 0)
         if(clan_tag == 0):
-            print("not in clan")
             return False
         
         if(data["role"].lower() not in roles):

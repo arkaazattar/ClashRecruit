@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import "./LookingForClan.css";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate, useOutletContext } from "react-router-dom";
+import { formatWarFrequency, WAR_FREQUENCY_OPTIONS } from "./utils/warFrequency";
+import usePageTitle from "./hooks/usePageTitle"
 import LoadingScreen from "./components/LoadingScreen";
+import "./LookingForClan.css";
 
 const PAGE_SIZE = 10;
 
@@ -9,10 +11,36 @@ function toNumberOrNull(value) {
     return value === "" || value === null ? null : Number(value);
 }
 
+function normalizeClanTag(tagValue) {
+    if (!tagValue) {
+      return null;
+    }
+
+    const normalized = String(tagValue).trim().replace(/^#+/, "");
+    if (!normalized) {
+      return null;
+    }
+
+    return normalized;
+}
+
 function LookingForClan() {
-    const navigate = useNavigate()
+    usePageTitle("Find a Clan | ClashRecruit")
+    
+    const navigate = useNavigate();
+    const { user, sessionStateLoaded } = useOutletContext();
+    const hasMountedNameEffect = useRef(false);
+    const debounceTimerRef = useRef(null);
+    const requestControllerRef = useRef(null);
+    const saveErrorTimerRef = useRef(null);
+    const [savedClanTags, setSavedClanTags] = useState([]);
+    const [saveErrorTag, setSaveErrorTag] = useState("");
+    const [saveErrorText, setSaveErrorText] = useState("");
+    const [savingClanTag, setSavingClanTag] = useState("");
     const [Locations, setLocations] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState("");
+    const [filterError, setFilterError] = useState("");
     const [clans, setClans] = useState([]);
     const [offset, setOffset] = useState(0);
     const [hasMore, setHasMore] = useState(true);
@@ -29,19 +57,40 @@ function LookingForClan() {
       clanPoints: "",
       location: "",
     });
-    
+    const filtersRef = useRef(Filters);
+    const isLoggedIn = Boolean(user && user !== "Guest");
+    const savedTagSet = new Set(savedClanTags);
+
     useEffect(() => {
-      const loadData = async() => {
-        await Promise.all(
-          [
-            getClans(0, false),
-            getLocations()
-          ]
-        );
-        setLoading(false);
+      filtersRef.current = Filters;
+    }, [Filters]);
+
+    useEffect(() => {
+      return () => {
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+        }
+        if (requestControllerRef.current) {
+          requestControllerRef.current.abort();
+        }
+        if (saveErrorTimerRef.current) {
+          clearTimeout(saveErrorTimerRef.current);
+        }
       };
-      loadData();
     }, []);
+
+    const showInlineSaveError = (clanTag, message) => {
+      setSaveErrorTag(clanTag);
+      setSaveErrorText(message);
+      if (saveErrorTimerRef.current) {
+        clearTimeout(saveErrorTimerRef.current);
+      }
+      saveErrorTimerRef.current = setTimeout(() => {
+        setSaveErrorTag("");
+        setSaveErrorText("");
+        saveErrorTimerRef.current = null;
+      }, 2400);
+    };
     
     const handleFilterChange = (e) => {
       const { name, value } = e.target;
@@ -51,67 +100,248 @@ function LookingForClan() {
       }));
     };
 
+    const handleNameChange = (e) => {
+      const { value } = e.target;
+      setFilters((prev) => ({
+        ...prev,
+        name: value,
+      }));
+    };
+
     async function getLocations(){
       const rsp = await fetch("/clash_locations");
+      if (!rsp.ok) {
+        throw new Error("Failed to load locations.");
+      }
       const locations = await rsp.json()
-      setLocations(locations)
+      setLocations(Array.isArray(locations) ? locations : [])
     }
     async function getClans(nextOffset = 0, append = false){
       const rsp = await fetch(`/recruitee?limit=${PAGE_SIZE}&offset=${nextOffset}`)
-      const data = await rsp.json()
-      if (append) {
-        setClans((prev) => [...prev, ...data])
-      } else {
-        setClans(data)
+      if (!rsp.ok) {
+        throw new Error("Failed to load clans.");
       }
-      setOffset(nextOffset + data.length)
-      setHasMore(data.length === PAGE_SIZE)
+      const data = await rsp.json()
+      const normalizedData = Array.isArray(data) ? data : [];
+      if (append) {
+        setClans((prev) => [...prev, ...normalizedData])
+      } else {
+        setClans(normalizedData)
+      }
+      setOffset(nextOffset + normalizedData.length)
+      setHasMore(normalizedData.length === PAGE_SIZE)
     }
 
-    const handleFilterSubmit = async (e) => {
-      e.preventDefault();
-      setHasAppliedFilters(true);
-      const response = await fetch("/recruitee", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          filters: {
-            name: Filters.name,
-            minClanLevel: toNumberOrNull(Filters.minClanLevel),
-            clanPoints: toNumberOrNull(Filters.clanPoints),
-            warFrequency: Filters.warFrequency || null,
-            location: Filters.location || null,
-            requirements: {
-              townhall: toNumberOrNull(Filters.minTownhall),
-              league: toNumberOrNull(Filters.minLeague),
-              members: {
-                max: toNumberOrNull(Filters.maxMembers),
-                min: toNumberOrNull(Filters.minMembers),
-              },
-            },
-          },
-        }),
+    const getSavedClans = useCallback(async () => {
+      if (!isLoggedIn) {
+        setSavedClanTags([]);
+        return;
+      }
+
+      const response = await fetch("/saved-clans", {
+        credentials: "include",
       });
 
+      if (!response.ok) {
+        setSavedClanTags([]);
+        return;
+      }
+
       const data = await response.json();
-      setClans(data);
-      setHasMore(false);
-      setOffset(data.length);
-      setIsLoadingMore(false);
-    };
+      const tags = Array.isArray(data.saved_clans)
+        ? data.saved_clans
+            .map((savedClan) => normalizeClanTag(savedClan.clan_tag))
+            .filter(Boolean)
+        : [];
+      setSavedClanTags(tags);
+    }, [isLoggedIn]);
+
+    useEffect(() => {
+      if (!sessionStateLoaded) {
+        return;
+      }
+
+      const loadData = async() => {
+        setLoading(true);
+        setLoadError("");
+
+        try {
+          const loadJobs = [getClans(0, false), getLocations()];
+          if (isLoggedIn) {
+            loadJobs.push(getSavedClans());
+          } else {
+            setSavedClanTags([]);
+          }
+
+          await Promise.all(loadJobs);
+        } catch {
+          setLoadError("Could not load clan listings right now. Please try again.");
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadData();
+    }, [isLoggedIn, getSavedClans, sessionStateLoaded]);
+
+    const handleFilterSubmit = useCallback(async (e) => {
+      if (e) {
+        e.preventDefault();
+      }
+
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      if (requestControllerRef.current) {
+        requestControllerRef.current.abort();
+      }
+      const controller = new AbortController();
+      requestControllerRef.current = controller;
+
+      setHasAppliedFilters(true);
+      setFilterError("");
+      const activeFilters = filtersRef.current;
+
+      try {
+        const response = await fetch("/recruitee", {
+          method: "POST",
+          signal: controller.signal,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            filters: {
+              name: activeFilters.name,
+              minClanLevel: toNumberOrNull(activeFilters.minClanLevel),
+              clanPoints: toNumberOrNull(activeFilters.clanPoints),
+              warFrequency: activeFilters.warFrequency || null,
+              location_id: activeFilters.location || null,
+              requirements: {
+                townhall: toNumberOrNull(activeFilters.minTownhall),
+                league: toNumberOrNull(activeFilters.minLeague),
+                members: {
+                  max: toNumberOrNull(activeFilters.maxMembers),
+                  min: toNumberOrNull(activeFilters.minMembers),
+                },
+              },
+            },
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch filtered clans.");
+        }
+
+        const data = await response.json();
+        if (controller.signal.aborted) {
+          return;
+        }
+        setClans(Array.isArray(data) ? data : []);
+        setHasMore(false);
+        setOffset(Array.isArray(data) ? data.length : 0);
+        setIsLoadingMore(false);
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          setFilterError("Could not apply filters right now. Please try again.");
+        }
+      } finally {
+        if (requestControllerRef.current === controller) {
+          requestControllerRef.current = null;
+        }
+      }
+    }, []);
+
+    useEffect(() => {
+      if (!hasMountedNameEffect.current) {
+        hasMountedNameEffect.current = true;
+        return;
+      }
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      debounceTimerRef.current = setTimeout(() => {
+        handleFilterSubmit();
+      }, 250);
+    }, [Filters.name, handleFilterSubmit]);
+
+
 
     const handleLoadMore = async () => {
       if (!hasMore || isLoadingMore || hasAppliedFilters) {
         return;
       }
       setIsLoadingMore(true);
-      await getClans(offset, true);
-      setIsLoadingMore(false);
+      try {
+        await getClans(offset, true);
+      } finally {
+        setIsLoadingMore(false);
+      }
     };
 
-if (loading){
+    const handleToggleSaveClan = async (clanTag) => {
+      if (!isLoggedIn) {
+        return;
+      }
+
+      const normalizedTag = normalizeClanTag(clanTag);
+      if (!normalizedTag) {
+        return;
+      }
+
+      setSavingClanTag(normalizedTag);
+      setSaveErrorTag("");
+      setSaveErrorText("");
+
+      const isSaved = savedTagSet.has(normalizedTag);
+      if (!isSaved && savedClanTags.length >= 10) {
+        setSavingClanTag("");
+        showInlineSaveError(normalizedTag, "Can only save 10!");
+        return;
+      }
+
+      const encodedTag = encodeURIComponent(normalizedTag);
+
+      try {
+        if (isSaved) {
+          const response = await fetch(`/saved-clans/${encodedTag}`, {
+            method: "DELETE",
+            credentials: "include",
+          });
+          const data = await response.json();
+
+          if (!response.ok) {
+            showInlineSaveError(normalizedTag, data.message || "Try again");
+            return;
+          }
+
+          setSavedClanTags((prev) => prev.filter((tag) => tag !== normalizedTag));
+          return;
+        }
+
+        const response = await fetch(`/saved-clans/${encodedTag}`, {
+          method: "POST",
+          credentials: "include",
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          if (response.status === 409) {
+            showInlineSaveError(normalizedTag, "Can only save 10!");
+            return;
+          }
+          showInlineSaveError(normalizedTag, data.message || "Try again");
+          return;
+        }
+
+        setSavedClanTags((prev) => (prev.includes(normalizedTag) ? prev : [...prev, normalizedTag]));
+      } catch {
+        showInlineSaveError(normalizedTag, "Network error");
+      } finally {
+        setSavingClanTag("");
+      }
+    };
+
+if (!sessionStateLoaded || loading){
   return <LoadingScreen />;
 }
 
@@ -125,7 +355,7 @@ return (
     <form className="looking-filters" onSubmit={handleFilterSubmit}>
       <label>
         Name
-        <input type="text" name="name" value={Filters.name} onChange={handleFilterChange} />
+        <input type="text" name="name" value={Filters.name} onChange={handleNameChange} />
       </label>
 
       <label>
@@ -154,15 +384,14 @@ return (
       </label>
 
       <label>
-        War Freq
+        War Frequency
         <select name="warFrequency" value={Filters.warFrequency} onChange={handleFilterChange}>
           <option value="">All</option>
-          <option value="always">Always</option>
-          <option value="oncePerWeek">Once a week</option>
-          <option value="twicePerWeek">Twice a week</option>
-          <option value="rarely">Rarely</option>
-          <option value="never">Never</option>
-          <option value="unknown">Unknown</option>
+          {WAR_FREQUENCY_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
         </select>
       </label>
 
@@ -176,7 +405,7 @@ return (
         <select name="location" value={Filters.location} onChange={handleFilterChange}>
           <option value="">All Locations</option>
           {Locations.map((location) => (
-            <option value={location.name}>
+            <option key={location.id} value={location.id}>
               {location.name}
             </option>
           ))}
@@ -189,36 +418,72 @@ return (
         </button>
       </div>
     </form>
+    {loadError && (
+      <p className="looking-request-error" role="status">{loadError}</p>
+    )}
+    {filterError && (
+      <p className="looking-request-error" role="status">{filterError}</p>
+    )}
 
 
 
     <div className="listing-grid">
-      {clans.map((clan) => (
-        <button
-          key={clan.clan_tag}
-          type="button"
-          className="listing-card"
-          onClick={() => navigate(`/looking-for-clan/${clan.clan_tag}`, {clanTag:clan.clan_tag})}
-        >
-          <div className="listing-top">
-            <h3>{clan.name || clan.clan_info?.name || clan.clan_tag}</h3>
-            <span className="listing-location">{(clan.clan_info.location["name"])}</span>
-          </div>
+      {clans.map((clan) => {
+        const normalizedClanTag = normalizeClanTag(clan.clan_tag);
+        const isSaved = normalizedClanTag ? savedTagSet.has(normalizedClanTag) : false;
+        const isUpdatingSave = normalizedClanTag ? savingClanTag === normalizedClanTag : false;
+        const hasSaveError = normalizedClanTag ? saveErrorTag === normalizedClanTag : false;
 
-          <div className="listing-stats">
-            <p><strong>Townhall:</strong> {clan.requirements[2]}</p>
-            <p><strong>League:</strong> {clan.requirements[0]}</p>
-            {clan.clan_info.warFrequency != "unknown" &&
-              <p><strong>War Freq:</strong> {clan.clan_info["warFrequency"]}</p>
-            }
-            <p><strong>Clan Points:</strong> {clan.clan_info["clanPoints"]}</p>
-          </div>
+        return (
+          <article
+            key={clan.clan_tag}
+            className="listing-card listing-card-clickable"
+            onClick={() => navigate(`/looking-for-clan/${clan.clan_tag}`, {clanTag:clan.clan_tag})}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                navigate(`/looking-for-clan/${clan.clan_tag}`, {clanTag:clan.clan_tag});
+              }
+            }}
+          >
+            <div className="listing-top">
+              <h3>{clan.name || clan.clan_info?.name || clan.clan_tag}</h3>
+              <span className="listing-location">{clan.clan_info?.location?.name || "Unknown"}</span>
+            </div>
 
-          <p className="listing-description">
-            {clan.clan_info["description"] || "No description provided."}
-          </p>
-        </button>
-      ))}
+            <div className="listing-stats">
+              <p><strong>Townhall:</strong> {clan.requirements?.[2] ?? "?"}</p>
+              <p><strong>League:</strong> {clan.requirements?.[0] ?? "?"}</p>
+              {clan.clan_info?.warFrequency !== "unknown" &&
+                <p><strong>War Freq:</strong> {formatWarFrequency(clan.clan_info?.warFrequency)}</p>
+              }
+              <p><strong>Clan Points:</strong> {clan.clan_info?.clanPoints ?? 0}</p>
+            </div>
+
+            <p className="listing-description">
+              {clan.clan_info?.description || "No description provided."}
+            </p>
+
+            <div className="listing-card-actions">
+              {isLoggedIn && (
+                <button
+                  type="button"
+                  className={`listing-action-btn listing-save-btn${isSaved ? " is-saved" : ""}${hasSaveError ? " has-error" : ""}`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleToggleSaveClan(clan.clan_tag);
+                  }}
+                  disabled={isUpdatingSave}
+                >
+                  {isUpdatingSave ? "Updating..." : (hasSaveError ? saveErrorText : (isSaved ? "Saved" : "Save"))}
+                </button>
+              )}
+            </div>
+          </article>
+        );
+      })}
     </div>
     {!hasAppliedFilters && hasMore && (
       <div className="listing-load-more-wrap">

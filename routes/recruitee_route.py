@@ -37,32 +37,31 @@ def _get_requested_offset():
 @recruitee_bp.get("/recruitee")
 def recruitee_get():
 
-    if request.method == 'GET':
-        player_name = session.get("player_name")
-        default_limit = 10
-        requested_limit = _get_requested_limit(default_limit)
-        requested_offset = _get_requested_offset()
+    player_name = session.get("player_name", None)
+    default_limit = 10
+    requested_limit = _get_requested_limit(default_limit)
+    requested_offset = _get_requested_offset()
 
-        if player_name == "Guest":
-            data = list(
-                clan_collection.find({}, {"_id": 0})
-                .sort([("last_updated", -1), ("clan_tag", 1)])
-                .skip(requested_offset)
-                .limit(requested_limit)
-            )
-        else:
-            data = list(
-                clan_collection.find(
-                    {
-                        "requirements.0": {"$lte": session.get("player_league")},
-                        "requirements.1": {"$lte": session.get("player_builderbase_trophies")},
-                        "requirements.2": {"$lte": session.get("player_townhall")},
-                    },
-                    {"_id": 0}
-                ).sort([("last_updated", -1), ("clan_tag", 1)]).skip(requested_offset).limit(requested_limit)
-            )
+    if not player_name or player_name == "Guest":  
+        data = list(
+            clan_collection.find({}, {"_id": 0})
+            .sort([("last_updated", -1), ("clan_tag", 1)])
+            .skip(requested_offset)
+            .limit(requested_limit)
+        )
+    else:
+        data = list(
+            clan_collection.find(
+                {
+                    "requirements.0": {"$lte": session.get("player_league")},
+                    "requirements.1": {"$lte": session.get("player_builderbase_trophies")},
+                    "requirements.2": {"$lte": session.get("player_townhall")},
+                },
+                {"_id": 0}
+            ).sort([("last_updated", -1), ("clan_tag", 1)]).skip(requested_offset).limit(requested_limit)
+        )
 
-        return jsonify(data)
+    return jsonify(data)
 
 
 @recruitee_bp.post("/recruitee")
@@ -107,12 +106,11 @@ def recruitee_post():
     war_frequency = filters.get("warFrequency", None)
     if war_frequency: query["clan_info.warFrequency"] = war_frequency
 
-    location = filters.get("location", None)
-    if location:
-        query["clan_info.location"] = location
+    location_id = filters.get("location_id", None)
+    if location_id:
+        query["clan_info.location.id"] = int(location_id)
 
     requested_limit = _get_requested_limit(DEFAULT_LIMIT)
-    print(query)
     data = list(
         clan_collection.find(query, {"_id": 0})
         .sort([("last_updated", -1), ("clan_tag", 1)]).limit(requested_limit)

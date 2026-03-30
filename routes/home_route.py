@@ -1,11 +1,11 @@
 from flask import request, session, Blueprint, jsonify
+from ..services.mongo_db_client import clan_collection
 from ..api.clash_api import API
 from ..config import headers
 
 home_bp = Blueprint("home", __name__)
 
 @home_bp.route("/", methods=["POST"])
-
 def home():
     
     data = request.get_json()
@@ -42,3 +42,12 @@ def home():
         "player_name" : name,
         "clan_tag" : clan_tag
     })
+
+@home_bp.route("/database_count", methods=["GET"])
+def database_count():
+    return jsonify({"clan_count": clan_collection.count_documents({})})
+
+@home_bp.route("/logout", methods=["POST"])
+def logout():
+    session.clear()
+    return jsonify({"message": True})

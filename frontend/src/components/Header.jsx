@@ -1,33 +1,28 @@
 import './Header.css';
 import { Link, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { AUTH_STATUS_CHANGED_EVENT } from '../utils/appEvents';
+import logoWithoutText from '../assets/logo_without_text.png';
 
-function Header() {
-    const [user, setUser] = useState(() => sessionStorage.getItem("player_name") || "Guest");
-    const [hasActiveListing, setHasActiveListing] = useState(false);
+function Header({ user , hasActiveListing}) {
     const [open, setOpen] = useState(false);
     const navigate = useNavigate();
-    const isLoggedIn = Boolean(user && user !== "Guest");
+    const normalizedUser = user === "Guest" ? null : user;
+    const isLoggedIn = Boolean(normalizedUser);
+    const displayUser = normalizedUser || "Guest";
+    const dropdownRef = useRef(null);
 
     useEffect(() => {
-        let isMounted = true;
+        const handleDocumentClick = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setOpen(false);
+            }
+        };
 
-        fetch("/dashboard", { credentials: "include" })
-            .then((res) => res.json())
-            .then((data) => {
-                if (!isMounted) return;
-                const username = data.username || "Guest";
-                setUser(username);
-                setHasActiveListing(Boolean(data.has_active_listing));
-                sessionStorage.setItem("player_name", username);
-            })
-            .catch(() => {
-                if (!isMounted) return;
-                setHasActiveListing(false);
-            });
+        document.addEventListener("mousedown", handleDocumentClick);
 
         return () => {
-            isMounted = false;
+            document.removeEventListener("mousedown", handleDocumentClick);
         };
     }, []);
     
@@ -35,56 +30,82 @@ function Header() {
         setOpen(prev => !prev);
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
         sessionStorage.removeItem("player_name");
-        setUser("Guest");
-        setHasActiveListing(false);
         setOpen(false);
+
+        await fetch("/logout", {
+            method: "POST",
+            credentials: "include"
+        });
+
+        window.dispatchEvent(new CustomEvent(AUTH_STATUS_CHANGED_EVENT));
         navigate("/");
     };
     
     const handleSignin = () => {
         setOpen(false);
-        navigate("/");
     };
     
     const handleListings = () => {
         setOpen(false);
-        navigate("/recruit");
     };
+    
+    const handleFindClan = () => {
+        setOpen(false);
+    }
 
     return (
         <header className="header">
-            <Link to='/dashboard' className='logo'>
-                ClashRecruit
+            <Link to='/' className='logo'>
+                <img src={logoWithoutText} alt="ClashRecruit logo" className="logo-image" />
             </Link>
 
             <div className="header-right">
-                <span className="header-divider" aria-hidden="true">|</span>
-                <div className="dropdown">
-                    <button className="user-button" onClick={toggleDropdown}>
-                        {user} ▾
+                {isLoggedIn && (
+                    <Link to="/dashboard" className="header-nav-link">
+                        Dashboard
+                    </Link>
+                )}
+                <span className="header-divider" aria-hidden="true"></span>
+                <div className="dropdown" ref={dropdownRef}>
+                    <button
+                        className="user-button"
+                        onClick={toggleDropdown}
+                        aria-expanded={open}
+                        aria-haspopup="menu"
+                    >
+                        <span className="user-button-copy">
+                            <span className="user-button-label">
+                                {isLoggedIn ? 'Signed in as' : 'Browsing as'}
+                            </span>
+                            <span className="user-button-name">{displayUser} ▾</span>
+                        </span>
                     </button>
 
-                    {open && (
-                        <div className="dropdown-menu">
-                            {isLoggedIn ?(
-                                <button onClick={handleLogout} className="dropdown-item">
-                                    Logout
-                                </button>
-                            ): (
-                                <button onClick={handleSignin} className="dropdown-item"> 
-                                    Login
-                                </button>
-                            )}
+                    <div
+                        className={`dropdown-menu ${open ? "is-open" : "is-closed"}`}
+                        aria-hidden={!open}
+                    >
+                    <Link to="/looking-for-clan" onClick={handleFindClan} className="dropdown-item">
+                            Find a Clan
+                    </Link>
+                        {hasActiveListing && (
+                            <Link to="/recruit" onClick={handleListings} className="dropdown-item">
+                                My Listings
+                            </Link>
+                        )}
+                        {isLoggedIn ?(
+                            <button onClick={handleLogout} className="dropdown-item">
+                                Logout
+                            </button>
+                        ): (
+                            <Link to="/login" onClick={handleSignin} className="dropdown-item"> 
+                                Login
+                            </Link>
+                        )}
 
-                            {hasActiveListing && (
-                                <button onClick={handleListings} className="dropdown-item">
-                                    My Listings
-                                </button>
-                            )}
-                        </div>
-                    )}
+                    </div>
                 </div>
             </div>
         </header>

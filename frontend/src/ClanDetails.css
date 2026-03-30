@@ -2,9 +2,11 @@
     max-width: 900px;
     margin: 0 auto;
     padding: 24px;
+    background: transparent;
 }
 
 .clan-back-btn {
+    display: inline-block;
     border: 1px solid #cbd5e1;
     border-radius: 8px;
     background: #ffffff;
@@ -13,6 +15,7 @@
     font-size: 0.92rem;
     cursor: pointer;
     margin-bottom: 14px;
+    text-decoration: none;
 }
 
 .clan-back-btn:hover {

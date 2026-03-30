@@ -18,4 +18,6 @@ except Exception as e:
 clan_info_db = client["clan_info_db"]
 location_collection = clan_info_db["locations"]
 clan_collection = clan_info_db["clans"]
+user_collection = clan_info_db["users"]
 clan_collection.create_index("expires", expireAfterSeconds=0)
+user_collection.create_index("player_tag", unique=True)

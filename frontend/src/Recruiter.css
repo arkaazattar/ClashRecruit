@@ -2,10 +2,12 @@
     padding: 24px;
     max-width: 900px;
     margin: 0 auto;
+    background: transparent;
 }
 
 .recruiter-loading {
     padding: 24px;
+    background: transparent;
 }
 
 .recruiter-header h2 {
@@ -101,6 +103,13 @@
     color: #0f172a;
 }
 
+.recruiter-secondary-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
 .recruiter-secondary:hover {
     background: #cbd5e1;
 }
@@ -118,9 +127,48 @@
     background: #ffffff;
 }
 
+.recruiter-listing-toggle-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.recruiter-listing-toggle {
+    display: inline-flex;
+    align-items: center;
+}
+
+.recruiter-listing-toggle-input:checked ~ .recruiter-actions .recruiter-listing-toggle {
+    background: #1d4ed8;
+}
+
 .recruiter-update-box {
+    min-height: 0;
+    max-height: 0;
+    margin-top: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-color: transparent;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
+    transition:
+        max-height 0.15s ease,
+        margin-top 0.15s ease,
+        padding-top 0.15s ease,
+        padding-bottom 0.15s ease,
+        opacity 0.05s ease,
+        border-color 0.05s ease;
+}
+
+.recruiter-listing-toggle-input:checked ~ .recruiter-update-box {
+    max-height: 700px;
     margin-top: 14px;
-    min-height: 120px;
+    padding-top: 16px;
+    padding-bottom: 16px;
+    border-color: #d8e0ea;
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .recruiter-status-title {
@@ -169,11 +217,34 @@
 }
 
 .recruiter-delete-confirm {
-    margin-top: 14px;
-    padding: 12px;
+    min-height: 0;
+    max-height: 0;
+    margin-top: 0;
+    padding: 0 12px;
     border: 1px solid #fecaca;
     border-radius: 10px;
     background: #fef2f2;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
+    border-color: transparent;
+    transition:
+        max-height 0.15s ease,
+        margin-top 0.15s ease,
+        padding-top 0.15s ease,
+        padding-bottom 0.15s ease,
+        opacity 0.05s ease,
+        border-color 0.05s ease;
+}
+
+.recruiter-delete-confirm.is-open {
+    max-height: 220px;
+    margin-top: 14px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    opacity: 1;
+    pointer-events: auto;
+    border-color: #fecaca;
 }
 
 .recruiter-delete-confirm-text {
