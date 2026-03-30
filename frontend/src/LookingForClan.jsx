@@ -1,9 +1,13 @@
-import { useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./LookingForClan.css";
 import LoadingScreen from "./components/LoadingScreen";
 
 const PAGE_SIZE = 10;
+const VIEW_MODE = {
+  LISTINGS: "listings",
+  LIVE_API: "live_api",
+};
 
 function toNumberOrNull(value) {
     return value === "" || value === null ? null : Number(value);
@@ -63,11 +67,19 @@ function getClanDescription(clan) {
 }
 
 function getPrimaryStat(clan, isRandomMode) {
-  return isRandomMode ? clan.clanLevel ?? "N/A" : clan.requirements?.[2] ?? "N/A";
+  if (isRandomMode) {
+    return clan.clan_info?.clan_level ?? clan.clanLevel ?? "N/A";
+  }
+
+  return clan.requirements?.[2] ?? "N/A";
 }
 
 function getSecondaryStat(clan, isRandomMode) {
-  return isRandomMode ? clan.members ?? "N/A" : clan.requirements?.[0] ?? "N/A";
+  if (isRandomMode) {
+    return clan.clan_info?.member_count ?? clan.members ?? "N/A";
+  }
+
+  return clan.requirements?.[0] ?? "N/A";
 }
 
 function getWarFrequency(clan) {
@@ -82,8 +94,33 @@ function getClanTag(clan, index) {
   return (clan.clan_tag || clan.tag || `clan-${index}`).replace(/^#/, "");
 }
 
+function getClanSourceLabel(clan) {
+  if (clan.source === "clash_api_import") {
+    return "Imported from API";
+  }
+
+  if (clan.source === "live_listing") {
+    return "Live listing";
+  }
+
+  return "";
+}
+
+function getRandomClanErrorMessage(data) {
+  if (data?.error) {
+    return data.error;
+  }
+
+  if (data?.reason === "badRequest" && data?.message === "At least one filtering parameter must exist") {
+    return "Add at least one Clash API filter before searching.";
+  }
+
+  return "Failed to search Clash API clans.";
+}
+
 function LookingForClan() {
     const navigate = useNavigate()
+    const listingPageCacheRef = useRef({});
     const [Locations, setLocations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [clans, setClans] = useState([]);
@@ -92,8 +129,10 @@ function LookingForClan() {
     const [totalResults, setTotalResults] = useState(0);
     const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
     const [appliedFilterPayload, setAppliedFilterPayload] = useState(null);
-    const [isRandomMode, setIsRandomMode] = useState(false);
-    const [randomError, setRandomError] = useState("");
+    const [viewMode, setViewMode] = useState(VIEW_MODE.LISTINGS);
+    const [apiSearchError, setApiSearchError] = useState("");
+    const [apiSearchAfter, setApiSearchAfter] = useState(null);
+    const [hasApiSearchResults, setHasApiSearchResults] = useState(false);
     const [Filters, setFilters] = useState({
       name: "",
       minTownhall: "",
@@ -133,9 +172,22 @@ function LookingForClan() {
       setLocations(locations)
     }
 
-    async function fetchClanPage(page, filterPayload = appliedFilterPayload) {
+    function getListingCacheKey(page, filterPayload) {
+      return JSON.stringify({
+        page,
+        filterPayload: filterPayload || null,
+      });
+    }
+
+    async function fetchListingPageData(page, filterPayload = appliedFilterPayload, includeTotal = true) {
+      const cacheKey = getListingCacheKey(page, filterPayload);
+      const cached = listingPageCacheRef.current[cacheKey];
+      if (cached && (!includeTotal || typeof cached.total === "number")) {
+        return cached;
+      }
+
       const offset = (page - 1) * PAGE_SIZE;
-      const url = `/recruitee?limit=${PAGE_SIZE}&offset=${offset}`;
+      const url = `/recruitee?limit=${PAGE_SIZE}&offset=${offset}&includeTotal=${includeTotal ? 1 : 0}`;
       const response = filterPayload
         ? await fetch(url, {
             method: "POST",
@@ -147,13 +199,48 @@ function LookingForClan() {
         : await fetch(url);
 
       const payload = await response.json();
-      setClans(payload.items || []);
-      setTotalResults(payload.total || 0);
-      setCurrentPage(page);
+      listingPageCacheRef.current[cacheKey] = payload;
+      return payload;
     }
 
-    async function fetchRandomClans() {
+    async function prefetchListingPage(page, filterPayload = appliedFilterPayload) {
+      if (page < 1) {
+        return;
+      }
+
+      const cacheKey = getListingCacheKey(page, filterPayload);
+      if (listingPageCacheRef.current[cacheKey]) {
+        return;
+      }
+
+      try {
+        await fetchListingPageData(page, filterPayload, false);
+      } catch {
+        // Ignore background prefetch failures and let interactive fetch handle them.
+      }
+    }
+
+    async function fetchClanPage(page, filterPayload = appliedFilterPayload, includeTotal = true) {
+      const payload = await fetchListingPageData(page, filterPayload, includeTotal);
+      setClans(payload.items || []);
+      if (typeof payload.total === "number") {
+        setTotalResults(payload.total);
+      }
+      setCurrentPage(page);
+
+      const totalForPrefetch = typeof payload.total === "number" ? payload.total : totalResults;
+      const totalPagesForPrefetch = Math.max(1, Math.ceil((totalForPrefetch || 0) / PAGE_SIZE));
+      if (page < totalPagesForPrefetch) {
+        void prefetchListingPage(page + 1, filterPayload);
+      }
+    }
+
+    async function fetchRandomClans(after = null, append = false) {
       const payload = buildRandomFilterPayload(Filters, Locations);
+      if (after) {
+        payload.after = after;
+      }
+
       const response = await fetch("/search_clans", {
         method: "POST",
         headers: {
@@ -162,20 +249,33 @@ function LookingForClan() {
         body: JSON.stringify(payload),
       });
       const data = await response.json();
-      setRandomClans(data.items || []);
-      setRandomError((data.items || []).length ? "" : "No random clans matched these filters.");
+      if (!response.ok) {
+        if (!append) {
+          setRandomClans([]);
+          setHasApiSearchResults(false);
+          setApiSearchAfter(null);
+        }
+        setApiSearchError(getRandomClanErrorMessage(data));
+        return;
+      }
+      const nextItems = data.items || [];
+      setRandomClans((prev) => append ? [...prev, ...nextItems] : nextItems);
+      setApiSearchAfter(data.after || null);
+      setHasApiSearchResults(true);
+      setApiSearchError(nextItems.length ? "" : "No Clash API clans matched these filters.");
     }
 
     const handleFilterSubmit = async (e) => {
       e.preventDefault();
-      if (isRandomMode) {
-        await fetchRandomClans();
+      if (viewMode === VIEW_MODE.LIVE_API) {
+        await fetchRandomClans(null, false);
         return;
       }
 
       setHasAppliedFilters(true);
       const payload = buildFilterPayload(Filters);
       setAppliedFilterPayload(payload);
+      listingPageCacheRef.current = {};
       await fetchClanPage(1, payload);
     };
 
@@ -185,15 +285,17 @@ function LookingForClan() {
       }
 
       if (hasAppliedFilters) {
-        await fetchClanPage(nextPage, appliedFilterPayload);
+        await fetchClanPage(nextPage, appliedFilterPayload, false);
       } else {
-        await fetchClanPage(nextPage, null);
+        await fetchClanPage(nextPage, null, false);
       }
     };
 
     const totalPages = Math.max(1, Math.ceil(totalResults / PAGE_SIZE));
     const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
-    const displayedClans = isRandomMode ? randomClans : clans;
+    const isListingsMode = viewMode === VIEW_MODE.LISTINGS;
+    const isApiSearchMode = viewMode === VIEW_MODE.LIVE_API;
+    const displayedClans = isApiSearchMode ? randomClans : clans;
 
 if (loading){
   return <LoadingScreen />;
@@ -203,23 +305,27 @@ return (
   <section className="looking-page">
     <div className="looking-header">
       <h2>Find a Clan</h2>
-      <p>Browse active listings that match your profile.</p>
+      <p>
+        {isApiSearchMode
+          ? "Search clans directly from the Clash of Clans API."
+          : "Browse live listings and imported API clans together."}
+      </p>
     </div>
 
     <div className="looking-mode-toggle">
       <button
         type="button"
-        className={`looking-mode-btn ${!isRandomMode ? "is-active" : ""}`}
-        onClick={() => setIsRandomMode(false)}
+        className={`looking-mode-btn ${isListingsMode ? "is-active" : ""}`}
+        onClick={() => setViewMode(VIEW_MODE.LISTINGS)}
       >
         Browse Listings
       </button>
       <button
         type="button"
-        className={`looking-mode-btn ${isRandomMode ? "is-active" : ""}`}
-        onClick={() => setIsRandomMode(true)}
+        className={`looking-mode-btn ${isApiSearchMode ? "is-active" : ""}`}
+        onClick={() => setViewMode(VIEW_MODE.LIVE_API)}
       >
-        Browse Random Clans
+        Search Clash API
       </button>
     </div>
 
@@ -229,15 +335,19 @@ return (
         <input type="text" name="name" value={Filters.name} onChange={handleFilterChange} />
       </label>
 
-      <label>
-        Min TH
-        <input type="number" name="minTownhall" value={Filters.minTownhall} onChange={handleFilterChange} min={0} />
-      </label>
+      {isListingsMode && (
+        <label>
+          Min TH
+          <input type="number" name="minTownhall" value={Filters.minTownhall} onChange={handleFilterChange} min={0} />
+        </label>
+      )}
 
-      <label>
-        Min League
-        <input type="number" name="minLeague" value={Filters.minLeague} onChange={handleFilterChange} min={0} max={34} />
-      </label>
+      {isListingsMode && (
+        <label>
+          Min League
+          <input type="number" name="minLeague" value={Filters.minLeague} onChange={handleFilterChange} min={0} max={34} />
+        </label>
+      )}
 
       <label>
         Min Members
@@ -284,7 +394,7 @@ return (
         </select>
       </label>
 
-      <div className="looking-filters-actions">
+    <div className="looking-filters-actions">
         <button type="submit" className="looking-filter-submit">
           Apply Filters
         </button>
@@ -294,9 +404,9 @@ return (
 
 
     <div className="listing-grid">
-      {isRandomMode && randomError && (
+    {isApiSearchMode && apiSearchError && (
         <div className="looking-empty-state">
-          <p>{randomError}</p>
+          <p>{apiSearchError}</p>
         </div>
       )}
 
@@ -308,18 +418,24 @@ return (
           onClick={() => navigate(`/looking-for-clan/${getClanTag(clan, index)}/`, {
             state: {
               clanInfo: clan,
-              isRandomMode,
+              isRandomMode: isApiSearchMode,
+              isImportedMode: clan.source === "clash_api_import",
             },
           })}
         >
           <div className="listing-top">
-            <h3>{getClanName(clan)}</h3>
+            <div>
+              <h3>{getClanName(clan)}</h3>
+              {!isApiSearchMode && getClanSourceLabel(clan) && (
+                <span className="listing-location">{getClanSourceLabel(clan)}</span>
+              )}
+            </div>
             <span className="listing-location">{getClanLocation(clan)}</span>
           </div>
 
           <div className="listing-stats">
-            <p><strong>{isRandomMode ? "Clan Level" : "Townhall"}:</strong> {getPrimaryStat(clan, isRandomMode)}</p>
-            <p><strong>{isRandomMode ? "Members" : "League"}:</strong> {getSecondaryStat(clan, isRandomMode)}</p>
+            <p><strong>{isApiSearchMode ? "Clan Level" : "Townhall"}:</strong> {getPrimaryStat(clan, isApiSearchMode)}</p>
+            <p><strong>{isApiSearchMode ? "Members" : "League"}:</strong> {getSecondaryStat(clan, isApiSearchMode)}</p>
             {getWarFrequency(clan) !== "unknown" &&
               <p><strong>War Freq:</strong> {getWarFrequency(clan)}</p>
             }
@@ -332,7 +448,7 @@ return (
         </button>
       ))}
     </div>
-    {!isRandomMode && pageNumbers.length > 1 && (
+    {isListingsMode && pageNumbers.length > 1 && (
       <div className="listing-pagination-wrap">
         {pageNumbers.map((pageNumber) => (
           <button
@@ -344,6 +460,19 @@ return (
             {pageNumber}
           </button>
         ))}
+      </div>
+    )}
+
+    {isApiSearchMode && hasApiSearchResults && (
+      <div className="listing-pagination-wrap">
+        <button
+          type="button"
+          className="listing-page-btn"
+          onClick={() => fetchRandomClans(apiSearchAfter, true)}
+          disabled={!apiSearchAfter}
+        >
+          {apiSearchAfter ? "Load More" : "No More Results"}
+        </button>
       </div>
     )}
 

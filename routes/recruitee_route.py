@@ -1,5 +1,6 @@
 import re
 from flask import Blueprint, session, jsonify, request
+from ..services.import_clash_api_clans import ensure_imported_clan_inventory
 from ..services.mongo_db_client import clan_collection
 
 recruitee_bp = Blueprint("recruitee", __name__)
@@ -34,12 +35,23 @@ def _get_requested_offset():
     return max(0, parsed_offset)
 
 
+def _should_refresh_imported_inventory():
+    return _get_requested_offset() == 0
+
+
+def _should_include_total():
+    return request.args.get("includeTotal", "1") != "0"
+
+
 @recruitee_bp.get("/recruitee")
 def recruitee_get():
     player_name = session.get("player_name")
     default_limit = 10
     requested_limit = _get_requested_limit(default_limit)
     requested_offset = _get_requested_offset()
+
+    if _should_refresh_imported_inventory():
+        ensure_imported_clan_inventory()
 
     if player_name == "Guest":
         base_query = {}
@@ -50,7 +62,7 @@ def recruitee_get():
             "requirements.2": {"$lte": session.get("player_townhall")},
         }
 
-    total = clan_collection.count_documents(base_query)
+    total = clan_collection.count_documents(base_query) if _should_include_total() else None
     items = list(
         clan_collection.find(base_query, {"_id": 0})
         .sort([("last_updated", -1), ("clan_tag", 1)])
@@ -80,6 +92,9 @@ def recruitee_post():
         if data is None:
             return jsonify({"error": "Clan not found"}), 404
         return jsonify(data)
+
+    if _should_refresh_imported_inventory():
+        ensure_imported_clan_inventory()
 
     filters = raw_form.get("filters", {})
     query = {}
@@ -111,9 +126,9 @@ def recruitee_post():
 
     location = filters.get("location", None)
     if location:
-        query["clan_info.location"] = location
+        query["clan_info.location.name"] = location
 
-    total = clan_collection.count_documents(query)
+    total = clan_collection.count_documents(query) if _should_include_total() else None
     items = list(
         clan_collection.find(query, {"_id": 0})
         .sort([("last_updated", -1), ("clan_tag", 1)])

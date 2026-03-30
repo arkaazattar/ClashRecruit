@@ -31,6 +31,7 @@ function ClanDetails() {
     const [error, setError] = useState("");
     const stateClanInfo = location.state?.clanInfo;
     const isRandomMode = location.state?.isRandomMode;
+    const isImportedMode = location.state?.isImportedMode;
 
     useEffect(() => {
         if (stateClanInfo) {
@@ -39,7 +40,9 @@ function ClanDetails() {
             return;
         }
 
-        fetch("/recruitee", {
+        const endpoint = isImportedMode ? "/imported_clans" : "/recruitee";
+
+        fetch(endpoint, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -62,7 +65,7 @@ function ClanDetails() {
             .catch((err) => {
                 setError(err.message);
             });
-    }, [clanTag, stateClanInfo]);
+    }, [clanTag, stateClanInfo, isImportedMode]);
 
     if (error) {
         return <section className="clan-details-page">{error}</section>;
@@ -109,7 +112,8 @@ function ClanDetails() {
                     {!isRandomMode && clanInfo.player_tag && <p><strong>Posted by:</strong> {clanInfo.player_tag}</p>}
                     {!isRandomMode && clanInfo.last_updated && <p><strong>Last updated:</strong> {new Date(clanInfo.last_updated).toLocaleDateString()}</p>}
                     {!isRandomMode && clanInfo.expires && <p><strong>Expires:</strong> {new Date(clanInfo.expires).toLocaleDateString()}</p>}
-                    {isRandomMode && <p><strong>Source:</strong> Clash of Clans API</p>}
+                    {clanInfo.source === "clash_api_import" && <p><strong>Source:</strong> Imported Clash of Clans API</p>}
+                    {isRandomMode && clanInfo.source !== "clash_api_import" && <p><strong>Source:</strong> Clash of Clans API</p>}
                 </div>
             </div>
         </section>

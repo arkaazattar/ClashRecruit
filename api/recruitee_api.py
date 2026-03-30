@@ -16,7 +16,16 @@ class Recruitee:
         
         storage = response.json()
 
+        error = None
+        if response.status_code >= 400:
+            error = {
+                "reason": storage.get("reason"),
+                "message": storage.get("message"),
+                "status": response.status_code,
+            }
+
         return {
         "items": storage.get("items", []),
-        "after": storage.get("paging", {}).get("cursors", {}).get("after")
+        "after": storage.get("paging", {}).get("cursors", {}).get("after"),
+        "error": error,
     }
