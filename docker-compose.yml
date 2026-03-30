@@ -23,7 +23,7 @@ services:
   worker:
     build: .
     working_dir: /app
-    command: celery -A ClashRecruiter.services.refresh_db:app worker --loglevel=info
+    command: celery -A ClashRecruiter.services.celery_app:app worker --loglevel=info
     env_file:
       - .env
     environment:
@@ -37,7 +37,7 @@ services:
   beat:
     build: .
     working_dir: /app
-    command: celery -A ClashRecruiter.services.refresh_db:app beat --loglevel=info
+    command: celery -A ClashRecruiter.services.celery_app:app beat --loglevel=info
     env_file:
       - .env
     environment:

@@ -7,13 +7,17 @@ from ..services.maxtownhall import refresh
 
 recruiter_bp = Blueprint("recruiter", __name__)
 
-@recruiter_bp.route("/recruiter", methods= ['GET', 'POST'])
+
+@recruiter_bp.route("/recruiter", methods=['GET', 'POST'])
 def recruit():
     if not session.get("recruiter_status"):
         return jsonify({"message": "Forbidden"}), 403
- 
-    existing = clan_collection.find_one({"clan_tag": session.get("clan_tag")})
-    
+
+    existing = clan_collection.find_one({
+        "clan_tag": session.get("clan_tag"),
+        "source": {"$ne": "clash_api_import"},
+    })
+
     user = Recruiter(session.get("player_tag"), session.get("clan_tag"), headers)
     user.pull_clan_requirements()
     if request.method == "GET":
@@ -21,7 +25,7 @@ def recruit():
             required_league = existing["requirements"][0]
             required_builder_league = existing["requirements"][1]
             required_townhall = existing["requirements"][2]
-            clan_description = existing["clan_info"]["description"]
+            clan_description = existing.get("clan_info", {}).get("description", "")
             status = existing["expires"]
         else:
             required_league = user.requirements[0]
@@ -34,13 +38,13 @@ def recruit():
         return jsonify({
             "oldRequiredLeague": required_league,
             "oldRequiredBuilderLeague": required_builder_league,
-            "oldRequiredTownhall" : required_townhall,
-            "MAXTOWNHALL" : MAXTOWNHALL,
-            "clanDescription" : clan_description,
-            "status" : status
+            "oldRequiredTownhall": required_townhall,
+            "MAXTOWNHALL": MAXTOWNHALL,
+            "clanDescription": clan_description,
+            "status": status
         })
-    
-    data = request.get_json()    
+
+    data = request.get_json()
     new_required_league = data.get("requiredLeague", None)
     new_required_builder_league = data.get("requiredBuilderLeague", None)
     new_required_townhall = data.get("requiredTownhall", None)
@@ -48,18 +52,18 @@ def recruit():
     user.requirements[1] = new_required_builder_league
     user.requirements[2] = new_required_townhall
     clan_info = user.lookup_clan()
-    
-    #may need to 403 error if existing
+
     if data.get("status") == "new":
-        expiry = datetime.now(timezone.utc) + timedelta(days=7) 
+        expiry = datetime.now(timezone.utc) + timedelta(days=7)
         clan_info["description"] = data.get("description")
         data = {
+            "source": "live_listing",
             "requirements": user.requirements,
             "name": clan_info.get("name"),
             "clan_tag": session.get("clan_tag"),
             "player_tag": session.get("player_tag"),
             "clan_info": clan_info,
-            "last_updated" : datetime.now(timezone.utc),
+            "last_updated": datetime.now(timezone.utc),
             "expires": expiry
         }
         render_data = data.copy()
@@ -68,8 +72,8 @@ def recruit():
         render_data["message"] = "Listing created successfully."
 
     elif data.get("status") == "update":
-        render_data = {}
         query = {
+            "source": "live_listing",
             "requirements": user.requirements,
             "clan_info.description": data.get("description"),
             "last_updated": datetime.now(timezone.utc)
@@ -78,28 +82,28 @@ def recruit():
         if data.get("updateExpiry") is True:
             expiry = datetime.now(timezone.utc) + timedelta(days=7)
             query["expires"] = expiry
-            render_data["status"] = expiry
+            status = expiry
         else:
-            render_data["status"] = data.get("expiry")
+            status = data.get("expiry")
 
         clan_collection.update_one(
-            {"clan_tag": session.get("clan_tag")},
+            {"clan_tag": session.get("clan_tag"), "source": {"$ne": "clash_api_import"}},
             {"$set": query}
         )
-        render_data["message"] = "Listing updated successfully."
+        render_data = {
+            "status": status,
+            "message": "Listing updated successfully."
+        }
 
     elif data.get("status") == "removeListing":
         deleted = clan_collection.delete_one({
-            "clan_tag": session.get("clan_tag")
+            "clan_tag": session.get("clan_tag"),
+            "source": {"$ne": "clash_api_import"},
         })
-        if deleted: message = "Successfully deleted entry."
+        if deleted.deleted_count:
+            message = "Successfully deleted entry."
+            return jsonify({"message": message}), 200
 
-        else: 
-            message = "Failed to delete." 
-            return jsonify(render_data ={"message" : message}), 404
-
-        render_data = {
-            "message" : message
-        }
+        return jsonify({"message": "Failed to delete."}), 404
 
     return jsonify(render_data), 200

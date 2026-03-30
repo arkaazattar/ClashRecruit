@@ -1,5 +1,6 @@
 import re
 from flask import Blueprint, session, jsonify, request
+from ..services.import_clash_api_clans import ensure_imported_clan_inventory
 from ..services.mongo_db_client import clan_collection
 
 recruitee_bp = Blueprint("recruitee", __name__)
@@ -34,15 +35,21 @@ def _get_requested_offset():
     return max(0, parsed_offset)
 
 
+def _should_refresh_imported_inventory():
+    return _get_requested_offset() == 0
+
+
 @recruitee_bp.get("/recruitee")
 def recruitee_get():
-
     player_name = session.get("player_name", None)
     default_limit = 10
     requested_limit = _get_requested_limit(default_limit)
     requested_offset = _get_requested_offset()
 
-    if not player_name or player_name == "Guest":  
+    if _should_refresh_imported_inventory():
+        ensure_imported_clan_inventory()
+
+    if not player_name or player_name == "Guest":
         data = list(
             clan_collection.find({}, {"_id": 0})
             .sort([("last_updated", -1), ("clan_tag", 1)])
@@ -66,8 +73,8 @@ def recruitee_get():
 
 @recruitee_bp.post("/recruitee")
 def recruitee_post():
-    # this can change based on whatever we would want
     DEFAULT_LIMIT = 10
+    requested_limit = _get_requested_limit(DEFAULT_LIMIT)
 
     raw_form = request.get_json() or {}
 
@@ -78,41 +85,52 @@ def recruitee_post():
             return jsonify({"error": "Clan not found"}), 404
         return jsonify(data)
 
+    if _should_refresh_imported_inventory():
+        ensure_imported_clan_inventory()
+
     filters = raw_form.get("filters", {})
     query = {}
 
     name = filters.get("name", None)
-    if name: query["name"] = {"$regex": re.escape(name.strip()), "$options": "i"}
+    if name:
+        query["name"] = {"$regex": re.escape(name.strip()), "$options": "i"}
     requirements = filters.get("requirements", {})
     min_townhall = requirements.get("townhall", None)
     min_league = requirements.get("league", None)
-    if min_townhall is not None: query["requirements.2"] = {"$gte": min_townhall}
-    if min_league is not None: query["requirements.0"] = {"$gte": min_league}
+    if min_townhall is not None:
+        query["requirements.2"] = {"$gte": min_townhall}
+    if min_league is not None:
+        query["requirements.0"] = {"$gte": min_league}
 
     min_clan_level = filters.get("minClanLevel", None)
-    if min_clan_level is not None: query["clan_info.clan_level"] = {"$gte": min_clan_level}
+    if min_clan_level is not None:
+        query["clan_info.clan_level"] = {"$gte": min_clan_level}
 
     min_clan_points = filters.get("clanPoints", None)
-    if min_clan_points is not None: query["clan_info.clanPoints"] = {"$gte": min_clan_points}
+    if min_clan_points is not None:
+        query["clan_info.clanPoints"] = {"$gte": min_clan_points}
 
     members = requirements.get("members", {})
     min_members = members.get("min", None)
     max_members = members.get("max", None)
     if min_members is not None or max_members is not None:
         member_range = {}
-        if min_members is not None: member_range["$gte"] = min_members
-        if max_members is not None: member_range["$lte"] = max_members
+        if min_members is not None:
+            member_range["$gte"] = min_members
+        if max_members is not None:
+            member_range["$lte"] = max_members
         query["clan_info.member_count"] = member_range
     war_frequency = filters.get("warFrequency", None)
-    if war_frequency: query["clan_info.warFrequency"] = war_frequency
+    if war_frequency:
+        query["clan_info.warFrequency"] = war_frequency
 
     location_id = filters.get("location_id", None)
     if location_id:
         query["clan_info.location.id"] = int(location_id)
 
-    requested_limit = _get_requested_limit(DEFAULT_LIMIT)
     data = list(
         clan_collection.find(query, {"_id": 0})
-        .sort([("last_updated", -1), ("clan_tag", 1)]).limit(requested_limit)
+        .sort([("last_updated", -1), ("clan_tag", 1)])
+        .limit(requested_limit)
     )
     return jsonify(data)
