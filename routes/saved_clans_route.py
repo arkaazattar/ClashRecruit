@@ -2,7 +2,6 @@ from flask import Blueprint, jsonify, session
 
 from ..services.mongo_db_client import clan_collection, user_collection
 
-
 saved_clans_bp = Blueprint("saved_clans", __name__)
 
 MAX_SAVED_CLANS = 10

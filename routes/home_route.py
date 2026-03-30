@@ -1,7 +1,8 @@
-from flask import request, session, Blueprint, jsonify
-from ..services.mongo_db_client import clan_collection
+from flask import Blueprint, jsonify, request, session
+
 from ..api.clash_api import API
 from ..config import headers
+from ..services.mongo_db_client import clan_collection
 
 home_bp = Blueprint("home", __name__)
 

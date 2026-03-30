@@ -1,5 +1,5 @@
 import re
-from flask import Blueprint, session, jsonify, request
+from flask import Blueprint, jsonify, request, session
 from ..services.import_clash_api_clans import ensure_imported_clan_inventory
 from ..services.mongo_db_client import clan_collection
 

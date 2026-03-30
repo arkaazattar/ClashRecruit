@@ -1,6 +1,10 @@
+"""Create the MongoDB client and expose the application's collections."""
+
 import sys
+
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
+
 from ..config import DBURI
 
 uri = DBURI

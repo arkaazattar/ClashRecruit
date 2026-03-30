@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify
+
 from ..services.mongo_db_client import location_collection
 
 locations_bp = Blueprint("locations", __name__)

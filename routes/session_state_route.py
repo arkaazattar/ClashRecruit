@@ -1,8 +1,10 @@
 from datetime import datetime, timezone
+
 from flask import Blueprint, jsonify, session
-from ..services.mongo_db_client import clan_collection
+
 from ..api.clash_api import API
 from ..config import headers
+from ..services.mongo_db_client import clan_collection
 
 session_state_bp = Blueprint("session_state", __name__)
 

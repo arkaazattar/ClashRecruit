@@ -1,5 +1,7 @@
 import requests
-from ..services.maxtownhall import refresh
+
+from ..services.maxtownhall import get_max_townhall_cached
+
 
 class Recruiter:
 
@@ -9,7 +11,7 @@ class Recruiter:
         self.clan_tag = clan_tag
         self.requirements = []
         # this may need to change
-        self.maxtownhall = refresh(self.headers)
+        self.maxtownhall = get_max_townhall_cached(self.headers)
     
     def pull_clan_requirements(self):
 

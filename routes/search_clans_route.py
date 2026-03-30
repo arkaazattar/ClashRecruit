@@ -1,4 +1,5 @@
-from flask import Blueprint, request, jsonify, session
+from flask import Blueprint, jsonify, request, session
+
 from ..api.recruitee_api import Recruitee
 from ..config import headers
 

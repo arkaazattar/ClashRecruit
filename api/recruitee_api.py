@@ -1,4 +1,6 @@
 import requests
+
+
 class Recruitee:
     def __init__(self, user_tag, townhall, league, headers):
         self.headers = headers

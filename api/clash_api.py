@@ -1,5 +1,6 @@
-import requests
 from typing import Literal
+
+import requests
 
 REQUESTOPTIONS = Literal[
     "expLevel",
