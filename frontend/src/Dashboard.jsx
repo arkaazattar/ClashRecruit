@@ -215,6 +215,59 @@ function Dashboard() {
     setSavedClansModalOpen(false);
   };
 
+  function renderSavedClanRow(savedClan, keyPrefix, index) {
+    const savedClanTag = normalizeSavedClanTag(savedClan.clan_tag);
+    const savedClanTagForRoute = savedClanTag || "";
+    const savedClanName = savedClan.name || savedClan.clan_info?.name || savedClanTag || "Saved Clan";
+    const savedClanLocation = savedClan.clan_info?.location?.name;
+    const savedClanMeta = savedClan.listing_available
+      ? (savedClanLocation || "Listing active")
+      : "Listing no longer available";
+    const rowKeyBase = savedClanTagForRoute || `${savedClanName}-${index}`;
+    const rowKey = `${keyPrefix}-${rowKeyBase}`;
+    const canOpenListing = Boolean(savedClan.listing_available && savedClanTagForRoute);
+
+    if (canOpenListing) {
+      return (
+        <Link
+          key={rowKey}
+          to={`/looking-for-clan/${savedClanTagForRoute}`}
+          className="dashboard-saved-item dashboard-saved-item-clickable"
+        >
+          <div className="dashboard-saved-item-content">
+            <p className="dashboard-saved-name">{savedClanName}</p>
+            <p className="dashboard-saved-meta">{savedClanMeta}</p>
+          </div>
+          <span className="dashboard-saved-row-icon" aria-hidden="true">›</span>
+        </Link>
+      );
+    }
+
+    return (
+      <div key={rowKey} className="dashboard-saved-item">
+        <div className="dashboard-saved-item-content">
+          <p className="dashboard-saved-name">{savedClanName}</p>
+          <p className="dashboard-saved-meta">{savedClanMeta}</p>
+        </div>
+
+        {savedClanTag ? (
+          <div className="dashboard-tag-inline dashboard-tag-inline-right dashboard-saved-tag-wrap">
+            <button
+              type="button"
+              className="dashboard-current-value dashboard-tag-copy-btn dashboard-tag-copy-btn-inline"
+              onClick={() => copyTag(savedClanTag)}
+            >
+              {`#${savedClanTag}`}
+            </button>
+            <span className={`dashboard-tag-copied-inline${copiedTag === savedClanTag ? " is-visible" : ""}`}>
+              ✓ Copied
+            </span>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
   function getListingChipMeta() {
     if (!isInClan) {
       return { label: "No Clan", className: "is-idle" };
@@ -504,38 +557,9 @@ function Dashboard() {
                   <p className="dashboard-saved-empty">Save clans from search to keep a shortlist here.</p>
                 )}
 
-                {!savedClansError && hasSavedClans && savedClansPreview.map((savedClan) => {
-                  const savedClanTag = normalizeSavedClanTag(savedClan.clan_tag);
-                  const savedClanTagForRoute = savedClanTag || "";
-                  const savedClanName = savedClan.name || savedClan.clan_info?.name || savedClanTag || "Saved Clan";
-                  const savedClanLocation = savedClan.clan_info?.location?.name;
-                  const savedClanMeta = savedClanLocation || (savedClan.listing_available ? "Listing active" : "Listing unavailable");
-
-                  if (!savedClanTagForRoute) {
-                    return (
-                      <div key={savedClanName} className="dashboard-saved-item">
-                        <div className="dashboard-saved-item-content">
-                          <p className="dashboard-saved-name">{savedClanName}</p>
-                          <p className="dashboard-saved-meta">{savedClanMeta}</p>
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <Link
-                      key={savedClanTagForRoute}
-                      to={`/looking-for-clan/${savedClanTagForRoute}`}
-                      className="dashboard-saved-item dashboard-saved-item-clickable"
-                    >
-                      <div className="dashboard-saved-item-content">
-                        <p className="dashboard-saved-name">{savedClanName}</p>
-                        <p className="dashboard-saved-meta">{savedClanMeta}</p>
-                      </div>
-                      <span className="dashboard-saved-row-icon" aria-hidden="true">›</span>
-                    </Link>
-                  );
-                })}
+                {!savedClansError && hasSavedClans && savedClansPreview.map((savedClan, index) => (
+                  renderSavedClanRow(savedClan, "preview", index)
+                ))}
 
                 {!savedClansError && remainingSavedClansCount > 0 && (
                   <p className="dashboard-saved-more">{`+${remainingSavedClansCount} more saved`}</p>
@@ -576,38 +600,7 @@ function Dashboard() {
             </header>
 
             <div className="dashboard-saved-modal-list">
-              {savedClans.map((savedClan) => {
-                const savedClanTag = normalizeSavedClanTag(savedClan.clan_tag);
-                const savedClanTagForRoute = savedClanTag || "";
-                const savedClanName = savedClan.name || savedClan.clan_info?.name || savedClanTag || "Saved Clan";
-                const savedClanLocation = savedClan.clan_info?.location?.name;
-                const savedClanMeta = savedClanLocation || (savedClan.listing_available ? "Listing active" : "Listing unavailable");
-
-                if (!savedClanTagForRoute) {
-                  return (
-                    <div key={`modal-${savedClanName}`} className="dashboard-saved-item">
-                      <div className="dashboard-saved-item-content">
-                        <p className="dashboard-saved-name">{savedClanName}</p>
-                        <p className="dashboard-saved-meta">{savedClanMeta}</p>
-                      </div>
-                    </div>
-                  );
-                }
-
-                return (
-                  <Link
-                    key={`modal-${savedClanTagForRoute}`}
-                    to={`/looking-for-clan/${savedClanTagForRoute}`}
-                    className="dashboard-saved-item dashboard-saved-item-clickable"
-                  >
-                    <div className="dashboard-saved-item-content">
-                      <p className="dashboard-saved-name">{savedClanName}</p>
-                      <p className="dashboard-saved-meta">{savedClanMeta}</p>
-                    </div>
-                    <span className="dashboard-saved-row-icon" aria-hidden="true">›</span>
-                  </Link>
-                );
-              })}
+              {savedClans.map((savedClan, index) => renderSavedClanRow(savedClan, "modal", index))}
             </div>
           </section>
         </div>

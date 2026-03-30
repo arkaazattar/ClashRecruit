@@ -17,7 +17,7 @@
     width: 100%;
     padding: 96px 24px 44px;
     box-sizing: border-box;
-    background: #efe6d7;
+    background: transparent;
     color: var(--dash-text-main);
 }
 
@@ -547,6 +547,10 @@
     font-weight: 700;
     line-height: 1;
     opacity: 0.78;
+}
+
+.dashboard-saved-tag-wrap {
+    flex: 0 0 auto;
 }
 
 .dashboard-saved-empty {

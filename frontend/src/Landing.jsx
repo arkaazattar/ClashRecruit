@@ -88,7 +88,7 @@ function Landing() {
                     </div>
 
                     <div className="landing-subtitle">
-                            text text text text
+                            Looking to promote your clan or join a new one? Discover clans and post listings in one place.
                     </div>
                     <span className="clan-count-title">
                         <span className="clan-count-dot" aria-hidden="true" />
