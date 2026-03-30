@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router-dom";
 import { AUTH_STATUS_CHANGED_EVENT } from "./utils/appEvents";
 import usePageTitle from "./hooks/usePageTitle";
 import LoadingScreen from "./components/LoadingScreen";
@@ -145,9 +145,9 @@ function Login() {
             <button type="submit" className="primary-btn">Submit</button>
           </form>
 
-          <button onClick={() => navigate("/")} type="button" className="ghost-btn">
+          <Link to="/" className="ghost-btn">
             Back to Homepage
-          </button>
+          </Link>
         </div>
       </div>
     </div>

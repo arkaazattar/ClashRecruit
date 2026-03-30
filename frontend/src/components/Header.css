@@ -97,6 +97,8 @@
 }
 
 .dropdown-item {
+    display: block;
+    width: 100%;
     padding: 10px 12px;
     background: #ffffff;
     border: none;
@@ -104,6 +106,8 @@
     cursor: pointer;
     color: #0f172a;
     font-size: 0.92rem;
+    text-decoration: none;
+    box-sizing: border-box;
 }
 
 .dropdown-item:hover {

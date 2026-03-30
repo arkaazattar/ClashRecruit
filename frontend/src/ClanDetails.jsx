@@ -1,5 +1,5 @@
 import "./ClanDetails.css";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { formatWarFrequency } from "./utils/warFrequency";
 
@@ -12,7 +12,6 @@ function normalizeLocation(rawLocation) {
 
 function ClanDetails() {
     const { clanTag } = useParams();
-    const navigate = useNavigate();
     const [clanInfo, setClanInfo] = useState(null);
     const [error, setError] = useState("");
 
@@ -55,9 +54,9 @@ function ClanDetails() {
 
     return (
         <section className="clan-details-page">
-            <button className="clan-back-btn" type="button" onClick={() => navigate("/looking-for-clan")}>
+            <Link className="clan-back-btn" to="/looking-for-clan">
                 Back to listings
-            </button>
+            </Link>
 
             <div className="clan-details-card">
                 <div className="clan-details-header">

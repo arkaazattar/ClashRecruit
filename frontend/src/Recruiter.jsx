@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router";
-import { useOutletContext } from "react-router-dom";
+import { Link, useNavigate, useOutletContext } from "react-router-dom";
 import { leagueOptions } from "./utils/recruiter";
 import { LISTING_STATUS_CHANGED_EVENT } from "./utils/appEvents";
 import usePageTitle from "./hooks/usePageTitle"
@@ -295,13 +294,12 @@ function Recruiter() {
             >
               {Listing}
             </label>
-            <button
-              className="recruiter-secondary"
-              type="button"
-              onClick={() => navigate("/dashboard")}
+            <Link
+              className="recruiter-secondary recruiter-secondary-link"
+              to="/dashboard"
             >
               Dashboard
-            </button>
+            </Link>
             <button
               className="recruiter-danger"
               type="button"

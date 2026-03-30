@@ -142,9 +142,13 @@
 }
 
 .ghost-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   background: #eef2f7;
   color: #0f172a;
+  text-decoration: none;
 }
 
 .ghost-btn:hover {

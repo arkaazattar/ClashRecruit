@@ -103,6 +103,13 @@
     color: #0f172a;
 }
 
+.recruiter-secondary-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
 .recruiter-secondary:hover {
     background: #cbd5e1;
 }

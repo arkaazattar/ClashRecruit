@@ -45,17 +45,14 @@ function Header({ user , hasActiveListing}) {
     
     const handleSignin = () => {
         setOpen(false);
-        navigate("/login");
     };
     
     const handleListings = () => {
         setOpen(false);
-        navigate("/recruit");
     };
     
     const handleFindClan = () => {
         setOpen(false);
-        navigate("/looking-for-clan")
     }
 
     return (
@@ -90,22 +87,22 @@ function Header({ user , hasActiveListing}) {
                         className={`dropdown-menu ${open ? "is-open" : "is-closed"}`}
                         aria-hidden={!open}
                     >
-                    <button onClick={handleFindClan} className="dropdown-item">
+                    <Link to="/looking-for-clan" onClick={handleFindClan} className="dropdown-item">
                             Find a Clan
-                    </button>
+                    </Link>
                         {hasActiveListing && (
-                            <button onClick={handleListings} className="dropdown-item">
+                            <Link to="/recruit" onClick={handleListings} className="dropdown-item">
                                 My Listings
-                            </button>
+                            </Link>
                         )}
                         {isLoggedIn ?(
                             <button onClick={handleLogout} className="dropdown-item">
                                 Logout
                             </button>
                         ): (
-                            <button onClick={handleSignin} className="dropdown-item"> 
+                            <Link to="/login" onClick={handleSignin} className="dropdown-item"> 
                                 Login
-                            </button>
+                            </Link>
                         )}
 
                     </div>
