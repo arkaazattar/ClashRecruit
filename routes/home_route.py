@@ -21,7 +21,7 @@ def home():
     check_player_team = user.check_player()
     session["recruiter_status"] = user.recruiter_status
 
-    if check_player_team == True:
+    if check_player_team:
         status = True
         reason = "Valid User"
         name = user.user_name
@@ -42,9 +42,9 @@ def home():
     return jsonify({
         "message": status,
         "receivedPlayerTag": reason,
-        "recruit_status" : session.get("recruiter_status"),
-        "player_name" : name,
-        "clan_tag" : clan_tag
+        "recruit_status": session.get("recruiter_status"),
+        "player_name": name,
+        "clan_tag": clan_tag
     })
 
 
