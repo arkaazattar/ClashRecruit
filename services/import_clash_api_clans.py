@@ -19,10 +19,10 @@ def _now():
 def _clean_tag(tag):
     if not tag:
         return None
-    cleaned = str(tag).strip().upper()
+    cleaned = str(tag).strip().upper().lstrip("#")
     if not cleaned:
         return None
-    return cleaned if cleaned.startswith("#") else f"#{cleaned}"
+    return cleaned
 
 
 def _build_seed_key(seed):
@@ -114,7 +114,7 @@ def _fetch_clan_detail(clan_tag):
     if not clean_tag:
         return None
 
-    encoded_tag = clean_tag.replace("#", "%23")
+    encoded_tag = f"%23{clean_tag}"
     response = requests.get(
         f"https://api.clashofclans.com/v1/clans/{encoded_tag}",
         headers=headers,

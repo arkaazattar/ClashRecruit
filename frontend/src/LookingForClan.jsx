@@ -24,6 +24,40 @@ function normalizeClanTag(tagValue) {
     return normalized;
 }
 
+function buildFilterPayload(filters) {
+  return {
+    filters: {
+      name: filters.name,
+      minClanLevel: toNumberOrNull(filters.minClanLevel),
+      clanPoints: toNumberOrNull(filters.clanPoints),
+      warFrequency: filters.warFrequency || null,
+      location: filters.location || null,
+      requirements: {
+        townhall: toNumberOrNull(filters.minTownhall),
+        league: toNumberOrNull(filters.minLeague),
+        members: {
+          max: toNumberOrNull(filters.maxMembers),
+          min: toNumberOrNull(filters.minMembers),
+        },
+      },
+    },
+  };
+}
+
+function normalizeListingPayload(payload) {
+  if (Array.isArray(payload)) {
+    return {
+      items: payload,
+      total: payload.length,
+    };
+  }
+
+  return {
+    items: Array.isArray(payload?.items) ? payload.items : [],
+    total: typeof payload?.total === "number" ? payload.total : 0,
+  };
+}
+
 function LookingForClan() {
     usePageTitle("Find a Clan | ClashRecruit")
     
@@ -42,10 +76,10 @@ function LookingForClan() {
     const [loadError, setLoadError] = useState("");
     const [filterError, setFilterError] = useState("");
     const [clans, setClans] = useState([]);
-    const [offset, setOffset] = useState(0);
-    const [hasMore, setHasMore] = useState(true);
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalResults, setTotalResults] = useState(0);
     const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
+    const [appliedFilterPayload, setAppliedFilterPayload] = useState(null);
     const [Filters, setFilters] = useState({
       name: "",
       minTownhall: "",
@@ -116,20 +150,31 @@ function LookingForClan() {
       const locations = await rsp.json()
       setLocations(Array.isArray(locations) ? locations : [])
     }
-    async function getClans(nextOffset = 0, append = false){
-      const rsp = await fetch(`/recruitee?limit=${PAGE_SIZE}&offset=${nextOffset}`)
-      if (!rsp.ok) {
+
+    async function fetchClanPage(page, filterPayload = null, includeTotal = true) {
+      const offset = (page - 1) * PAGE_SIZE;
+      const url = `/recruitee?limit=${PAGE_SIZE}&offset=${offset}&includeTotal=${includeTotal ? 1 : 0}`;
+      const response = filterPayload
+        ? await fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(filterPayload),
+          })
+        : await fetch(url);
+
+      if (!response.ok) {
         throw new Error("Failed to load clans.");
       }
-      const data = await rsp.json()
-      const normalizedData = Array.isArray(data) ? data : [];
-      if (append) {
-        setClans((prev) => [...prev, ...normalizedData])
-      } else {
-        setClans(normalizedData)
+
+      const payload = await response.json();
+      const normalized = normalizeListingPayload(payload);
+      setClans(normalized.items);
+      setCurrentPage(page);
+      if (includeTotal) {
+        setTotalResults(normalized.total);
       }
-      setOffset(nextOffset + normalizedData.length)
-      setHasMore(normalizedData.length === PAGE_SIZE)
     }
 
     const getSavedClans = useCallback(async () => {
@@ -166,7 +211,7 @@ function LookingForClan() {
         setLoadError("");
 
         try {
-          const loadJobs = [getClans(0, false), getLocations()];
+          const loadJobs = [fetchClanPage(1, null, true), getLocations()];
           if (isLoggedIn) {
             loadJobs.push(getSavedClans());
           } else {
@@ -199,47 +244,30 @@ function LookingForClan() {
       requestControllerRef.current = controller;
 
       setHasAppliedFilters(true);
+      setCurrentPage(1);
       setFilterError("");
       const activeFilters = filtersRef.current;
+      const filterPayload = buildFilterPayload(activeFilters);
+      setAppliedFilterPayload(filterPayload);
 
       try {
-        const response = await fetch("/recruitee", {
+        const offset = 0;
+        const response = await fetch(`/recruitee?limit=${PAGE_SIZE}&offset=${offset}&includeTotal=1`, {
           method: "POST",
           signal: controller.signal,
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            filters: {
-              name: activeFilters.name,
-              minClanLevel: toNumberOrNull(activeFilters.minClanLevel),
-              clanPoints: toNumberOrNull(activeFilters.clanPoints),
-              warFrequency: activeFilters.warFrequency || null,
-              location_id: activeFilters.location || null,
-              requirements: {
-                townhall: toNumberOrNull(activeFilters.minTownhall),
-                league: toNumberOrNull(activeFilters.minLeague),
-                members: {
-                  max: toNumberOrNull(activeFilters.maxMembers),
-                  min: toNumberOrNull(activeFilters.minMembers),
-                },
-              },
-            },
-          }),
+          body: JSON.stringify(filterPayload),
         });
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch filtered clans.");
-        }
-
+        if (!response.ok) throw new Error("Failed to fetch filtered clans.");
         const data = await response.json();
         if (controller.signal.aborted) {
           return;
         }
-        setClans(Array.isArray(data) ? data : []);
-        setHasMore(false);
-        setOffset(Array.isArray(data) ? data.length : 0);
-        setIsLoadingMore(false);
+        const normalized = normalizeListingPayload(data);
+        setClans(normalized.items);
+        setTotalResults(normalized.total);
       } catch (error) {
         if (error.name !== "AbortError") {
           setFilterError("Could not apply filters right now. Please try again.");
@@ -264,17 +292,20 @@ function LookingForClan() {
       }, 250);
     }, [Filters.name, handleFilterSubmit]);
 
-
-
-    const handleLoadMore = async () => {
-      if (!hasMore || isLoadingMore || hasAppliedFilters) {
+    const handlePageChange = async (nextPage) => {
+      if (nextPage < 1 || nextPage > totalPages || nextPage === currentPage) {
         return;
       }
-      setIsLoadingMore(true);
+
       try {
-        await getClans(offset, true);
-      } finally {
-        setIsLoadingMore(false);
+        if (hasAppliedFilters) {
+          await fetchClanPage(nextPage, appliedFilterPayload, false);
+        } else {
+          await fetchClanPage(nextPage, null, false);
+        }
+        setFilterError("");
+      } catch {
+        setFilterError("Could not load that page right now. Please try again.");
       }
     };
 
@@ -340,6 +371,8 @@ function LookingForClan() {
         setSavingClanTag("");
       }
     };
+    const totalPages = Math.max(1, Math.ceil(totalResults / PAGE_SIZE));
+    const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
 
 if (!sessionStateLoaded || loading){
   return <LoadingScreen />;
@@ -405,7 +438,7 @@ return (
         <select name="location" value={Filters.location} onChange={handleFilterChange}>
           <option value="">All Locations</option>
           {Locations.map((location) => (
-            <option key={location.id} value={location.id}>
+            <option key={location.id ?? location.name} value={location.name}>
               {location.name}
             </option>
           ))}
@@ -485,16 +518,18 @@ return (
         );
       })}
     </div>
-    {!hasAppliedFilters && hasMore && (
-      <div className="listing-load-more-wrap">
-        <button
-          type="button"
-          className="listing-load-more"
-          onClick={handleLoadMore}
-          disabled={isLoadingMore}
-        >
-          {isLoadingMore ? "Loading..." : "Load More"}
-        </button>
+    {pageNumbers.length > 1 && (
+      <div className="listing-pagination-wrap">
+        {pageNumbers.map((pageNumber) => (
+          <button
+            key={pageNumber}
+            type="button"
+            className={`listing-page-btn ${pageNumber === currentPage ? "is-active" : ""}`}
+            onClick={() => handlePageChange(pageNumber)}
+          >
+            {pageNumber}
+          </button>
+        ))}
       </div>
     )}
 

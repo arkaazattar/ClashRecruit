@@ -39,6 +39,10 @@ def _should_refresh_imported_inventory():
     return _get_requested_offset() == 0
 
 
+def _should_include_total():
+    return request.args.get("includeTotal", "0") == "1"
+
+
 @recruitee_bp.get("/recruitee")
 def recruitee_get():
     player_name = session.get("player_name", None)
@@ -50,31 +54,38 @@ def recruitee_get():
         ensure_imported_clan_inventory()
 
     if not player_name or player_name == "Guest":
-        data = list(
-            clan_collection.find({}, {"_id": 0})
-            .sort([("last_updated", -1), ("clan_tag", 1)])
-            .skip(requested_offset)
-            .limit(requested_limit)
-        )
+        base_query = {}
     else:
-        data = list(
-            clan_collection.find(
-                {
-                    "requirements.0": {"$lte": session.get("player_league")},
-                    "requirements.1": {"$lte": session.get("player_builderbase_trophies")},
-                    "requirements.2": {"$lte": session.get("player_townhall")},
-                },
-                {"_id": 0}
-            ).sort([("last_updated", -1), ("clan_tag", 1)]).skip(requested_offset).limit(requested_limit)
-        )
+        base_query = {
+            "requirements.0": {"$lte": session.get("player_league")},
+            "requirements.1": {"$lte": session.get("player_builderbase_trophies")},
+            "requirements.2": {"$lte": session.get("player_townhall")},
+        }
 
-    return jsonify(data)
+    data = list(
+        clan_collection.find(base_query, {"_id": 0})
+        .sort([("last_updated", -1), ("clan_tag", 1)])
+        .skip(requested_offset)
+        .limit(requested_limit)
+    )
+
+    if not _should_include_total():
+        return jsonify(data)
+
+    total = clan_collection.count_documents(base_query)
+    return jsonify({
+        "items": data,
+        "total": total,
+        "limit": requested_limit,
+        "offset": requested_offset,
+    })
 
 
 @recruitee_bp.post("/recruitee")
 def recruitee_post():
     DEFAULT_LIMIT = 10
     requested_limit = _get_requested_limit(DEFAULT_LIMIT)
+    requested_offset = _get_requested_offset()
 
     raw_form = request.get_json() or {}
 
@@ -127,10 +138,25 @@ def recruitee_post():
     location_id = filters.get("location_id", None)
     if location_id:
         query["clan_info.location.id"] = int(location_id)
+    else:
+        location_name = filters.get("location", None)
+        if location_name:
+            query["clan_info.location.name"] = location_name
 
     data = list(
         clan_collection.find(query, {"_id": 0})
         .sort([("last_updated", -1), ("clan_tag", 1)])
+        .skip(requested_offset)
         .limit(requested_limit)
     )
-    return jsonify(data)
+
+    if not _should_include_total():
+        return jsonify(data)
+
+    total = clan_collection.count_documents(query)
+    return jsonify({
+        "items": data,
+        "total": total,
+        "limit": requested_limit,
+        "offset": requested_offset,
+    })
