@@ -4,11 +4,10 @@ from flask import Blueprint, jsonify, request, session
 
 from ..api.recruiter_api import Recruiter
 from ..config import headers
-from ..services.maxtownhall import get_max_townhall_cached
+from ..services.maxtownhall import refresh
 from ..services.mongo_db_client import clan_collection
 
 recruiter_bp = Blueprint("recruiter", __name__)
-
 
 @recruiter_bp.route("/recruiter", methods=['GET', 'POST'])
 def recruit():
@@ -36,7 +35,7 @@ def recruit():
             clan_description = user.lookup_clan("description")["description"]
             status = None
 
-        MAXTOWNHALL = get_max_townhall_cached(headers)
+        MAXTOWNHALL = refresh(headers)
         return jsonify({
             "oldRequiredLeague": required_league,
             "oldRequiredBuilderLeague": required_builder_league,

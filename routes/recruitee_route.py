@@ -5,9 +5,7 @@ from ..services.mongo_db_client import clan_collection
 
 recruitee_bp = Blueprint("recruitee", __name__)
 
-
 MAX_LIMIT = 200
-
 
 def _get_requested_limit(default_limit):
     raw_limit = request.args.get("limit")
@@ -20,7 +18,6 @@ def _get_requested_limit(default_limit):
         return default_limit
 
     return max(1, min(parsed_limit, MAX_LIMIT))
-
 
 def _get_requested_offset():
     raw_offset = request.args.get("offset")

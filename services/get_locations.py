@@ -4,7 +4,7 @@ from ..config import headers
 from ..services.mongo_db_client import location_collection
 
 
-def get_locations(headers=headers) -> list:
+def get_locations(headers):
     """Returns a list of locations returned from the Clash of Clans API.
 
     Args:
@@ -21,7 +21,7 @@ def get_locations(headers=headers) -> list:
 
     return list_of_locations
 
-def update_location_collection() -> None:
+def update_location_collection():
     """Updates stored database locations on function call."""
 
     list_of_locations = get_locations(headers)

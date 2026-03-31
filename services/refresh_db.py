@@ -4,7 +4,6 @@ Refresh all clan membercount inside of the database.
 
 from datetime import datetime, timedelta, timezone
 
-from celery import Celery
 from celery.signals import worker_ready
 
 from ..api.recruiter_api import Recruiter
@@ -47,6 +46,9 @@ def refresh_membercount() -> None:
                                     {"last_updated" : datetime.now(timezone.utc),
                                      "clan_info.member_count" : member_count
                                      }})
+
+    #testing
+    print(len(outdated_entries))
 
 if __name__ == "__main__":
     refresh_membercount()

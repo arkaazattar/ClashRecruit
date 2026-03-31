@@ -1,3 +1,5 @@
+"""Register home routes for login, logout, and database count requests."""
+
 from flask import Blueprint, jsonify, request, session
 
 from ..api.clash_api import API
@@ -8,7 +10,8 @@ home_bp = Blueprint("home", __name__)
 
 @home_bp.route("/", methods=["POST"])
 def home():
-    
+    """Validate a player, store session data, and return login details."""
+
     data = request.get_json()
 
     received_tag = data.get('playerTag')
@@ -46,9 +49,11 @@ def home():
 
 @home_bp.route("/database_count", methods=["GET"])
 def database_count():
+    """Return the current number of stored clans in the database."""
     return jsonify({"clan_count": clan_collection.count_documents({})})
 
 @home_bp.route("/logout", methods=["POST"])
 def logout():
+    """Clear the current session and confirm logout."""
     session.clear()
     return jsonify({"message": True})
