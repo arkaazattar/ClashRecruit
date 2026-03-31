@@ -8,10 +8,10 @@ from ..services.mongo_db_client import clan_collection
 
 home_bp = Blueprint("home", __name__)
 
-@home_bp.route("/", methods=["POST"])
+
+@home_bp.post("/")
 def home():
     """Validate a player, store session data, and return login details."""
-
     data = request.get_json()
 
     received_tag = data.get('playerTag')
@@ -40,19 +40,21 @@ def home():
         session["clan_tag"] = clan_tag
 
     return jsonify({
-        "message": status, 
+        "message": status,
         "receivedPlayerTag": reason,
         "recruit_status" : session.get("recruiter_status"),
         "player_name" : name,
         "clan_tag" : clan_tag
     })
 
-@home_bp.route("/database_count", methods=["GET"])
+
+@home_bp.get("/database_count")
 def database_count():
     """Return the current number of stored clans in the database."""
     return jsonify({"clan_count": clan_collection.count_documents({})})
 
-@home_bp.route("/logout", methods=["POST"])
+
+@home_bp.post("/logout")
 def logout():
     """Clear the current session and confirm logout."""
     session.clear()

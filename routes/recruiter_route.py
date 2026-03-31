@@ -1,3 +1,5 @@
+"""Register routes for handling recruiter requests."""
+
 from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, jsonify, request, session
@@ -9,8 +11,10 @@ from ..services.mongo_db_client import clan_collection
 
 recruiter_bp = Blueprint("recruiter", __name__)
 
+
 @recruiter_bp.route("/recruiter", methods=['GET', 'POST'])
 def recruit():
+    """Return recruiter listing data or create, update, and remove listings."""
     if not session.get("recruiter_status"):
         return jsonify({"message": "Forbidden"}), 403
 
@@ -19,14 +23,16 @@ def recruit():
         "source": {"$ne": "clash_api_import"},
     })
 
-    user = Recruiter(session.get("player_tag"), session.get("clan_tag"), headers)
+    user = Recruiter(session.get("clan_tag"), headers)
     user.pull_clan_requirements()
     if request.method == "GET":
         if existing:
             required_league = existing["requirements"][0]
             required_builder_league = existing["requirements"][1]
             required_townhall = existing["requirements"][2]
-            clan_description = existing.get("clan_info", {}).get("description", "")
+            clan_description = existing.get("clan_info", {}).get(
+                "description", ""
+            )
             status = existing["expires"]
         else:
             required_league = user.requirements[0]
@@ -88,7 +94,10 @@ def recruit():
             status = data.get("expiry")
 
         clan_collection.update_one(
-            {"clan_tag": session.get("clan_tag"), "source": {"$ne": "clash_api_import"}},
+            {
+                "clan_tag": session.get("clan_tag"),
+                "source": {"$ne": "clash_api_import"},
+            },
             {"$set": query}
         )
         render_data = {

@@ -26,14 +26,21 @@ def _hydrate_saved_clans(saved_clan_tags):
         list: A list of hydrated saved clan objects in the same order as the
             provided saved clan tags.
     """
-
     listings = list(
         clan_collection.find(
             {"clan_tag": {"$in": saved_clan_tags}},
-            {"_id": 0, "clan_tag": 1, "name": 1, "requirements": 1, "clan_info": 1},
+            {
+                "_id": 0,
+                "clan_tag": 1,
+                "name": 1,
+                "requirements": 1,
+                "clan_info": 1,
+            },
         )
     )
-    listing_by_saved_tag = {listing["clan_tag"]: listing for listing in listings}
+    listing_by_saved_tag = {
+        listing["clan_tag"]: listing for listing in listings
+    }
 
     hydrated = []
     for saved_tag in saved_clan_tags:
@@ -43,8 +50,14 @@ def _hydrate_saved_clans(saved_clan_tags):
         hydrated.append(
             {
                 "clan_tag": saved_tag,
-                "name": (listing.get("name") if listing else None) or clan_info.get("name") or saved_tag,
-                "requirements": listing.get("requirements") if listing else None,
+                "name": (
+                    (listing.get("name") if listing else None)
+                    or clan_info.get("name")
+                    or saved_tag
+                ),
+                "requirements": (
+                    listing.get("requirements") if listing else None
+                ),
                 "clan_info": clan_info,
                 "listing_available": bool(listing),
             }
@@ -55,8 +68,7 @@ def _hydrate_saved_clans(saved_clan_tags):
 
 @saved_clans_bp.get("/saved-clans")
 def get_saved_clans():
-    """Return a JSON response with the current user's saved clans and limits."""
-
+    """Return the current user's saved clans and limits as JSON."""
     player_tag = session.get("player_tag")
     if not player_tag:
         return jsonify({"message": "Unauthorized"}), 401
@@ -84,7 +96,6 @@ def add_saved_clan(clan_tag):
     Args:
         clan_tag (str): The clan tag to save for the current user.
     """
-    
     player_tag = session.get("player_tag")
     if not player_tag:
         return jsonify({"message": "Unauthorized"}), 401
@@ -109,7 +120,10 @@ def add_saved_clan(clan_tag):
     if len(current_saved) >= MAX_SAVED_CLANS:
         return jsonify(
             {
-                "message": "You can save up to 10 clans. Remove one before saving another.",
+                "message": (
+                    "You can save up to 10 clans. Remove one before saving "
+                    "another."
+                ),
                 "count": len(current_saved),
                 "max_saved_clans": MAX_SAVED_CLANS,
             }
@@ -142,7 +156,6 @@ def delete_saved_clan(clan_tag):
         clan_tag (str): The clan tag to remove from the current user's saved
             clans.
     """
-
     player_tag = session.get("player_tag")
     if not player_tag:
         return jsonify({"message": "Unauthorized"}), 401
@@ -154,4 +167,6 @@ def delete_saved_clan(clan_tag):
         {"$pull": {"saved_clans": normalized_tag}},
     )
 
-    return jsonify({"message": "Saved clan removed.", "clan_tag": normalized_tag}), 200
+    return jsonify(
+        {"message": "Saved clan removed.", "clan_tag": normalized_tag}
+    ), 200
