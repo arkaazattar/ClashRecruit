@@ -1,10 +1,12 @@
+"""Register routes for handling imported clans."""
+
 import re
 
 from flask import Blueprint, jsonify, request
 
-from ..services.import_clash_api_clans import ensure_imported_clan_inventory, get_imported_clan
+from ..services.import_clash_api_clans import (ensure_imported_clan_inventory,
+                                               get_imported_clan)
 from ..services.mongo_db_client import clan_collection
-
 
 imported_clans_bp = Blueprint("imported_clans", __name__)
 
@@ -12,6 +14,7 @@ MAX_LIMIT = 200
 
 
 def _get_requested_limit(default_limit):
+    """Return the validated `limit` query param capped to allowed bounds."""
     raw_limit = request.args.get("limit")
     if raw_limit is None:
         return default_limit
@@ -25,6 +28,7 @@ def _get_requested_limit(default_limit):
 
 
 def _get_requested_offset():
+    """Return the validated `offset` query param with a minimum of zero."""
     raw_offset = request.args.get("offset")
     if raw_offset is None:
         return 0
@@ -38,6 +42,7 @@ def _get_requested_offset():
 
 
 def _build_imported_query(filters):
+    """Build a MongoDB query for imported clans from request filter data."""
     query = {
         "source": "clash_api_import",
     }
@@ -79,6 +84,7 @@ def _build_imported_query(filters):
 
 @imported_clans_bp.post("/imported_clans")
 def imported_clans_post():
+    """Return clan details for a tag or a filtered imported clan list."""
     default_limit = 10
     requested_limit = _get_requested_limit(default_limit)
     requested_offset = _get_requested_offset()

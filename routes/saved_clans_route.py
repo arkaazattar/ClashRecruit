@@ -1,7 +1,8 @@
+"""Register routes for saved a users saved clans."""
+
 from flask import Blueprint, jsonify, session
 
 from ..services.mongo_db_client import clan_collection, user_collection
-
 
 saved_clans_bp = Blueprint("saved_clans", __name__)
 
@@ -9,13 +10,37 @@ MAX_SAVED_CLANS = 10
 
 
 def _hydrate_saved_clans(saved_clan_tags):
+    """Build saved clan response objects from stored clan tags.
+
+    For each saved clan tag, this helper looks up the matching clan listing in
+    the database and returns a normalized object for the response payload. If a
+    saved tag no longer has an active listing, the function still includes that
+    tag in the returned list with fallback values and marks the listing as
+    unavailable.
+
+    Args:
+        saved_clan_tags (list): The saved clan tags associated with the current
+            user.
+
+    Returns:
+        list: A list of hydrated saved clan objects in the same order as the
+            provided saved clan tags.
+    """
     listings = list(
         clan_collection.find(
             {"clan_tag": {"$in": saved_clan_tags}},
-            {"_id": 0, "clan_tag": 1, "name": 1, "requirements": 1, "clan_info": 1},
+            {
+                "_id": 0,
+                "clan_tag": 1,
+                "name": 1,
+                "requirements": 1,
+                "clan_info": 1,
+            },
         )
     )
-    listing_by_saved_tag = {listing["clan_tag"]: listing for listing in listings}
+    listing_by_saved_tag = {
+        listing["clan_tag"]: listing for listing in listings
+    }
 
     hydrated = []
     for saved_tag in saved_clan_tags:
@@ -25,8 +50,14 @@ def _hydrate_saved_clans(saved_clan_tags):
         hydrated.append(
             {
                 "clan_tag": saved_tag,
-                "name": (listing.get("name") if listing else None) or clan_info.get("name") or saved_tag,
-                "requirements": listing.get("requirements") if listing else None,
+                "name": (
+                    (listing.get("name") if listing else None)
+                    or clan_info.get("name")
+                    or saved_tag
+                ),
+                "requirements": (
+                    listing.get("requirements") if listing else None
+                ),
                 "clan_info": clan_info,
                 "listing_available": bool(listing),
             }
@@ -37,6 +68,7 @@ def _hydrate_saved_clans(saved_clan_tags):
 
 @saved_clans_bp.get("/saved-clans")
 def get_saved_clans():
+    """Return the current user's saved clans and limits as JSON."""
     player_tag = session.get("player_tag")
     if not player_tag:
         return jsonify({"message": "Unauthorized"}), 401
@@ -59,6 +91,11 @@ def get_saved_clans():
 
 @saved_clans_bp.post("/saved-clans/<clan_tag>")
 def add_saved_clan(clan_tag):
+    """Return a JSON response after saving a clan tag for the current user.
+
+    Args:
+        clan_tag (str): The clan tag to save for the current user.
+    """
     player_tag = session.get("player_tag")
     if not player_tag:
         return jsonify({"message": "Unauthorized"}), 401
@@ -83,7 +120,10 @@ def add_saved_clan(clan_tag):
     if len(current_saved) >= MAX_SAVED_CLANS:
         return jsonify(
             {
-                "message": "You can save up to 10 clans. Remove one before saving another.",
+                "message": (
+                    "You can save up to 10 clans. Remove one before saving "
+                    "another."
+                ),
                 "count": len(current_saved),
                 "max_saved_clans": MAX_SAVED_CLANS,
             }
@@ -110,6 +150,12 @@ def add_saved_clan(clan_tag):
 
 @saved_clans_bp.delete("/saved-clans/<clan_tag>")
 def delete_saved_clan(clan_tag):
+    """Return a JSON response after removing a saved clan tag for the user.
+
+    Args:
+        clan_tag (str): The clan tag to remove from the current user's saved
+            clans.
+    """
     player_tag = session.get("player_tag")
     if not player_tag:
         return jsonify({"message": "Unauthorized"}), 401
@@ -121,4 +167,6 @@ def delete_saved_clan(clan_tag):
         {"$pull": {"saved_clans": normalized_tag}},
     )
 
-    return jsonify({"message": "Saved clan removed.", "clan_tag": normalized_tag}), 200
+    return jsonify(
+        {"message": "Saved clan removed.", "clan_tag": normalized_tag}
+    ), 200

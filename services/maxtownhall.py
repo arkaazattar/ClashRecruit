@@ -1,55 +1,62 @@
-"""
-Caches the highest Townhall level for 24 hours into cache/. 
+"""Service for caching the highest Townhall level for 24 hours into cache."""
 
-Important Note:
-- If running this file standalone (not imported), you must provide the headers manually.
-"""
 import requests
 from diskcache import Cache
 
 cache = Cache("cache")
 
-def get_max_townhall(headers):
+
+def get_max_townhall(headers) -> int:
+    """Fetch and cache the current highest observed Town Hall level.
+
+    Args:
+        headers (dict[str, str]): HTTP headers sent with Clash of Clans API
+            requests.
+
+    Returns:
+        int: The highest Town Hall level from the top-ranked U.S. player.
+
+    Raises:
+        ValueError: If the API response does not include a valid
+            ``townHallLevel`` value.
     """
-    This function will return the current highest ranked player in the United States and pull their Townhall level.
-    """
-    response = requests.get('https://api.clashofclans.com/v1/locations/32000249/rankings/players?limit=1', headers=headers)
+    response = requests.get(
+        "https://api.clashofclans.com/v1/locations/32000249/"
+        "rankings/players?limit=1",
+        headers=headers,
+    )
     response = response.json()
     tag = response['items'][0]["tag"]
     tag = tag[1:]
-    response = requests.get(f"https://api.clashofclans.com/v1/players/%23{tag}", headers=headers)
+    response = requests.get(
+        f"https://api.clashofclans.com/v1/players/%23{tag}",
+        headers=headers,
+    )
     response = response.json()
-    MAXTOWNHALL = response.get("townHallLevel")
-    cache.set("MAXTOWNHALL", MAXTOWNHALL, 86400)
-    return MAXTOWNHALL
+    max_townhall = response.get("townHallLevel")
+    if max_townhall is None:
+        raise ValueError("Missing 'townHallLevel' in Clash API response.")
+
+    max_townhall = int(max_townhall)
+    cache.set("MAXTOWNHALL", max_townhall, 86400)
+    return max_townhall
 
 
-def refresh(headers):
+def refresh(headers) -> int:
+    """Return the cached maximum Town Hall level, refreshing when absent.
+
+    Args:
+        headers (dict[str, str]): HTTP headers sent with Clash of Clans API
+            requests when a refresh is needed.
+
+    Returns:
+        int: The cached maximum Town Hall level.
+
+    Raises:
+        ValueError: If a valid Town Hall level cannot be resolved.
     """
-    Returns the current highest Townhall level.
-    Checks the cache first, and calls the API only if needed.
-    """
-    if cache.get("MAXTOWNHALL") is None:
-        get_max_townhall(headers)
-    return cache.get("MAXTOWNHALL")
+    cached_value = cache.get("MAXTOWNHALL")
+    if cached_value is None:
+        return get_max_townhall(headers)
 
-if __name__ == "__main__":
-    
-    def check_cache():
-        """
-        This function is used to check the cache file for a value. If nothing is found, it will call get_max_townhall().
-        get_max_townhall() will return the MAXTOWNHALL constant into a cache folder. Access using cache.get("MAXTOWNHALL").
-        """
-        if cache.get("MAXTOWNHALL") == None:
-            get_max_townhall()
-            return False
-        return True
-    
-    cache_status = check_cache()
-    if cache_status:
-        print(f"Received from Cache. Maximum townhall = {cache.get('MAXTOWNHALL')}")
-        exit()
-    else:
-        print(f"Checked highest ranked player in the United States. Maximum townhall = {cache.get('MAXTOWNHALL')}")
-        exit()
-    
+    return int(cached_value)

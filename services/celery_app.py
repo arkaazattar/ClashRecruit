@@ -1,8 +1,9 @@
+"""Shared Celery app configuration and periodic task scheduling."""
+
 import os
 from datetime import timedelta
 
 from celery import Celery
-
 
 app = Celery(
     "clash_recruiter",
@@ -22,5 +23,5 @@ app.conf.beat_schedule = {
 
 # Import task modules after creating the shared app so they register tasks
 # against this Celery instance.
-from . import refresh_db  # noqa: E402,F401
 from . import import_clash_api_clans  # noqa: E402,F401
+from . import refresh_db  # noqa: E402,F401

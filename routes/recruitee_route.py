@@ -1,15 +1,19 @@
+"""Register routes for handling recruitee requests."""
+
 import re
-from flask import Blueprint, session, jsonify, request
+
+from flask import Blueprint, jsonify, request, session
+
 from ..services.import_clash_api_clans import ensure_imported_clan_inventory
 from ..services.mongo_db_client import clan_collection
 
 recruitee_bp = Blueprint("recruitee", __name__)
 
-
 MAX_LIMIT = 200
 
 
 def _get_requested_limit(default_limit):
+    """Return the validated `limit` query param capped to allowed bounds."""
     raw_limit = request.args.get("limit")
     if raw_limit is None:
         return default_limit
@@ -23,6 +27,7 @@ def _get_requested_limit(default_limit):
 
 
 def _get_requested_offset():
+    """Return the validated `offset` query param with a minimum of zero."""
     raw_offset = request.args.get("offset")
     if raw_offset is None:
         return 0
@@ -36,15 +41,18 @@ def _get_requested_offset():
 
 
 def _should_refresh_imported_inventory():
+    """Return whether imported inventory should refresh for this request."""
     return _get_requested_offset() == 0
 
 
 def _should_include_total():
+    """Return whether the response should include paginated total metadata."""
     return request.args.get("includeTotal", "0") == "1"
 
 
 @recruitee_bp.get("/recruitee")
 def recruitee_get():
+    """Return clans for the current session with optional total metadata."""
     player_name = session.get("player_name", None)
     default_limit = 10
     requested_limit = _get_requested_limit(default_limit)
@@ -58,7 +66,9 @@ def recruitee_get():
     else:
         base_query = {
             "requirements.0": {"$lte": session.get("player_league")},
-            "requirements.1": {"$lte": session.get("player_builderbase_trophies")},
+            "requirements.1": {
+                "$lte": session.get("player_builderbase_trophies")
+            },
             "requirements.2": {"$lte": session.get("player_townhall")},
         }
 
@@ -83,6 +93,7 @@ def recruitee_get():
 
 @recruitee_bp.post("/recruitee")
 def recruitee_post():
+    """Return clan details by tag or a filtered clan list for recruitees."""
     DEFAULT_LIMIT = 10
     requested_limit = _get_requested_limit(DEFAULT_LIMIT)
     requested_offset = _get_requested_offset()

@@ -1,4 +1,7 @@
+"""Application configuration and environment-backed settings."""
+
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()

@@ -1,13 +1,17 @@
-from flask import request, session, Blueprint, jsonify
-from ..services.mongo_db_client import clan_collection
+"""Register home routes for login, logout, and database count requests."""
+
+from flask import Blueprint, jsonify, request, session
+
 from ..api.clash_api import API
 from ..config import headers
+from ..services.mongo_db_client import clan_collection
 
 home_bp = Blueprint("home", __name__)
 
-@home_bp.route("/", methods=["POST"])
+
+@home_bp.post("/")
 def home():
-    
+    """Validate a player, store session data, and return login details."""
     data = request.get_json()
 
     received_tag = data.get('playerTag')
@@ -17,7 +21,7 @@ def home():
     check_player_team = user.check_player()
     session["recruiter_status"] = user.recruiter_status
 
-    if check_player_team == True:
+    if check_player_team:
         status = True
         reason = "Valid User"
         name = user.user_name
@@ -36,18 +40,22 @@ def home():
         session["clan_tag"] = clan_tag
 
     return jsonify({
-        "message": status, 
+        "message": status,
         "receivedPlayerTag": reason,
-        "recruit_status" : session.get("recruiter_status"),
-        "player_name" : name,
-        "clan_tag" : clan_tag
+        "recruit_status": session.get("recruiter_status"),
+        "player_name": name,
+        "clan_tag": clan_tag
     })
 
-@home_bp.route("/database_count", methods=["GET"])
+
+@home_bp.get("/database_count")
 def database_count():
+    """Return the current number of stored clans in the database."""
     return jsonify({"clan_count": clan_collection.count_documents({})})
 
-@home_bp.route("/logout", methods=["POST"])
+
+@home_bp.post("/logout")
 def logout():
+    """Clear the current session and confirm logout."""
     session.clear()
     return jsonify({"message": True})
