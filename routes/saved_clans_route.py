@@ -2,7 +2,7 @@
 
 from flask import Blueprint, jsonify, session
 
-from ..services.mongo_db_client import clan_collection, user_collection
+from ..services.mongo_db_client import get_clan_collection, get_user_collection
 
 saved_clans_bp = Blueprint("saved_clans", __name__)
 
@@ -26,6 +26,7 @@ def _hydrate_saved_clans(saved_clan_tags):
         list: A list of hydrated saved clan objects in the same order as the
             provided saved clan tags.
     """
+    clan_collection = get_clan_collection()
     listings = list(
         clan_collection.find(
             {"clan_tag": {"$in": saved_clan_tags}},
@@ -69,6 +70,7 @@ def _hydrate_saved_clans(saved_clan_tags):
 @saved_clans_bp.get("/saved-clans")
 def get_saved_clans():
     """Return the current user's saved clans and limits as JSON."""
+    user_collection = get_user_collection()
     player_tag = session.get("player_tag")
     if not player_tag:
         return jsonify({"message": "Unauthorized"}), 401
@@ -96,6 +98,7 @@ def add_saved_clan(clan_tag):
     Args:
         clan_tag (str): The clan tag to save for the current user.
     """
+    user_collection = get_user_collection()
     player_tag = session.get("player_tag")
     if not player_tag:
         return jsonify({"message": "Unauthorized"}), 401
@@ -156,6 +159,7 @@ def delete_saved_clan(clan_tag):
         clan_tag (str): The clan tag to remove from the current user's saved
             clans.
     """
+    user_collection = get_user_collection()
     player_tag = session.get("player_tag")
     if not player_tag:
         return jsonify({"message": "Unauthorized"}), 401

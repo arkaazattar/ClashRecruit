@@ -1,9 +1,15 @@
 """Service for caching the highest Townhall level for 24 hours into cache."""
 
+from functools import lru_cache
+
 import requests
 from diskcache import Cache
 
-cache = Cache("cache")
+
+@lru_cache(maxsize=1)
+def get_cache() -> Cache:
+    """Return a cached diskcache handle initialized on first use."""
+    return Cache("cache")
 
 
 def get_max_townhall(headers) -> int:
@@ -38,7 +44,7 @@ def get_max_townhall(headers) -> int:
         raise ValueError("Missing 'townHallLevel' in Clash API response.")
 
     max_townhall = int(max_townhall)
-    cache.set("MAXTOWNHALL", max_townhall, 86400)
+    get_cache().set("MAXTOWNHALL", max_townhall, 86400)
     return max_townhall
 
 
@@ -55,7 +61,7 @@ def refresh(headers) -> int:
     Raises:
         ValueError: If a valid Town Hall level cannot be resolved.
     """
-    cached_value = cache.get("MAXTOWNHALL")
+    cached_value = get_cache().get("MAXTOWNHALL")
     if cached_value is None:
         return get_max_townhall(headers)
 

@@ -15,11 +15,10 @@ from .routes.saved_clans_route import saved_clans_bp
 from .routes.search_clans_route import search_clans_bp
 from .routes.session_state_route import session_state_bp
 from .services.clash_api_preflight import run_clash_api_preflight
+from .services.mongo_db_client import initialize_mongo
 
 app = Flask(__name__)
 app.secret_key = FLASKSECRETKEY
-if os.getenv("CLASH_DEV_PREFLIGHT", "False").lower() == "true":
-    run_clash_api_preflight()
 
 CORS(
     app,
@@ -36,5 +35,15 @@ app.register_blueprint(search_clans_bp)
 app.register_blueprint(locations_bp)
 app.register_blueprint(saved_clans_bp)
 
+
+def run_startup_tasks_from_env() -> None:
+    """Run optional startup tasks gated by environment flags."""
+    if os.getenv("CLASH_DEV_PREFLIGHT", "False").lower() == "true":
+        run_clash_api_preflight()
+    if os.getenv("CLASH_INIT_DB_ON_START", "False").lower() == "true":
+        initialize_mongo()
+
+
 if __name__ == "__main__":
+    run_startup_tasks_from_env()
     app.run(port=5000)

@@ -7,7 +7,7 @@ from flask import Blueprint, jsonify, request, session
 from ..api.recruiter_api import Recruiter
 from ..config import headers
 from ..services.maxtownhall import refresh
-from ..services.mongo_db_client import clan_collection
+from ..services.mongo_db_client import get_clan_collection
 
 recruiter_bp = Blueprint("recruiter", __name__)
 
@@ -17,6 +17,8 @@ def recruit():
     """Return recruiter listing data or create, update, and remove listings."""
     if not session.get("recruiter_status"):
         return jsonify({"message": "Forbidden"}), 403
+
+    clan_collection = get_clan_collection()
 
     existing = clan_collection.find_one({
         "clan_tag": session.get("clan_tag"),

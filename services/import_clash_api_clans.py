@@ -9,9 +9,9 @@ from celery.signals import worker_ready
 from ..config import headers
 from .celery_app import app
 from .mongo_db_client import (
-    clan_collection,
-    import_state_collection,
-    location_collection,
+    get_clan_collection,
+    get_import_state_collection,
+    get_location_collection,
 )
 
 DISCOVERY_STALE_AFTER = timedelta(hours=6)
@@ -21,6 +21,21 @@ IMPORTED_CLAN_RETENTION = timedelta(days=3)
 def _now() -> datetime:
     """Return the current UTC time."""
     return datetime.now(timezone.utc)
+
+
+def _clan_collection():
+    """Return the clans collection lazily."""
+    return get_clan_collection()
+
+
+def _import_state_collection():
+    """Return the import-state collection lazily."""
+    return get_import_state_collection()
+
+
+def _location_collection():
+    """Return the location collection lazily."""
+    return get_location_collection()
 
 
 def _clean_tag(tag: str | None) -> str | None:
@@ -45,7 +60,7 @@ def _build_seed_key(seed: dict[str, Any]) -> str:
 def _seed_locations(limit: int = 4) -> list[int]:
     """Return a list of stored location IDs used to build discovery seeds."""
     locations = list(
-        location_collection.find({}, {"_id": 0, "id": 1}).limit(limit)
+        _location_collection().find({}, {"_id": 0, "id": 1}).limit(limit)
     )
     return [location.get("id") for location in locations if location.get("id")]
 
@@ -105,12 +120,12 @@ def _search_clans(filters: dict[str, Any]) -> dict[str, Any]:
 
 def _get_seed_state(seed_key: str) -> dict[str, Any] | None:
     """Return persisted pagination state for a discovery seed key."""
-    return import_state_collection.find_one({"seed_key": seed_key}, {"_id": 0})
+    return _import_state_collection().find_one({"seed_key": seed_key}, {"_id": 0})
 
 
 def _set_seed_after(seed_key: str, after: str | None) -> None:
     """Persist the next-page cursor and run timestamp for a discovery seed."""
-    import_state_collection.update_one(
+    _import_state_collection().update_one(
         {"seed_key": seed_key},
         {
             "$set": {
@@ -271,7 +286,7 @@ def discover_imported_clans_task() -> int:
 def cleanup_old_imported_clans() -> int:
     """Delete stale imported clans past retention and return delete count."""
     cutoff = _now() - IMPORTED_CLAN_RETENTION
-    result = clan_collection.delete_many({
+    result = _clan_collection().delete_many({
         "source": "clash_api_import",
         "last_discovered": {"$lt": cutoff},
     })
@@ -339,7 +354,7 @@ def discover_imported_clans(max_seeds: int = 12) -> int:
                     detail,
                     seed_key,
                 )
-                clan_collection.update_one(
+                _clan_collection().update_one(
                     {"clan_tag": clan_tag, "source": "clash_api_import"},
                     {
                         "$set": {
@@ -375,7 +390,7 @@ def discover_imported_clans(max_seeds: int = 12) -> int:
 def ensure_imported_clan_inventory(min_complete: int = 30) -> None:
     """Ensure a recent minimum inventory of imported clans is available."""
     recent_threshold = _now() - DISCOVERY_STALE_AFTER
-    complete_count = clan_collection.count_documents(
+    complete_count = _clan_collection().count_documents(
         {
             "source": "clash_api_import",
             "last_discovered": {"$gte": recent_threshold},
@@ -403,7 +418,7 @@ def get_imported_clan(clan_tag: str | None) -> dict[str, Any] | None:
     if not clean_tag:
         return None
 
-    clan = clan_collection.find_one(
+    clan = _clan_collection().find_one(
         {"clan_tag": clean_tag, "source": "clash_api_import"},
         {"_id": 0},
     )
@@ -414,7 +429,7 @@ def get_imported_clan(clan_tag: str | None) -> dict[str, Any] | None:
     if detail is None:
         return None
 
-    clan_collection.update_one(
+    _clan_collection().update_one(
         {"clan_tag": clean_tag, "source": "clash_api_import"},
         {
             "$set": {
@@ -441,7 +456,7 @@ def get_imported_clan(clan_tag: str | None) -> dict[str, Any] | None:
         },
         upsert=True,
     )
-    return clan_collection.find_one(
+    return _clan_collection().find_one(
         {"clan_tag": clean_tag, "source": "clash_api_import"},
         {"_id": 0},
     )

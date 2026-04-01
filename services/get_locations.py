@@ -3,7 +3,7 @@
 import requests
 
 from ..config import headers
-from ..services.mongo_db_client import location_collection
+from ..services.mongo_db_client import get_location_collection
 
 
 def get_locations(headers) -> list:
@@ -29,6 +29,7 @@ def get_locations(headers) -> list:
 
 def update_location_collection() -> None:
     """Updates stored database locations on function call."""
+    location_collection = get_location_collection()
     list_of_locations = get_locations(headers)
 
     for location in list_of_locations:
