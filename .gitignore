@@ -17,6 +17,7 @@ node_modules/
 
 # testing
 coverage/
+.ruff_cache/
 
 # production build
 build/
