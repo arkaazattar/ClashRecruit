@@ -36,11 +36,16 @@ clashrecruit/
 ## Getting Started
 
 ### Prerequisites
-- Node.js
-- npm
-- Python 3.10+ (YMMV)
+- Node.js 20.x
+- npm 10.x
+- Python 3.12
 - pip / virtualenv
 - Docker + Docker Compose
+
+Version files in repo:
+- `.python-version` -> `3.12`
+- `.nvmrc` -> `20`
+- `frontend/package.json` engines -> Node `20.x`, npm `10.x`
 
 ---
 
