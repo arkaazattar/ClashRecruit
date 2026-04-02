@@ -4,7 +4,7 @@ from flask import Blueprint, jsonify, request, session
 
 from ..api.clash_api import API
 from ..config import headers
-from ..services.mongo_db_client import clan_collection
+from ..services.mongo_db_client import get_clan_collection
 
 home_bp = Blueprint("home", __name__)
 
@@ -51,6 +51,7 @@ def home():
 @home_bp.get("/database_count")
 def database_count():
     """Return the current number of stored clans in the database."""
+    clan_collection = get_clan_collection()
     return jsonify({"clan_count": clan_collection.count_documents({})})
 
 

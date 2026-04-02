@@ -6,7 +6,7 @@ from flask import Blueprint, jsonify, session
 
 from ..api.clash_api import API
 from ..config import headers
-from ..services.mongo_db_client import clan_collection
+from ..services.mongo_db_client import get_clan_collection
 
 session_state_bp = Blueprint("session_state", __name__)
 
@@ -30,6 +30,7 @@ def session_state():
         clan_tag = user.clantag or clan_tag
 
     if clan_tag:
+        clan_collection = get_clan_collection()
         now = datetime.now(timezone.utc)
         listing = clan_collection.find_one(
             {

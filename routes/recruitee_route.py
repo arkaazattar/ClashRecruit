@@ -5,7 +5,7 @@ import re
 from flask import Blueprint, jsonify, request, session
 
 from ..services.import_clash_api_clans import ensure_imported_clan_inventory
-from ..services.mongo_db_client import clan_collection
+from ..services.mongo_db_client import get_clan_collection
 
 recruitee_bp = Blueprint("recruitee", __name__)
 
@@ -53,6 +53,7 @@ def _should_include_total():
 @recruitee_bp.get("/recruitee")
 def recruitee_get():
     """Return clans for the current session with optional total metadata."""
+    clan_collection = get_clan_collection()
     player_name = session.get("player_name", None)
     default_limit = 10
     requested_limit = _get_requested_limit(default_limit)
@@ -94,6 +95,7 @@ def recruitee_get():
 @recruitee_bp.post("/recruitee")
 def recruitee_post():
     """Return clan details by tag or a filtered clan list for recruitees."""
+    clan_collection = get_clan_collection()
     DEFAULT_LIMIT = 10
     requested_limit = _get_requested_limit(DEFAULT_LIMIT)
     requested_offset = _get_requested_offset()

@@ -7,7 +7,7 @@ from celery.signals import worker_ready
 from ..api.recruiter_api import Recruiter
 from ..config import headers
 from .celery_app import app
-from .mongo_db_client import clan_collection
+from .mongo_db_client import get_clan_collection
 
 THRESHOLD = timedelta(minutes=10)
 
@@ -33,6 +33,7 @@ def run_refresh_on_worker_start(sender=None, **kwargs):
 
 def refresh_membercount() -> None:
     """Refresh member counts for clans with stale data."""
+    clan_collection = get_clan_collection()
     outdated_entries = list(clan_collection.find({
         "last_updated" : { '$lte': datetime.now(timezone.utc) - THRESHOLD},
     }))
