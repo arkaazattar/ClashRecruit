@@ -4,8 +4,10 @@ import re
 
 from flask import Blueprint, jsonify, request
 
-from ..services.import_clash_api_clans import (ensure_imported_clan_inventory,
-                                               get_imported_clan)
+from ..services.import_clash_api_clans import (
+    ensure_imported_clan_inventory,
+    get_imported_clan,
+)
 from ..services.mongo_db_client import get_clan_collection
 
 imported_clans_bp = Blueprint("imported_clans", __name__)

@@ -63,7 +63,7 @@ class Recruiter:
         response = response.json()
         rsp: dict[str, object] = {}
 
-        if request == None:
+        if request is None:
             rsp['name'] = response.get("name")
             rsp['type'] = response.get("type")
             rsp['description'] = response.get("description")

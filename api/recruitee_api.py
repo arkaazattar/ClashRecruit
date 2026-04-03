@@ -38,7 +38,7 @@ class Recruitee:
             dict: Response payload containing ``items``, ``after``, and
                 optional ``error`` metadata.
         """
-        url = f"https://api.clashofclans.com/v1/clans"
+        url = "https://api.clashofclans.com/v1/clans"
         if after:
             filter["after"] = after
 

@@ -69,7 +69,9 @@ class API:
         elif status == "invalid":
             self.reason = "API Token is incorrect"
 
-        else: self.reason = self.apistorage
+        else: 
+            self.reason = self.apistorage
+        
         return self.token
 
     def check_player(
@@ -103,13 +105,17 @@ class API:
              self.reason = "Invalid IP"
              return False
 
-        if self.json_data["token"] and self.check_player_api() == False:
+        if self.json_data["token"] and not self.check_player_api():
             return False
 
         self.league = self.storage.get("leagueTier").get("name")
+
         if self.league != 'Unranked':
             self.league = int(self.league[-2:])
-        else: self.league = 0
+
+        else: 
+            self.league = 0
+
         self.townhall = self.storage.get("townHallLevel")
         self.builder_trophies = self.storage.get("builderBaseTrophies")
 

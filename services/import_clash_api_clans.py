@@ -120,7 +120,10 @@ def _search_clans(filters: dict[str, Any]) -> dict[str, Any]:
 
 def _get_seed_state(seed_key: str) -> dict[str, Any] | None:
     """Return persisted pagination state for a discovery seed key."""
-    return _import_state_collection().find_one({"seed_key": seed_key}, {"_id": 0})
+    return _import_state_collection().find_one(
+        {"seed_key": seed_key},
+        {"_id": 0},
+    )
 
 
 def _set_seed_after(seed_key: str, after: str | None) -> None:

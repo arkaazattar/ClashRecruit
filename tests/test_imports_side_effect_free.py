@@ -7,7 +7,6 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PROJECT_PARENT = PROJECT_ROOT.parent
 if str(PROJECT_PARENT) not in sys.path:
@@ -31,7 +30,10 @@ MODULES_TO_IMPORT = [
 class ImportSideEffectsTests(unittest.TestCase):
     def _clear_repo_modules(self):
         for module_name in list(sys.modules):
-            if module_name == "ClashRecruit" or module_name.startswith("ClashRecruit."):
+            if (
+                module_name == "ClashRecruit"
+                or module_name.startswith("ClashRecruit.")
+            ):
                 sys.modules.pop(module_name, None)
 
     def test_importing_backend_modules_does_not_create_mongo_client(self):
