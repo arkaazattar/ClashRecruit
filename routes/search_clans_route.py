@@ -14,8 +14,6 @@ def search_clans():
     filters = request.get_json() or {}
     user = Recruitee(
         session.get("player_tag"),
-        session.get("player_townhall"),
-        session.get("player_league"),
         headers,
     )
     clans = user.searchClan(filters, filters.get("after"))
