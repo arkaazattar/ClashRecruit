@@ -9,7 +9,6 @@ PROJECT_PARENT = PROJECT_ROOT.parent
 if str(PROJECT_PARENT) not in sys.path:
     sys.path.insert(0, str(PROJECT_PARENT))
 
-
 @pytest.fixture
 def app() -> Flask:
     return Flask(__name__)
