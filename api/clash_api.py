@@ -102,8 +102,8 @@ class API:
             return False
 
         if reason == "accessDenied.invalidIp":
-             self.reason = "Invalid IP"
-             return False
+            self.reason = "Invalid IP"
+            return False
 
         if self.json_data["token"] and not self.check_player_api():
             return False
