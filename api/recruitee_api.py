@@ -15,8 +15,6 @@ class Recruitee:
 
         Args:
             user_tag (str | None): Player tag for the current user.
-            townhall (int | None): Player Town Hall level.
-            league (int | None): Player league tier.
             headers (dict[str, str]): HTTP headers for Clash API requests.
         """
         self.headers = headers

@@ -33,11 +33,11 @@ def test_player_not_found(monkeypatch) -> None:
 
     fake_response = Mock()
     fake_response.json.return_value = {"reason": "notFound"}
-    mock_post = Mock(return_value=fake_response)
+    mock_get = Mock(return_value=fake_response)
 
     monkeypatch.setattr(
         "ClashRecruit.api.clash_api.requests.get",
-        mock_post,
+        mock_get,
     )
 
     assert not invalid_user.check_player()
@@ -94,11 +94,11 @@ def test_check_player_with_all_request_options(monkeypatch) -> None:
         "role": "coLeader",
         "name": "valid_user",
     }
-    mock_post = Mock(return_value=fake_response)
+    mock_get = Mock(return_value=fake_response)
 
     monkeypatch.setattr(
         "ClashRecruit.api.clash_api.requests.get",
-        mock_post,
+        mock_get,
     )
 
     result = user.check_player([
@@ -143,11 +143,11 @@ def test_check_player_single_digit_league_tier(monkeypatch) -> None:
         "role": "coLeader",
         "name": "valid_user",
     }
-    mock_post = Mock(return_value=fake_response)
+    mock_get = Mock(return_value=fake_response)
 
     monkeypatch.setattr(
         "ClashRecruit.api.clash_api.requests.get",
-        mock_post,
+        mock_get,
     )
 
     user.check_player()
