@@ -101,13 +101,15 @@ def test_check_player_with_all_request_options(monkeypatch) -> None:
         mock_get,
     )
 
-    result = user.check_player([
-        "expLevel",
-        "leagueTier",
-        "builderBaseLeague",
-        "builderHallLevel",
-        "clan",
-    ])
+    result = user.check_player(
+        [
+            "expLevel",
+            "leagueTier",
+            "builderBaseLeague",
+            "builderHallLevel",
+            "clan",
+        ]
+    )
 
     assert result["player_tag"] == "valid_user"
     assert result["leagueTier"] == {"name": "Unranked"}
@@ -262,13 +264,15 @@ def test_check_player_request_subset_without_clan_num_items_5(
         Mock(return_value=fake_response),
     )
 
-    result = user.check_player([
-        "expLevel",
-        "leagueTier",
-        "builderBaseLeague",
-        "builderHallLevel",
-        "clan",
-    ])
+    result = user.check_player(
+        [
+            "expLevel",
+            "leagueTier",
+            "builderBaseLeague",
+            "builderHallLevel",
+            "clan",
+        ]
+    )
 
     assert result["player_tag"] == "valid_user"
     assert result["clan"] is None
@@ -288,4 +292,3 @@ def test_check_player_request_subset_without_clan_num_items_5(
 def test_recruiting_role_matrix(payload: dict, expected: bool) -> None:
     user = API("valid_user", api=None, headers=MOCK_HEADERS)
     assert user.recruiting(payload) is expected
-    

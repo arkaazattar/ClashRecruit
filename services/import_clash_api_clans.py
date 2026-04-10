@@ -75,29 +75,35 @@ def _build_discovery_seeds() -> list[dict[str, Any]]:
     location_ids = _seed_locations(limit=6)
 
     for prefix in prefixes:
-        seeds.append({
-            "name": prefix,
-            "minMembers": 10,
-            "limit": 10,
-        })
+        seeds.append(
+            {
+                "name": prefix,
+                "minMembers": 10,
+                "limit": 10,
+            }
+        )
 
     for war_frequency in war_frequencies:
         for min_members, max_members in member_ranges:
-            seeds.append({
-                "warFrequency": war_frequency,
-                "minMembers": min_members,
-                "maxMembers": max_members,
-                "limit": 10,
-            })
+            seeds.append(
+                {
+                    "warFrequency": war_frequency,
+                    "minMembers": min_members,
+                    "maxMembers": max_members,
+                    "limit": 10,
+                }
+            )
 
     for location_id in location_ids:
         for min_level in min_levels:
-            seeds.append({
-                "locationId": location_id,
-                "minClanLevel": min_level,
-                "minMembers": 10,
-                "limit": 10,
-            })
+            seeds.append(
+                {
+                    "locationId": location_id,
+                    "minClanLevel": min_level,
+                    "minMembers": 10,
+                    "limit": 10,
+                }
+            )
 
     return seeds
 
@@ -289,10 +295,12 @@ def discover_imported_clans_task() -> int:
 def cleanup_old_imported_clans() -> int:
     """Delete stale imported clans past retention and return delete count."""
     cutoff = _now() - IMPORTED_CLAN_RETENTION
-    result = _clan_collection().delete_many({
-        "source": "clash_api_import",
-        "last_discovered": {"$lt": cutoff},
-    })
+    result = _clan_collection().delete_many(
+        {
+            "source": "clash_api_import",
+            "last_discovered": {"$lt": cutoff},
+        }
+    )
     return result.deleted_count
 
 

@@ -23,9 +23,8 @@ MODULES_TO_IMPORT = [
 class ImportSideEffectsTests(unittest.TestCase):
     def _clear_repo_modules(self):
         for module_name in list(sys.modules):
-            if (
-                module_name == "ClashRecruit"
-                or module_name.startswith("ClashRecruit.")
+            if module_name == "ClashRecruit" or module_name.startswith(
+                "ClashRecruit."
             ):
                 sys.modules.pop(module_name, None)
 

@@ -107,20 +107,24 @@ def imported_clans_post():
     total = clan_collection.count_documents(query)
     items = list(
         clan_collection.find(query, {"_id": 0})
-        .sort([
-            ("last_discovered", -1),
-            ("last_updated", -1),
-            ("clan_info.clan_level", -1),
-            ("clan_info.member_count", -1),
-            ("clan_tag", 1),
-        ])
+        .sort(
+            [
+                ("last_discovered", -1),
+                ("last_updated", -1),
+                ("clan_info.clan_level", -1),
+                ("clan_info.member_count", -1),
+                ("clan_tag", 1),
+            ]
+        )
         .skip(requested_offset)
         .limit(requested_limit)
     )
 
-    return jsonify({
-        "items": items,
-        "total": total,
-        "limit": requested_limit,
-        "offset": requested_offset,
-    })
+    return jsonify(
+        {
+            "items": items,
+            "total": total,
+            "limit": requested_limit,
+            "offset": requested_offset,
+        }
+    )

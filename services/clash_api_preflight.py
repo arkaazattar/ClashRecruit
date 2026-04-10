@@ -34,5 +34,6 @@ def run_clash_api_preflight(headers=headers) -> None:
 
     return
 
+
 if __name__ == "__main__":
     run_clash_api_preflight()

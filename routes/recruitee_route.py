@@ -84,12 +84,14 @@ def recruitee_get():
         return jsonify(data)
 
     total = clan_collection.count_documents(base_query)
-    return jsonify({
-        "items": data,
-        "total": total,
-        "limit": requested_limit,
-        "offset": requested_offset,
-    })
+    return jsonify(
+        {
+            "items": data,
+            "total": total,
+            "limit": requested_limit,
+            "offset": requested_offset,
+        }
+    )
 
 
 @recruitee_bp.post("/recruitee")
@@ -167,9 +169,11 @@ def recruitee_post():
         return jsonify(data)
 
     total = clan_collection.count_documents(query)
-    return jsonify({
-        "items": data,
-        "total": total,
-        "limit": requested_limit,
-        "offset": requested_offset,
-    })
+    return jsonify(
+        {
+            "items": data,
+            "total": total,
+            "limit": requested_limit,
+            "offset": requested_offset,
+        }
+    )

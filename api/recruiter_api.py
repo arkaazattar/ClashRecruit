@@ -30,12 +30,11 @@ class Recruiter:
         self.storage = response.json()
         long_list = self.storage.get("items")
         for i in range(len(long_list)):
-            required_townhall = long_list[i].get('requiredTownhallLevel')
+            required_townhall = long_list[i].get("requiredTownhallLevel")
             required_builder_trophies = long_list[i].get(
                 "requiredBuilderBaseTrophies"
             )
             required_league = 0
-
 
         self.new_clan_requirements(
             required_league,
@@ -64,43 +63,26 @@ class Recruiter:
         rsp: dict[str, object] = {}
 
         if request is None:
-            rsp['name'] = response.get("name")
-            rsp['type'] = response.get("type")
-            rsp['description'] = response.get("description")
-            rsp['location'] = {
+            rsp["name"] = response.get("name")
+            rsp["type"] = response.get("type")
+            rsp["description"] = response.get("description")
+            rsp["location"] = {
                 "id": response.get("location", {}).get("id"),
                 "name": response.get("location", {}).get("name"),
             }
-            rsp['badge'] = response.get("badgeUrls").get("medium")
-            rsp['clan_level'] = response.get("clanLevel")
-            rsp['member_count'] = response.get("members")
-            rsp['warFrequency'] = response.get("warFrequency")
-            rsp['clanPoints'] = response.get("clanPoints")
-
+            rsp["badge"] = response.get("badgeUrls").get("medium")
+            rsp["clan_level"] = response.get("clanLevel")
+            rsp["member_count"] = response.get("members")
+            rsp["warFrequency"] = response.get("warFrequency")
+            rsp["clanPoints"] = response.get("clanPoints")
 
         elif request == "member_count":
-            rsp['member_count'] = response.get("members")
+            rsp["member_count"] = response.get("members")
 
         elif request == "description":
             rsp["description"] = response.get("description")
 
         return rsp
-
-
-    def set_townhall_requirement(self, required_townhall: int | None) -> None:
-        """Set the required Town Hall value for this recruiter instance."""
-        self.required_townhall = required_townhall
-
-    def set_builder_trophies_requirement(
-        self,
-        required_builder_trophies: int | None,
-    ) -> None:
-        """Set the required Builder Base trophies value."""
-        self.required_builder_trophies = required_builder_trophies
-
-    def set_league_requirement(self, required_league: int | None) -> None:
-        """Set the required league value."""
-        self.required_league = required_league
 
     def new_clan_requirements(
         self,

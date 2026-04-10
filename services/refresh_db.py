@@ -34,25 +34,29 @@ def run_refresh_on_worker_start(sender=None, **kwargs):
 def refresh_membercount() -> None:
     """Refresh member counts for clans with stale data."""
     clan_collection = get_clan_collection()
-    outdated_entries = list(clan_collection.find({
-        "last_updated" : { '$lte': datetime.now(timezone.utc) - THRESHOLD},
-    }))
+    outdated_entries = list(
+        clan_collection.find(
+            {
+                "last_updated": {
+                    "$lte": datetime.now(timezone.utc) - THRESHOLD
+                },
+            }
+        )
+    )
 
     for entry in outdated_entries:
         clan = Recruiter(entry.get("clan_tag"), headers)
         member_count = clan.lookup_clan("member_count").get("member_count")
         clan_collection.update_one(
-                                   {
-                                       "clan_tag" : clan.clan_tag,
-                                       "source": entry.get("source")
-                                   },
-                                   {'$set' :
-                                    {
-                                        "last_updated": datetime.now(
-                                            timezone.utc
-                                        ),
-                                     "clan_info.member_count" : member_count
-                                     }})
+            {"clan_tag": clan.clan_tag, "source": entry.get("source")},
+            {
+                "$set": {
+                    "last_updated": datetime.now(timezone.utc),
+                    "clan_info.member_count": member_count,
+                }
+            },
+        )
+
 
 if __name__ == "__main__":
     refresh_membercount()

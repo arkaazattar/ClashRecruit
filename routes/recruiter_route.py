@@ -12,7 +12,7 @@ from ..services.mongo_db_client import get_clan_collection
 recruiter_bp = Blueprint("recruiter", __name__)
 
 
-@recruiter_bp.route("/recruiter", methods=['GET', 'POST'])
+@recruiter_bp.route("/recruiter", methods=["GET", "POST"])
 def recruit():
     """Return recruiter listing data or create, update, and remove listings."""
     if not session.get("recruiter_status"):
@@ -20,10 +20,12 @@ def recruit():
 
     clan_collection = get_clan_collection()
 
-    existing = clan_collection.find_one({
-        "clan_tag": session.get("clan_tag"),
-        "source": {"$ne": "clash_api_import"},
-    })
+    existing = clan_collection.find_one(
+        {
+            "clan_tag": session.get("clan_tag"),
+            "source": {"$ne": "clash_api_import"},
+        }
+    )
 
     user = Recruiter(session.get("clan_tag"), headers)
     user.pull_clan_requirements()
@@ -44,14 +46,16 @@ def recruit():
             status = None
 
         MAXTOWNHALL = refresh(headers)
-        return jsonify({
-            "oldRequiredLeague": required_league,
-            "oldRequiredBuilderLeague": required_builder_league,
-            "oldRequiredTownhall": required_townhall,
-            "MAXTOWNHALL": MAXTOWNHALL,
-            "clanDescription": clan_description,
-            "status": status
-        })
+        return jsonify(
+            {
+                "oldRequiredLeague": required_league,
+                "oldRequiredBuilderLeague": required_builder_league,
+                "oldRequiredTownhall": required_townhall,
+                "MAXTOWNHALL": MAXTOWNHALL,
+                "clanDescription": clan_description,
+                "status": status,
+            }
+        )
 
     data = request.get_json()
     new_required_league = data.get("requiredLeague", None)
@@ -73,7 +77,7 @@ def recruit():
             "player_tag": session.get("player_tag"),
             "clan_info": clan_info,
             "last_updated": datetime.now(timezone.utc),
-            "expires": expiry
+            "expires": expiry,
         }
         render_data = data.copy()
         clan_collection.insert_one(data)
@@ -85,7 +89,7 @@ def recruit():
             "source": "live_listing",
             "requirements": user.requirements,
             "clan_info.description": data.get("description"),
-            "last_updated": datetime.now(timezone.utc)
+            "last_updated": datetime.now(timezone.utc),
         }
 
         if data.get("updateExpiry") is True:
@@ -100,18 +104,20 @@ def recruit():
                 "clan_tag": session.get("clan_tag"),
                 "source": {"$ne": "clash_api_import"},
             },
-            {"$set": query}
+            {"$set": query},
         )
         render_data = {
             "status": status,
-            "message": "Listing updated successfully."
+            "message": "Listing updated successfully.",
         }
 
     elif data.get("status") == "removeListing":
-        deleted = clan_collection.delete_one({
-            "clan_tag": session.get("clan_tag"),
-            "source": {"$ne": "clash_api_import"},
-        })
+        deleted = clan_collection.delete_one(
+            {
+                "clan_tag": session.get("clan_tag"),
+                "source": {"$ne": "clash_api_import"},
+            }
+        )
         if deleted.deleted_count:
             message = "Successfully deleted entry."
             return jsonify({"message": message}), 200

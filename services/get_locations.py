@@ -35,10 +35,9 @@ def update_location_collection() -> None:
     for location in list_of_locations:
         if location["name"] == "":
             continue
-        if not location_collection.find_one({"id" : location.get("id")}):
-            location_collection.insert_one(
-                location
-                )
+        if not location_collection.find_one({"id": location.get("id")}):
+            location_collection.insert_one(location)
+
 
 if __name__ == "__main__":
     update_location_collection()

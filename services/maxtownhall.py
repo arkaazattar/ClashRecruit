@@ -32,7 +32,7 @@ def get_max_townhall(headers) -> int:
         headers=headers,
     )
     response = response.json()
-    tag = response['items'][0]["tag"]
+    tag = response["items"][0]["tag"]
     tag = tag[1:]
     response = requests.get(
         f"https://api.clashofclans.com/v1/players/%23{tag}",
