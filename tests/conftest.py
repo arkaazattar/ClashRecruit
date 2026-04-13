@@ -12,4 +12,24 @@ if str(PROJECT_PARENT) not in sys.path:
 
 @pytest.fixture
 def app() -> Flask:
-    return Flask(__name__)
+    from ClashRecruit.app import app as clash_app
+
+    clash_app.config.update(
+        TESTING=True,
+        SECRET_KEY="test-secret-key",
+    )
+    return clash_app
+
+
+@pytest.fixture
+def client(app: Flask):
+    return app.test_client()
+
+
+@pytest.fixture
+def set_session(client):
+    def _set_session(**values):
+        with client.session_transaction() as sess:
+            sess.update(values)
+
+    return _set_session
