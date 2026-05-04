@@ -67,6 +67,104 @@ def test_saved_clans_get_hydrates_available_and_missing_listings(
     }
 
 
+def test_saved_clans_get_returns_empty_saved_list(
+    client,
+    monkeypatch,
+    set_session,
+):
+    import ClashRecruit.routes.saved_clans_route as saved_clans_route
+
+    class DummyUserCollection:
+        def find_one(self, query, projection):
+            assert query == {"player_tag": "PLAYER123"}
+            assert projection == {"_id": 0, "saved_clans": 1}
+            return {"saved_clans": []}
+
+    class DummyClanCollection:
+        def find(self, query, projection):
+            assert query == {"clan_tag": {"$in": []}}
+            assert projection == {
+                "_id": 0,
+                "clan_tag": 1,
+                "name": 1,
+                "requirements": 1,
+                "clan_info": 1,
+            }
+            return []
+
+    set_session(player_tag="PLAYER123")
+    monkeypatch.setattr(
+        saved_clans_route,
+        "get_user_collection",
+        lambda: DummyUserCollection(),
+    )
+    monkeypatch.setattr(
+        saved_clans_route,
+        "get_clan_collection",
+        lambda: DummyClanCollection(),
+    )
+
+    response = client.get("/saved-clans")
+
+    assert response.status_code == 200
+    assert response.get_json() == {
+        "saved_clans": [],
+        "count": 0,
+        "max_saved_clans": 10,
+    }
+
+
+def test_saved_clans_get_uses_clan_info_name_when_top_level_name_missing(
+    client,
+    monkeypatch,
+    set_session,
+):
+    import ClashRecruit.routes.saved_clans_route as saved_clans_route
+
+    class DummyUserCollection:
+        def find_one(self, query, projection):
+            return {"saved_clans": ["ABC123"]}
+
+    class DummyClanCollection:
+        def find(self, query, projection):
+            return [
+                {
+                    "clan_tag": "ABC123",
+                    "requirements": [1, 2, 3],
+                    "clan_info": {"name": "test_clan_info"},
+                }
+            ]
+
+    set_session(player_tag="PLAYER123")
+    monkeypatch.setattr(
+        saved_clans_route,
+        "get_user_collection",
+        lambda: DummyUserCollection(),
+    )
+    monkeypatch.setattr(
+        saved_clans_route,
+        "get_clan_collection",
+        lambda: DummyClanCollection(),
+    )
+
+    response = client.get("/saved-clans")
+
+    assert response.status_code == 200
+    assert response.get_json() == {
+        "saved_clans": [
+            {
+                "clan_tag": "ABC123",
+                "name": "test_clan_info",
+                "requirements": [1, 2, 3],
+                "clan_info": {"name": "test_clan_info"},
+                "listing_available": True,
+            }
+        ],
+        "count": 1,
+        "max_saved_clans": 10,
+    }
+
+
 def test_saved_clans_post_adds_normalized_tag(
     client,
     monkeypatch,

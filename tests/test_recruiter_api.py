@@ -32,6 +32,36 @@ def test_pull_clan_requirements_success(monkeypatch) -> None:
     )
 
 
+def test_pull_clan_requirements_defaults_when_api_returns_no_items(
+    monkeypatch,
+) -> None:
+    user = Recruiter(KNOWN_STABLE_TAG, MOCK_HEADERS)
+
+    fake_response = Mock()
+    fake_response.json.return_value = {"items": []}
+    monkeypatch.setattr(
+        "ClashRecruit.api.recruiter_api.requests.get",
+        Mock(return_value=fake_response),
+    )
+
+    assert user.pull_clan_requirements() == [0, 0, 0]
+
+
+def test_pull_clan_requirements_defaults_when_items_missing(
+    monkeypatch,
+) -> None:
+    user = Recruiter(KNOWN_STABLE_TAG, MOCK_HEADERS)
+
+    fake_response = Mock()
+    fake_response.json.return_value = {}
+    monkeypatch.setattr(
+        "ClashRecruit.api.recruiter_api.requests.get",
+        Mock(return_value=fake_response),
+    )
+
+    assert user.pull_clan_requirements() == [0, 0, 0]
+
+
 def test_lookup_clan_full_payload(monkeypatch) -> None:
     user = Recruiter(KNOWN_STABLE_TAG, MOCK_HEADERS)
 

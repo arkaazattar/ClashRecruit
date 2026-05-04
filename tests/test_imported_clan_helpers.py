@@ -74,3 +74,22 @@ def test_build_imported_query_member_ranges(
 
     assert query["source"] == "clash_api_import"
     assert query["clan_info.member_count"] == expected
+
+
+def test_build_imported_query_all_scalar_filters() -> None:
+    query = _build_imported_query(
+        {
+            "minClanLevel": 10,
+            "clanPoints": 35000,
+            "warFrequency": "always",
+            "location": "International",
+        }
+    )
+
+    assert query == {
+        "source": "clash_api_import",
+        "clan_info.clan_level": {"$gte": 10},
+        "clan_info.clanPoints": {"$gte": 35000},
+        "clan_info.warFrequency": "always",
+        "clan_info.location.name": "International",
+    }

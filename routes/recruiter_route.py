@@ -57,7 +57,24 @@ def recruit():
             }
         )
 
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
+    listing_status = data.get("status")
+    if listing_status not in {"new", "update", "removeListing"}:
+        return jsonify({"message": "Invalid listing status."}), 400
+
+    if listing_status == "removeListing":
+        deleted = clan_collection.delete_one(
+            {
+                "clan_tag": session.get("clan_tag"),
+                "source": {"$ne": "clash_api_import"},
+            }
+        )
+        if deleted.deleted_count:
+            message = "Successfully deleted entry."
+            return jsonify({"message": message}), 200
+
+        return jsonify({"message": "Failed to delete."}), 404
+
     new_required_league = data.get("requiredLeague", None)
     new_required_builder_league = data.get("requiredBuilderLeague", None)
     new_required_townhall = data.get("requiredTownhall", None)
@@ -66,7 +83,7 @@ def recruit():
     user.requirements[2] = new_required_townhall
     clan_info = user.lookup_clan()
 
-    if data.get("status") == "new":
+    if listing_status == "new":
         expiry = datetime.now(timezone.utc) + timedelta(days=7)
         clan_info["description"] = data.get("description")
         data = {
@@ -84,7 +101,7 @@ def recruit():
         render_data["status"] = expiry
         render_data["message"] = "Listing created successfully."
 
-    elif data.get("status") == "update":
+    elif listing_status == "update":
         query = {
             "source": "live_listing",
             "requirements": user.requirements,
@@ -110,18 +127,5 @@ def recruit():
             "status": status,
             "message": "Listing updated successfully.",
         }
-
-    elif data.get("status") == "removeListing":
-        deleted = clan_collection.delete_one(
-            {
-                "clan_tag": session.get("clan_tag"),
-                "source": {"$ne": "clash_api_import"},
-            }
-        )
-        if deleted.deleted_count:
-            message = "Successfully deleted entry."
-            return jsonify({"message": message}), 200
-
-        return jsonify({"message": "Failed to delete."}), 404
 
     return jsonify(render_data), 200

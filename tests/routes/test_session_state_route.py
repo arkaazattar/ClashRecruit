@@ -1,5 +1,6 @@
 class DummyAPI:
     instances = []
+    live_clan_tag = "LIVECLAN"
 
     def __init__(self, player_tag, api_token, headers):
         self.player_tag = player_tag
@@ -7,7 +8,7 @@ class DummyAPI:
         self.headers = headers
         self.townhall = 14
         self.townhallWeaponLevel = 3
-        self.clantag = "LIVECLAN"
+        self.clantag = self.live_clan_tag
         self.check_called = False
         DummyAPI.instances.append(self)
 
@@ -87,3 +88,76 @@ def test_session_state_returns_logged_in_player_and_active_listing(
     assert collection.find_one_query["clan_tag"] == "LIVECLAN"
     assert "$gt" in collection.find_one_query["expires"]
     assert collection.find_one_projection == {"_id": 1}
+
+
+def test_session_state_returns_logged_in_player_without_active_listing(
+    client,
+    monkeypatch,
+    set_session,
+):
+    import ClashRecruit.routes.session_state_route as session_state_route
+
+    collection = DummyClanCollection(listing=None)
+    DummyAPI.instances = []
+    DummyAPI.live_clan_tag = "LIVECLAN"
+    set_session(
+        player_name="test_player",
+        player_tag="PLAYER123",
+        recruiter_status=True,
+        clan_tag="SESSIONCLAN",
+    )
+    monkeypatch.setattr(session_state_route, "API", DummyAPI)
+    monkeypatch.setattr(
+        session_state_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.get("/session-state")
+
+    assert response.status_code == 200
+    assert response.get_json() == {
+        "username": "test_player",
+        "recruit_status": True,
+        "has_active_listing": False,
+        "townhall": 14,
+        "townhallWeaponLevel": 3,
+    }
+    assert collection.find_one_query["clan_tag"] == "LIVECLAN"
+
+
+def test_session_state_falls_back_to_session_clan_tag_when_api_has_none(
+    client,
+    monkeypatch,
+    set_session,
+):
+    import ClashRecruit.routes.session_state_route as session_state_route
+
+    collection = DummyClanCollection(listing={"_id": "listing-id"})
+    DummyAPI.instances = []
+    DummyAPI.live_clan_tag = None
+    set_session(
+        player_name="test_player",
+        player_tag="PLAYER123",
+        recruiter_status=True,
+        clan_tag="SESSIONCLAN",
+    )
+    monkeypatch.setattr(session_state_route, "API", DummyAPI)
+    monkeypatch.setattr(
+        session_state_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.get("/session-state")
+
+    assert response.status_code == 200
+    assert response.get_json() == {
+        "username": "test_player",
+        "recruit_status": True,
+        "has_active_listing": True,
+        "townhall": 14,
+        "townhallWeaponLevel": 3,
+    }
+    assert collection.find_one_query["clan_tag"] == "SESSIONCLAN"
+    DummyAPI.live_clan_tag = "LIVECLAN"

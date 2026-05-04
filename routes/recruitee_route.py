@@ -152,7 +152,10 @@ def recruitee_post():
 
     location_id = filters.get("location_id", None)
     if location_id:
-        query["clan_info.location.id"] = int(location_id)
+        try:
+            query["clan_info.location.id"] = int(location_id)
+        except (TypeError, ValueError):
+            return jsonify({"error": "Invalid location_id"}), 400
     else:
         location_name = filters.get("location", None)
         if location_name:

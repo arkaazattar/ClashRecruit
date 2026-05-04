@@ -108,6 +108,47 @@ def test_recruitee_get_filters_logged_in_player_with_total(
     assert collection.cursor.limit_count == 1
 
 
+def test_recruitee_get_returns_guest_default_raw_list(
+    client,
+    monkeypatch,
+    set_session,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    refresh_calls = []
+    collection = DummyClanCollection(
+        [
+            {"clan_tag": "TEST1", "name": "test_clan_1"},
+            {"clan_tag": "TEST2", "name": "test_clan_2"},
+        ]
+    )
+
+    set_session(player_name="Guest")
+    monkeypatch.setattr(
+        recruitee_route,
+        "ensure_imported_clan_inventory",
+        lambda: refresh_calls.append(True),
+    )
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.get("/recruitee")
+
+    assert response.status_code == 200
+    assert response.get_json() == [
+        {"clan_tag": "TEST1", "name": "test_clan_1"},
+        {"clan_tag": "TEST2", "name": "test_clan_2"},
+    ]
+    assert refresh_calls == [True]
+    assert collection.find_query == {}
+    assert collection.count_query is None
+    assert collection.cursor.skip_count == 0
+    assert collection.cursor.limit_count == 10
+
+
 def test_recruitee_post_filters_and_paginates_with_total(
     client,
     monkeypatch,
@@ -183,6 +224,130 @@ def test_recruitee_post_filters_and_paginates_with_total(
     ]
     assert collection.cursor.skip_count == 0
     assert collection.cursor.limit_count == 2
+
+
+def test_recruitee_post_returns_clan_by_tag(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection(
+        tag_result={"clan_tag": "TEST123", "name": "test_clan"}
+    )
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post("/recruitee", json={"clanTag": "TEST123"})
+
+    assert response.status_code == 200
+    assert response.get_json() == {"clan_tag": "TEST123", "name": "test_clan"}
+    assert collection.find_one_query == {"clan_tag": "TEST123"}
+    assert collection.find_one_projection == {"_id": 0}
+    assert collection.find_query is None
+
+
+def test_recruitee_post_filters_by_location_name_without_location_id(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    refresh_calls = []
+    collection = DummyClanCollection(
+        [{"clan_tag": "TEST123", "name": "test_clan"}]
+    )
+    monkeypatch.setattr(
+        recruitee_route,
+        "ensure_imported_clan_inventory",
+        lambda: refresh_calls.append(True),
+    )
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post(
+        "/recruitee",
+        json={"filters": {"location": "International"}},
+    )
+
+    assert response.status_code == 200
+    assert response.get_json() == [
+        {"clan_tag": "TEST123", "name": "test_clan"}
+    ]
+    assert refresh_calls == [True]
+    assert collection.find_query == {
+        "clan_info.location.name": "International",
+    }
+    assert collection.count_query is None
+
+
+def test_recruitee_uses_defaults_for_invalid_limit_and_offset(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection(
+        [{"clan_tag": "TEST123", "name": "test_clan"}]
+    )
+    monkeypatch.setattr(
+        recruitee_route,
+        "ensure_imported_clan_inventory",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.get("/recruitee?includeTotal=1&limit=bad&offset=bad")
+
+    assert response.status_code == 200
+    assert response.get_json() == {
+        "items": [{"clan_tag": "TEST123", "name": "test_clan"}],
+        "total": 1,
+        "limit": 10,
+        "offset": 0,
+    }
+    assert collection.find_query == {}
+    assert collection.count_query == {}
+    assert collection.cursor.skip_count == 0
+    assert collection.cursor.limit_count == 10
+
+
+def test_recruitee_post_returns_400_for_invalid_location_id(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "ensure_imported_clan_inventory",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post(
+        "/recruitee",
+        json={"filters": {"location_id": "not-a-number"}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "Invalid location_id"}
+    assert collection.find_query is None
 
 
 def test_recruitee_post_returns_404_for_missing_clan_tag(

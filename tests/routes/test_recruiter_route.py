@@ -111,6 +111,34 @@ def test_recruiter_get_returns_existing_listing(
     assert DummyRecruiter.instances[0].lookup_modes == []
 
 
+def test_recruiter_get_returns_default_listing_and_lookup_description(
+    client,
+    monkeypatch,
+    set_session,
+):
+    collection = DummyClanCollection(existing=None)
+    setup_recruiter_route(monkeypatch, collection)
+    set_session(recruiter_status=True, clan_tag="TEST123")
+
+    response = client.get("/recruiter")
+
+    assert response.status_code == 200
+    assert response.get_json() == {
+        "oldRequiredLeague": 1,
+        "oldRequiredBuilderLeague": 2,
+        "oldRequiredTownhall": 3,
+        "MAXTOWNHALL": 17,
+        "clanDescription": "test_clan_description",
+        "status": None,
+    }
+    assert collection.find_one_query == {
+        "clan_tag": "TEST123",
+        "source": {"$ne": "clash_api_import"},
+    }
+    assert DummyRecruiter.instances[0].pull_called is True
+    assert DummyRecruiter.instances[0].lookup_modes == ["description"]
+
+
 def test_recruiter_post_creates_new_listing(
     client,
     monkeypatch,
@@ -191,6 +219,45 @@ def test_recruiter_post_updates_listing_and_refreshes_expiry(
     assert isinstance(set_doc["expires"], datetime)
 
 
+def test_recruiter_post_updates_listing_and_preserves_provided_expiry(
+    client,
+    monkeypatch,
+    set_session,
+):
+    collection = DummyClanCollection(existing={"requirements": [1, 2, 3]})
+    setup_recruiter_route(monkeypatch, collection)
+    set_session(recruiter_status=True, clan_tag="TEST123")
+
+    response = client.post(
+        "/recruiter",
+        json={
+            "status": "update",
+            "requiredLeague": 6,
+            "requiredBuilderLeague": 2600,
+            "requiredTownhall": 14,
+            "description": "updated_description",
+            "updateExpiry": False,
+            "expiry": "provided_expiry",
+        },
+    )
+    update_query, update_doc = collection.update_call
+    set_doc = update_doc["$set"]
+
+    assert response.status_code == 200
+    assert response.get_json() == {
+        "status": "provided_expiry",
+        "message": "Listing updated successfully.",
+    }
+    assert update_query == {
+        "clan_tag": "TEST123",
+        "source": {"$ne": "clash_api_import"},
+    }
+    assert set_doc["source"] == "live_listing"
+    assert set_doc["requirements"] == [6, 2600, 14]
+    assert set_doc["clan_info.description"] == "updated_description"
+    assert "expires" not in set_doc
+
+
 def test_recruiter_post_removes_listing(
     client,
     monkeypatch,
@@ -214,3 +281,61 @@ def test_recruiter_post_removes_listing(
         "clan_tag": "TEST123",
         "source": {"$ne": "clash_api_import"},
     }
+
+
+def test_recruiter_post_remove_listing_returns_404_when_not_deleted(
+    client,
+    monkeypatch,
+    set_session,
+):
+    collection = DummyClanCollection(
+        existing={"requirements": [1, 2, 3]},
+        deleted_count=0,
+    )
+    setup_recruiter_route(monkeypatch, collection)
+    set_session(recruiter_status=True, clan_tag="TEST123")
+
+    response = client.post(
+        "/recruiter",
+        json={"status": "removeListing"},
+    )
+
+    assert response.status_code == 404
+    assert response.get_json() == {"message": "Failed to delete."}
+    assert collection.delete_query == {
+        "clan_tag": "TEST123",
+        "source": {"$ne": "clash_api_import"},
+    }
+
+
+def test_recruiter_post_returns_400_for_unknown_status(
+    client,
+    monkeypatch,
+    set_session,
+):
+    collection = DummyClanCollection(existing={"requirements": [1, 2, 3]})
+    setup_recruiter_route(monkeypatch, collection)
+    set_session(recruiter_status=True, clan_tag="TEST123")
+
+    response = client.post("/recruiter", json={"status": "unexpected"})
+
+    assert response.status_code == 400
+    assert response.get_json() == {"message": "Invalid listing status."}
+    assert collection.inserted_doc is None
+    assert collection.update_call is None
+    assert collection.delete_query is None
+
+
+def test_recruiter_post_returns_400_for_missing_json_status(
+    client,
+    monkeypatch,
+    set_session,
+):
+    collection = DummyClanCollection(existing={"requirements": [1, 2, 3]})
+    setup_recruiter_route(monkeypatch, collection)
+    set_session(recruiter_status=True, clan_tag="TEST123")
+
+    response = client.post("/recruiter")
+
+    assert response.status_code == 400
+    assert response.get_json() == {"message": "Invalid listing status."}

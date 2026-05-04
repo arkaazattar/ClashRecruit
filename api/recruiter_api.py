@@ -28,13 +28,15 @@ class Recruiter:
             headers=self.headers,
         )
         self.storage = response.json()
-        long_list = self.storage.get("items")
+        long_list = self.storage.get("items") or []
+        required_townhall = 0
+        required_builder_trophies = 0
+        required_league = 0
         for i in range(len(long_list)):
             required_townhall = long_list[i].get("requiredTownhallLevel")
             required_builder_trophies = long_list[i].get(
                 "requiredBuilderBaseTrophies"
             )
-            required_league = 0
 
         self.new_clan_requirements(
             required_league,

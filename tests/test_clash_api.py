@@ -75,6 +75,20 @@ def test_player_api_is_true(monkeypatch) -> None:
     assert user.check_player_api()
 
 
+def test_player_api_unknown_status_sets_reason_payload(monkeypatch) -> None:
+    user = API("valid_user", api="token", headers=MOCK_HEADERS)
+
+    fake_response = Mock()
+    fake_response.json.return_value = {"status": "maintenance"}
+    monkeypatch.setattr(
+        "ClashRecruit.api.clash_api.requests.post",
+        Mock(return_value=fake_response),
+    )
+
+    assert user.check_player_api() is False
+    assert user.reason == {"status": "maintenance"}
+
+
 def test_check_player_with_all_request_options(monkeypatch) -> None:
     user = API("valid_user", api=None, headers=MOCK_HEADERS)
 
@@ -184,6 +198,31 @@ def test_check_player_double_digit_league_tier(monkeypatch) -> None:
 
     user.check_player()
     assert user.league == 27
+
+
+def test_check_player_townhall_above_17_leaves_weapon_level_unset(
+    monkeypatch,
+) -> None:
+    user = API("valid_user", api=None, headers=MOCK_HEADERS)
+
+    fake_response = Mock()
+    fake_response.json.return_value = {
+        "leagueTier": {"name": "Titan League 27"},
+        "townHallLevel": 18,
+        "builderBaseTrophies": 2000,
+        "townHallWeaponLevel": 5,
+        "clan": {"tag": "#mock_clan_tag"},
+        "role": "leader",
+        "name": "valid_user",
+    }
+    monkeypatch.setattr(
+        "ClashRecruit.api.clash_api.requests.get",
+        Mock(return_value=fake_response),
+    )
+
+    assert user.check_player() is True
+    assert user.townhall == 18
+    assert user.townhallWeaponLevel is None
 
 
 def test_check_player_with_token_verification_fails(monkeypatch) -> None:
