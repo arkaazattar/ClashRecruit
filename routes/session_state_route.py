@@ -33,11 +33,7 @@ def session_state():
         clan_collection = get_clan_collection()
         now = datetime.now(timezone.utc)
         listing = clan_collection.find_one(
-            {
-                "clan_tag": clan_tag,
-                "expires": {"$gt": now}
-            },
-            {"_id": 1}
+            {"clan_tag": clan_tag, "expires": {"$gt": now}}, {"_id": 1}
         )
         has_active_listing = listing is not None
 
@@ -46,7 +42,7 @@ def session_state():
         recruit_status=recruit_status,
         has_active_listing=has_active_listing,
         townhall=townhall,
-        townhallWeaponLevel=townhallWeaponLevel
+        townhallWeaponLevel=townhallWeaponLevel,
     )
 
 
@@ -59,12 +55,14 @@ def session_state_user_info():
         return jsonify({})
 
     user = API(player_tag, None, headers)
-    stats = user.check_player([
-        "expLevel",
-        "leagueTier",
-        "builderBaseLeague",
-        "builderHallLevel",
-        "clan"
-    ])
+    stats = user.check_player(
+        [
+            "expLevel",
+            "leagueTier",
+            "builderBaseLeague",
+            "builderHallLevel",
+            "clan",
+        ]
+    )
 
     return jsonify(stats or {})

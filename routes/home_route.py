@@ -14,8 +14,8 @@ def home():
     """Validate a player, store session data, and return login details."""
     data = request.get_json()
 
-    received_tag = data.get('playerTag')
-    received_token = data.get('apiToken')
+    received_tag = data.get("playerTag")
+    received_token = data.get("apiToken")
     session["player_tag"] = received_tag
     user = API(received_tag, received_token, headers)
     check_player_team = user.check_player()
@@ -39,13 +39,15 @@ def home():
         clan_tag = user.clantag
         session["clan_tag"] = clan_tag
 
-    return jsonify({
-        "message": status,
-        "receivedPlayerTag": reason,
-        "recruit_status": session.get("recruiter_status"),
-        "player_name": name,
-        "clan_tag": clan_tag
-    })
+    return jsonify(
+        {
+            "message": status,
+            "receivedPlayerTag": reason,
+            "recruit_status": session.get("recruiter_status"),
+            "player_name": name,
+            "clan_tag": clan_tag,
+        }
+    )
 
 
 @home_bp.get("/database_count")

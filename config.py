@@ -7,9 +7,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 headers = {
-    "Content-Type" : "application/json",
-    "Authorization" : os.getenv("APIKEY")
+    "Content-Type": "application/json",
+    "Authorization": os.getenv("APIKEY"),
 }
 
-DBURI = os.getenv('DBURI')
+DBURI = os.getenv("DBURI")
 FLASKSECRETKEY = os.getenv("FLASKSECRETKEY")

@@ -75,10 +75,13 @@ def get_saved_clans():
     if not player_tag:
         return jsonify({"message": "Unauthorized"}), 401
 
-    user_doc = user_collection.find_one(
-        {"player_tag": player_tag},
-        {"_id": 0, "saved_clans": 1},
-    ) or {}
+    user_doc = (
+        user_collection.find_one(
+            {"player_tag": player_tag},
+            {"_id": 0, "saved_clans": 1},
+        )
+        or {}
+    )
     saved_clan_tags = user_doc.get("saved_clans", [])
     hydrated = _hydrate_saved_clans(saved_clan_tags)
 
@@ -105,10 +108,13 @@ def add_saved_clan(clan_tag):
 
     normalized_tag = clan_tag.lstrip("#")
 
-    current_doc = user_collection.find_one(
-        {"player_tag": player_tag},
-        {"_id": 0, "saved_clans": 1},
-    ) or {}
+    current_doc = (
+        user_collection.find_one(
+            {"player_tag": player_tag},
+            {"_id": 0, "saved_clans": 1},
+        )
+        or {}
+    )
     current_saved = current_doc.get("saved_clans", [])
     if normalized_tag in current_saved:
         return jsonify(

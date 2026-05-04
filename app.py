@@ -20,11 +20,7 @@ from .services.mongo_db_client import initialize_mongo
 app = Flask(__name__)
 app.secret_key = FLASKSECRETKEY
 
-CORS(
-    app,
-    supports_credentials=True,
-    origins=["http://localhost:3000"]
-)
+CORS(app, supports_credentials=True, origins=["http://localhost:3000"])
 
 app.register_blueprint(home_bp)
 app.register_blueprint(session_state_bp)

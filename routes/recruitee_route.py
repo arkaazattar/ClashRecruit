@@ -84,12 +84,14 @@ def recruitee_get():
         return jsonify(data)
 
     total = clan_collection.count_documents(base_query)
-    return jsonify({
-        "items": data,
-        "total": total,
-        "limit": requested_limit,
-        "offset": requested_offset,
-    })
+    return jsonify(
+        {
+            "items": data,
+            "total": total,
+            "limit": requested_limit,
+            "offset": requested_offset,
+        }
+    )
 
 
 @recruitee_bp.post("/recruitee")
@@ -150,7 +152,10 @@ def recruitee_post():
 
     location_id = filters.get("location_id", None)
     if location_id:
-        query["clan_info.location.id"] = int(location_id)
+        try:
+            query["clan_info.location.id"] = int(location_id)
+        except (TypeError, ValueError):
+            return jsonify({"error": "Invalid location_id"}), 400
     else:
         location_name = filters.get("location", None)
         if location_name:
@@ -167,9 +172,11 @@ def recruitee_post():
         return jsonify(data)
 
     total = clan_collection.count_documents(query)
-    return jsonify({
-        "items": data,
-        "total": total,
-        "limit": requested_limit,
-        "offset": requested_offset,
-    })
+    return jsonify(
+        {
+            "items": data,
+            "total": total,
+            "limit": requested_limit,
+            "offset": requested_offset,
+        }
+    )

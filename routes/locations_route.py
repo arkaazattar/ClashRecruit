@@ -13,7 +13,4 @@ def clash_locations():
     location_collection = get_location_collection()
     locations = list(location_collection.find({}, {"_id": 0}))
 
-    return jsonify(
-        locations
-    )
-
+    return jsonify(locations)

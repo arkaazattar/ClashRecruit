@@ -5,11 +5,7 @@ from typing import Literal
 import requests
 
 REQUESTOPTIONS = Literal[
-    "expLevel",
-    "leagueTier",
-    "builderBaseLeague",
-    "builderHallLevel",
-    "clan"
+    "expLevel", "leagueTier", "builderBaseLeague", "builderHallLevel", "clan"
 ]
 
 
@@ -33,9 +29,7 @@ class API:
         self.token = False
         self.user_tag = user_tag
         self.user_name = "Guest"
-        self.json_data = {
-            "token": api
-        }
+        self.json_data = {"token": api}
         self.clantag = ""
         self.recruiter_status = ""
         self.league = 0
@@ -69,7 +63,9 @@ class API:
         elif status == "invalid":
             self.reason = "API Token is incorrect"
 
-        else: self.reason = self.apistorage
+        else:
+            self.reason = self.apistorage
+
         return self.token
 
     def check_player(
@@ -100,16 +96,20 @@ class API:
             return False
 
         if reason == "accessDenied.invalidIp":
-             self.reason = "Invalid IP"
-             return False
+            self.reason = "Invalid IP"
+            return False
 
-        if self.json_data["token"] and self.check_player_api() == False:
+        if self.json_data["token"] and not self.check_player_api():
             return False
 
         self.league = self.storage.get("leagueTier").get("name")
-        if self.league != 'Unranked':
+
+        if self.league != "Unranked":
             self.league = int(self.league[-2:])
-        else: self.league = 0
+
+        else:
+            self.league = 0
+
         self.townhall = self.storage.get("townHallLevel")
         self.builder_trophies = self.storage.get("builderBaseTrophies")
 
@@ -123,9 +123,7 @@ class API:
         self.user_name = self.storage.get("name")
 
         if request:
-            response = {
-                "player_tag": self.user_tag
-            }
+            response = {"player_tag": self.user_tag}
 
             for request_key in request:
                 response[request_key] = self.storage.get(request_key, None)
@@ -153,10 +151,10 @@ class API:
         roles = ["leader", "coleader", "admin"]
 
         clan_tag = data.get("clan", {}).get("tag", 0)
-        if(clan_tag == 0):
+        if clan_tag == 0:
             return False
 
-        if(data["role"].lower() not in roles):
+        if data["role"].lower() not in roles:
             return False
 
         return True

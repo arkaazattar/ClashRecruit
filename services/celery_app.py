@@ -8,6 +8,10 @@ from celery import Celery
 app = Celery(
     "clash_recruiter",
     broker=os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0"),
+    include=[
+        "ClashRecruit.services.import_clash_api_clans",
+        "ClashRecruit.services.refresh_db",
+    ],
 )
 
 app.conf.beat_schedule = {
@@ -20,8 +24,3 @@ app.conf.beat_schedule = {
         "schedule": timedelta(days=1),
     },
 }
-
-# Import task modules after creating the shared app so they register tasks
-# against this Celery instance.
-from . import import_clash_api_clans  # noqa: E402,F401
-from . import refresh_db  # noqa: E402,F401

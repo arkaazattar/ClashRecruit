@@ -6,22 +6,15 @@ import requests
 class Recruitee:
     """Wrap Clash API calls used by recruitee search routes."""
 
-    def __init__(
-        self,
-        user_tag: str | None,
-        headers: dict[str, str]
-    ) -> None:
+    def __init__(self, user_tag: str | None, headers: dict[str, str]) -> None:
         """Initialize recruitee API context for clan search calls.
 
         Args:
             user_tag (str | None): Player tag for the current user.
-            townhall (int | None): Player Town Hall level.
-            league (int | None): Player league tier.
             headers (dict[str, str]): HTTP headers for Clash API requests.
         """
         self.headers = headers
         self.user_tag = user_tag
-
 
     def searchClan(
         self,
@@ -38,13 +31,11 @@ class Recruitee:
             dict: Response payload containing ``items``, ``after``, and
                 optional ``error`` metadata.
         """
-        url = f"https://api.clashofclans.com/v1/clans"
+        url = "https://api.clashofclans.com/v1/clans"
         if after:
             filter["after"] = after
 
-        response = requests.get(url,
-                                params = filter,
-                                headers = self.headers)
+        response = requests.get(url, params=filter, headers=self.headers)
 
         storage = response.json()
 
@@ -57,7 +48,7 @@ class Recruitee:
             }
 
         return {
-        "items": storage.get("items", []),
-        "after": storage.get("paging", {}).get("cursors", {}).get("after"),
-        "error": error,
-    }
+            "items": storage.get("items", []),
+            "after": storage.get("paging", {}).get("cursors", {}).get("after"),
+            "error": error,
+        }
