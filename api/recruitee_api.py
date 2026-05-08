@@ -2,6 +2,8 @@
 
 import requests
 
+REQUEST_TIMEOUT_SECONDS = 10
+
 
 class Recruitee:
     """Wrap Clash API calls used by recruitee search routes."""
@@ -35,7 +37,12 @@ class Recruitee:
         if after:
             filter["after"] = after
 
-        response = requests.get(url, params=filter, headers=self.headers)
+        response = requests.get(
+            url,
+            params=filter,
+            headers=self.headers,
+            timeout=REQUEST_TIMEOUT_SECONDS,
+        )
 
         storage = response.json()
 

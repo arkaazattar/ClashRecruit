@@ -32,6 +32,7 @@ def test_search_clan_success_without_after(monkeypatch) -> None:
         "https://api.clashofclans.com/v1/clans",
         params={"name": "test_filter"},
         headers=MOCK_HEADERS,
+        timeout=10,
     )
 
 
@@ -59,6 +60,7 @@ def test_search_clan_includes_after_cursor_in_params(monkeypatch) -> None:
         "https://api.clashofclans.com/v1/clans",
         params={"name": "test_filter", "after": "next-cursor"},
         headers=MOCK_HEADERS,
+        timeout=10,
     )
 
 

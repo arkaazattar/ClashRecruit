@@ -19,6 +19,10 @@ app.conf.beat_schedule = {
         "task": "refresh_membercount_task",
         "schedule": timedelta(minutes=5),
     },
+    "ensure_imported_clan_inventory_every_30_minutes": {
+        "task": "ensure_imported_clan_inventory_task",
+        "schedule": timedelta(minutes=30),
+    },
     "discover_imported_clans_daily": {
         "task": "discover_imported_clans_task",
         "schedule": timedelta(days=1),

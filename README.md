@@ -88,8 +88,8 @@ flask run
 
 In separate terminals, start Celery:
 ```
-celery -A ClashRecruiter.services.celery_app:app worker --loglevel=info
-celery -A ClashRecruiter.services.celery_app:app beat --loglevel=info
+celery -A ClashRecruit.services.celery_app:app worker --loglevel=info
+celery -A ClashRecruit.services.celery_app:app beat --loglevel=info
 ```
 
 Backend runs at `http://127.0.0.1:5000`.

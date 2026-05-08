@@ -59,11 +59,17 @@ def test_get_max_townhall_fetches_top_player_detail_and_caches(monkeypatch):
                 "https://api.clashofclans.com/v1/locations/32000249/"
                 "rankings/players?limit=1",
             ),
-            {"headers": {"Authorization": "Bearer token"}},
+            {
+                "headers": {"Authorization": "Bearer token"},
+                "timeout": 10,
+            },
         ),
         (
             ("https://api.clashofclans.com/v1/players/%23PLAYER123",),
-            {"headers": {"Authorization": "Bearer token"}},
+            {
+                "headers": {"Authorization": "Bearer token"},
+                "timeout": 10,
+            },
         ),
     ]
 

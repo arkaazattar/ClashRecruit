@@ -292,6 +292,12 @@ def discover_imported_clans_task() -> int:
     return discover_imported_clans()
 
 
+@app.task(name="ensure_imported_clan_inventory_task")
+def ensure_imported_clan_inventory_task(min_complete: int = 30) -> None:
+    """Run imported clan inventory top-up checks as a Celery task."""
+    ensure_imported_clan_inventory(min_complete=min_complete)
+
+
 def cleanup_old_imported_clans() -> int:
     """Delete stale imported clans past retention and return delete count."""
     cutoff = _now() - IMPORTED_CLAN_RETENTION
@@ -418,9 +424,9 @@ def run_import_refresh_on_worker_start(
     sender: Any = None,
     **kwargs: Any,
 ) -> None:
-    """Queue an import discovery task when a Celery worker starts."""
+    """Queue an import inventory ensure task when a Celery worker starts."""
     if sender is not None:
-        sender.app.send_task("discover_imported_clans_task")
+        sender.app.send_task("ensure_imported_clan_inventory_task")
 
 
 def get_imported_clan(clan_tag: str | None) -> dict[str, Any] | None:

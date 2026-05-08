@@ -559,13 +559,30 @@ def test_discover_imported_clans_task_delegates(monkeypatch):
     assert import_service.discover_imported_clans_task() == 7
 
 
+def test_ensure_imported_clan_inventory_task_delegates(monkeypatch):
+    ensure_calls = []
+
+    monkeypatch.setattr(
+        import_service,
+        "ensure_imported_clan_inventory",
+        lambda min_complete=30: ensure_calls.append(min_complete),
+    )
+
+    import_service.ensure_imported_clan_inventory_task()
+    import_service.ensure_imported_clan_inventory_task(min_complete=42)
+
+    assert ensure_calls == [30, 42]
+
+
 def test_run_import_refresh_on_worker_start_queues_task():
     sender = Mock()
 
     import_service.run_import_refresh_on_worker_start(sender=sender)
     import_service.run_import_refresh_on_worker_start(sender=None)
 
-    sender.app.send_task.assert_called_once_with("discover_imported_clans_task")
+    sender.app.send_task.assert_called_once_with(
+        "ensure_imported_clan_inventory_task"
+    )
 
 
 def test_ensure_imported_clan_inventory_skips_when_recent_count_is_enough(

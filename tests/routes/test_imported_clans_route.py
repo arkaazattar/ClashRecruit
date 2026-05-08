@@ -4,8 +4,6 @@ def test_imported_clans_post_filters_and_paginates(
 ):
     import ClashRecruit.routes.imported_clans_route as imported_clans_route
 
-    refresh_calls = []
-
     class DummyCursor:
         def __init__(self, docs):
             self.docs = docs
@@ -54,14 +52,6 @@ def test_imported_clans_post_filters_and_paginates(
 
     collection = DummyClanCollection()
 
-    def fake_refresh():
-        refresh_calls.append(True)
-
-    monkeypatch.setattr(
-        imported_clans_route,
-        "ensure_imported_clan_inventory",
-        fake_refresh,
-    )
     monkeypatch.setattr(
         imported_clans_route,
         "get_clan_collection",
@@ -99,7 +89,6 @@ def test_imported_clans_post_filters_and_paginates(
         "limit": 1,
         "offset": 1,
     }
-    assert refresh_calls == [True]
     assert collection.count_query == expected_query
     assert collection.find_query == expected_query
     assert collection.find_projection == {"_id": 0}

@@ -29,6 +29,7 @@ def test_pull_clan_requirements_success(monkeypatch) -> None:
     mock_get.assert_called_once_with(
         f"https://api.clashofclans.com/v1/clans?name=%23{KNOWN_STABLE_TAG}",
         headers=MOCK_HEADERS,
+        timeout=10,
     )
 
 
@@ -100,6 +101,7 @@ def test_lookup_clan_full_payload(monkeypatch) -> None:
     mock_get.assert_called_once_with(
         f"https://api.clashofclans.com/v1/clans/%23{KNOWN_STABLE_TAG}",
         headers=MOCK_HEADERS,
+        timeout=10,
     )
 
 
