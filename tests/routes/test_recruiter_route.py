@@ -58,17 +58,17 @@ class DummyRecruiter:
 
 
 def setup_recruiter_route(monkeypatch, collection):
-    import ClashRecruit.routes.recruiter_route as recruiter_route
+    import ClashRecruit.services.recruiter_listing as recruiter_listing
 
     DummyRecruiter.instances = []
-    monkeypatch.setattr(recruiter_route, "Recruiter", DummyRecruiter)
+    monkeypatch.setattr(recruiter_listing, "Recruiter", DummyRecruiter)
     monkeypatch.setattr(
-        recruiter_route,
+        recruiter_listing,
         "get_clan_collection",
         lambda: collection,
     )
-    monkeypatch.setattr(recruiter_route, "refresh", lambda headers: 17)
-    return recruiter_route
+    monkeypatch.setattr(recruiter_listing, "refresh", lambda headers: 17)
+    return recruiter_listing
 
 
 def test_recruiter_get_forbidden_without_recruiter_status(client):
