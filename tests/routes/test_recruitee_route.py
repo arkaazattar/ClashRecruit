@@ -55,7 +55,6 @@ def test_recruitee_get_filters_logged_in_player_with_total(
 ):
     import ClashRecruit.routes.recruitee_route as recruitee_route
 
-    refresh_calls = []
     collection = DummyClanCollection(
         [
             {"clan_tag": "TEST1", "name": "test_clan_1"},
@@ -69,11 +68,6 @@ def test_recruitee_get_filters_logged_in_player_with_total(
         player_league=5,
         player_builderbase_trophies=2200,
         player_townhall=13,
-    )
-    monkeypatch.setattr(
-        recruitee_route,
-        "ensure_imported_clan_inventory",
-        lambda: refresh_calls.append(True),
     )
     monkeypatch.setattr(
         recruitee_route,
@@ -96,7 +90,6 @@ def test_recruitee_get_filters_logged_in_player_with_total(
         "limit": 1,
         "offset": 1,
     }
-    assert refresh_calls == []
     assert collection.find_query == expected_query
     assert collection.count_query == expected_query
     assert collection.find_projection == {"_id": 0}
@@ -115,7 +108,6 @@ def test_recruitee_get_returns_guest_default_raw_list(
 ):
     import ClashRecruit.routes.recruitee_route as recruitee_route
 
-    refresh_calls = []
     collection = DummyClanCollection(
         [
             {"clan_tag": "TEST1", "name": "test_clan_1"},
@@ -124,11 +116,6 @@ def test_recruitee_get_returns_guest_default_raw_list(
     )
 
     set_session(player_name="Guest")
-    monkeypatch.setattr(
-        recruitee_route,
-        "ensure_imported_clan_inventory",
-        lambda: refresh_calls.append(True),
-    )
     monkeypatch.setattr(
         recruitee_route,
         "get_clan_collection",
@@ -142,7 +129,6 @@ def test_recruitee_get_returns_guest_default_raw_list(
         {"clan_tag": "TEST1", "name": "test_clan_1"},
         {"clan_tag": "TEST2", "name": "test_clan_2"},
     ]
-    assert refresh_calls == [True]
     assert collection.find_query == {}
     assert collection.count_query is None
     assert collection.cursor.skip_count == 0
@@ -155,7 +141,6 @@ def test_recruitee_post_filters_and_paginates_with_total(
 ):
     import ClashRecruit.routes.recruitee_route as recruitee_route
 
-    refresh_calls = []
     collection = DummyClanCollection(
         [
             {"clan_tag": "TEST1", "name": "test_clan_1"},
@@ -164,11 +149,6 @@ def test_recruitee_post_filters_and_paginates_with_total(
         ]
     )
 
-    monkeypatch.setattr(
-        recruitee_route,
-        "ensure_imported_clan_inventory",
-        lambda: refresh_calls.append(True),
-    )
     monkeypatch.setattr(
         recruitee_route,
         "get_clan_collection",
@@ -214,7 +194,6 @@ def test_recruitee_post_filters_and_paginates_with_total(
         "limit": 2,
         "offset": 0,
     }
-    assert refresh_calls == [True]
     assert collection.find_query == expected_query
     assert collection.count_query == expected_query
     assert collection.find_projection == {"_id": 0}
@@ -256,14 +235,8 @@ def test_recruitee_post_filters_by_location_name_without_location_id(
 ):
     import ClashRecruit.routes.recruitee_route as recruitee_route
 
-    refresh_calls = []
     collection = DummyClanCollection(
         [{"clan_tag": "TEST123", "name": "test_clan"}]
-    )
-    monkeypatch.setattr(
-        recruitee_route,
-        "ensure_imported_clan_inventory",
-        lambda: refresh_calls.append(True),
     )
     monkeypatch.setattr(
         recruitee_route,
@@ -280,7 +253,6 @@ def test_recruitee_post_filters_by_location_name_without_location_id(
     assert response.get_json() == [
         {"clan_tag": "TEST123", "name": "test_clan"}
     ]
-    assert refresh_calls == [True]
     assert collection.find_query == {
         "clan_info.location.name": "International",
     }
@@ -295,11 +267,6 @@ def test_recruitee_uses_defaults_for_invalid_limit_and_offset(
 
     collection = DummyClanCollection(
         [{"clan_tag": "TEST123", "name": "test_clan"}]
-    )
-    monkeypatch.setattr(
-        recruitee_route,
-        "ensure_imported_clan_inventory",
-        lambda: None,
     )
     monkeypatch.setattr(
         recruitee_route,
@@ -329,11 +296,6 @@ def test_recruitee_post_returns_400_for_invalid_location_id(
     import ClashRecruit.routes.recruitee_route as recruitee_route
 
     collection = DummyClanCollection()
-    monkeypatch.setattr(
-        recruitee_route,
-        "ensure_imported_clan_inventory",
-        lambda: None,
-    )
     monkeypatch.setattr(
         recruitee_route,
         "get_clan_collection",

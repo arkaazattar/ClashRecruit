@@ -7,6 +7,7 @@ import requests
 REQUESTOPTIONS = Literal[
     "expLevel", "leagueTier", "builderBaseLeague", "builderHallLevel", "clan"
 ]
+REQUEST_TIMEOUT_SECONDS = 10
 
 
 class API:
@@ -52,6 +53,7 @@ class API:
             url,
             headers=self.headers,
             json=self.json_data,
+            timeout=REQUEST_TIMEOUT_SECONDS,
         )
         self.apistorage = response.json()
 
@@ -87,7 +89,11 @@ class API:
             self.reason = "User is a Guest"
             return False
         url = f"https://api.clashofclans.com/v1/players/%23{self.user_tag}"
-        response = requests.get(url, headers=self.headers)
+        response = requests.get(
+            url,
+            headers=self.headers,
+            timeout=REQUEST_TIMEOUT_SECONDS,
+        )
         self.storage = response.json()
         reason = self.storage.get("reason")
 

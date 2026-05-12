@@ -2,6 +2,8 @@
 
 import requests
 
+REQUEST_TIMEOUT_SECONDS = 10
+
 
 class Recruiter:
     """Wrap Clash API calls used by recruiter-facing routes."""
@@ -26,6 +28,7 @@ class Recruiter:
         response = requests.get(
             f"https://api.clashofclans.com/v1/clans?name=%23{self.clan_tag}",
             headers=self.headers,
+            timeout=REQUEST_TIMEOUT_SECONDS,
         )
         self.storage = response.json()
         long_list = self.storage.get("items") or []
@@ -60,6 +63,7 @@ class Recruiter:
         response = requests.get(
             f"https://api.clashofclans.com/v1/clans/%23{self.clan_tag}",
             headers=self.headers,
+            timeout=REQUEST_TIMEOUT_SECONDS,
         )
         response = response.json()
         rsp: dict[str, object] = {}

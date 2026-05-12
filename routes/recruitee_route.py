@@ -4,7 +4,6 @@ import re
 
 from flask import Blueprint, jsonify, request, session
 
-from ..services.import_clash_api_clans import ensure_imported_clan_inventory
 from ..services.mongo_db_client import get_clan_collection
 
 recruitee_bp = Blueprint("recruitee", __name__)
@@ -40,10 +39,6 @@ def _get_requested_offset():
     return max(0, parsed_offset)
 
 
-def _should_refresh_imported_inventory():
-    """Return whether imported inventory should refresh for this request."""
-    return _get_requested_offset() == 0
-
 
 def _should_include_total():
     """Return whether the response should include paginated total metadata."""
@@ -59,8 +54,6 @@ def recruitee_get():
     requested_limit = _get_requested_limit(default_limit)
     requested_offset = _get_requested_offset()
 
-    if _should_refresh_imported_inventory():
-        ensure_imported_clan_inventory()
 
     if not player_name or player_name == "Guest":
         base_query = {}
@@ -111,8 +104,6 @@ def recruitee_post():
             return jsonify({"error": "Clan not found"}), 404
         return jsonify(data)
 
-    if _should_refresh_imported_inventory():
-        ensure_imported_clan_inventory()
 
     filters = raw_form.get("filters", {})
     query = {}

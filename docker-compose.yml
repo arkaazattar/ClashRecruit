@@ -3,47 +3,58 @@ services:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   web:
     build: .
     working_dir: /app
-    command: flask --app ClashRecruiter.app run --host=0.0.0.0 --port=5000
+    command: flask --app ClashRecruit.app run --host=0.0.0.0 --port=5000
     env_file:
       - .env
     environment:
       PYTHONPATH: /app
       CELERY_BROKER_URL: redis://redis:6379/0
     volumes:
-      - .:/app/ClashRecruiter
+      - .:/app/ClashRecruit
     ports:
       - "5000:5000"
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
 
   worker:
     build: .
     working_dir: /app
-    command: celery -A ClashRecruiter.services.celery_app:app worker --loglevel=info
+    command: celery -A ClashRecruit.services.celery_app:app worker --loglevel=info
     env_file:
       - .env
     environment:
       PYTHONPATH: /app
       CELERY_BROKER_URL: redis://redis:6379/0
     volumes:
-      - .:/app/ClashRecruiter
+      - .:/app/ClashRecruit
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
 
   beat:
     build: .
     working_dir: /app
-    command: celery -A ClashRecruiter.services.celery_app:app beat --loglevel=info
+    command: celery -A ClashRecruit.services.celery_app:app beat --loglevel=info
     env_file:
       - .env
     environment:
       PYTHONPATH: /app
       CELERY_BROKER_URL: redis://redis:6379/0
     volumes:
-      - .:/app/ClashRecruiter
+      - .:/app/ClashRecruit
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+    restart: unless-stopped

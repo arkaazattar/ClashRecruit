@@ -5,6 +5,8 @@ from functools import lru_cache
 import requests
 from diskcache import Cache
 
+REQUEST_TIMEOUT_SECONDS = 10
+
 
 @lru_cache(maxsize=1)
 def get_cache() -> Cache:
@@ -30,6 +32,7 @@ def get_max_townhall(headers) -> int:
         "https://api.clashofclans.com/v1/locations/32000249/"
         "rankings/players?limit=1",
         headers=headers,
+        timeout=REQUEST_TIMEOUT_SECONDS,
     )
     response = response.json()
     tag = response["items"][0]["tag"]
@@ -37,6 +40,7 @@ def get_max_townhall(headers) -> int:
     response = requests.get(
         f"https://api.clashofclans.com/v1/players/%23{tag}",
         headers=headers,
+        timeout=REQUEST_TIMEOUT_SECONDS,
     )
     response = response.json()
     max_townhall = response.get("townHallLevel")

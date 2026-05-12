@@ -5,7 +5,6 @@ import re
 from flask import Blueprint, jsonify, request
 
 from ..services.import_clash_api_clans import (
-    ensure_imported_clan_inventory,
     get_imported_clan,
 )
 from ..services.mongo_db_client import get_clan_collection
@@ -100,7 +99,6 @@ def imported_clans_post():
             return jsonify({"error": "Imported clan not found"}), 404
         return jsonify(clan)
 
-    ensure_imported_clan_inventory()
 
     filters = raw_form.get("filters", {})
     query = _build_imported_query(filters)
