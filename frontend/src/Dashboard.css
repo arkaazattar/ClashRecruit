@@ -654,7 +654,7 @@
     background: rgba(22, 16, 11, 0.44);
     backdrop-filter: blur(2px);
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     padding: 22px;
     z-index: 120;
