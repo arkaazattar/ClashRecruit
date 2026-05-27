@@ -100,7 +100,9 @@ function Dashboard() {
   const [userInfo, setUserInfo] = useState(null);
   const [savedClans, setSavedClans] = useState([]);
   const [savedClansError, setSavedClansError] = useState("");
+  const [savedClansActionError, setSavedClansActionError] = useState("");
   const [savedClansModalOpen, setSavedClansModalOpen] = useState(false);
+  const [removingSavedClanTag, setRemovingSavedClanTag] = useState("");
   const [copiedTag, setCopiedTag] = useState("");
   const copyResetTimerRef = useRef(null);
   const { user, townhall, townhallWeaponLevel, recruitStatus, hasActiveListing, sessionStateLoaded } = useOutletContext();
@@ -215,6 +217,37 @@ function Dashboard() {
     setSavedClansModalOpen(false);
   };
 
+  const removeSavedClan = async (clanTag) => {
+    const normalizedTag = normalizeSavedClanTag(clanTag);
+    if (!normalizedTag || removingSavedClanTag) {
+      return;
+    }
+
+    setRemovingSavedClanTag(normalizedTag);
+    setSavedClansActionError("");
+
+    try {
+      const response = await fetch(`/saved-clans/${encodeURIComponent(normalizedTag)}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Could not remove saved clan.");
+      }
+
+      setSavedClans((currentSavedClans) => (
+        currentSavedClans.filter((savedClan) => (
+          normalizeSavedClanTag(savedClan.clan_tag) !== normalizedTag
+        ))
+      ));
+    } catch (error) {
+      setSavedClansActionError(error.message || "Could not remove saved clan.");
+    } finally {
+      setRemovingSavedClanTag("");
+    }
+  };
+
   function renderSavedClanRow(savedClan, keyPrefix, index) {
     const savedClanTag = normalizeSavedClanTag(savedClan.clan_tag);
     const savedClanTagForRoute = savedClanTag || "";
@@ -226,44 +259,57 @@ function Dashboard() {
     const rowKeyBase = savedClanTagForRoute || `${savedClanName}-${index}`;
     const rowKey = `${keyPrefix}-${rowKeyBase}`;
     const canOpenListing = Boolean(savedClan.listing_available && savedClanTagForRoute);
-
-    if (canOpenListing) {
-      return (
-        <Link
-          key={rowKey}
-          to={`/looking-for-clan/${savedClanTagForRoute}`}
-          className="dashboard-saved-item dashboard-saved-item-clickable"
-        >
-          <div className="dashboard-saved-item-content">
-            <p className="dashboard-saved-name">{savedClanName}</p>
-            <p className="dashboard-saved-meta">{savedClanMeta}</p>
-          </div>
-          <span className="dashboard-saved-row-icon" aria-hidden="true">›</span>
-        </Link>
-      );
-    }
+    const isRemoving = savedClanTag === removingSavedClanTag;
+    const removeButton = savedClanTag ? (
+      <button
+        type="button"
+        className="dashboard-saved-remove-btn"
+        onClick={() => removeSavedClan(savedClanTag)}
+        disabled={isRemoving}
+        aria-label={`Remove ${savedClanName} from saved clans`}
+        title="Remove saved clan"
+      >
+        <span aria-hidden="true">×</span>
+      </button>
+    ) : null;
 
     return (
       <div key={rowKey} className="dashboard-saved-item">
-        <div className="dashboard-saved-item-content">
-          <p className="dashboard-saved-name">{savedClanName}</p>
-          <p className="dashboard-saved-meta">{savedClanMeta}</p>
-        </div>
+        {canOpenListing ? (
+          <Link
+            to={`/looking-for-clan/${savedClanTagForRoute}`}
+            className="dashboard-saved-item-content dashboard-saved-item-clickable"
+          >
+            <div className="dashboard-saved-text">
+              <p className="dashboard-saved-name">{savedClanName}</p>
+              <p className="dashboard-saved-meta">{savedClanMeta}</p>
+            </div>
+            <span className="dashboard-saved-row-icon" aria-hidden="true">›</span>
+          </Link>
+        ) : (
+          <div className="dashboard-saved-item-content">
+            <div className="dashboard-saved-text">
+              <p className="dashboard-saved-name">{savedClanName}</p>
+              <p className="dashboard-saved-meta">{savedClanMeta}</p>
+            </div>
 
-        {savedClanTag ? (
-          <div className="dashboard-tag-inline dashboard-tag-inline-right dashboard-saved-tag-wrap">
-            <button
-              type="button"
-              className="dashboard-current-value dashboard-tag-copy-btn dashboard-tag-copy-btn-inline"
-              onClick={() => copyTag(savedClanTag)}
-            >
-              {`#${savedClanTag}`}
-            </button>
-            <span className={`dashboard-tag-copied-inline${copiedTag === savedClanTag ? " is-visible" : ""}`}>
-              ✓ Copied
-            </span>
+            {savedClanTag ? (
+              <div className="dashboard-tag-inline dashboard-tag-inline-right dashboard-saved-tag-wrap">
+                <button
+                  type="button"
+                  className="dashboard-current-value dashboard-tag-copy-btn dashboard-tag-copy-btn-inline"
+                  onClick={() => copyTag(savedClanTag)}
+                >
+                  {`#${savedClanTag}`}
+                </button>
+                <span className={`dashboard-tag-copied-inline${copiedTag === savedClanTag ? " is-visible" : ""}`}>
+                  ✓ Copied
+                </span>
+              </div>
+            ) : null}
           </div>
-        ) : null}
+        )}
+        {removeButton}
       </div>
     );
   }
@@ -553,6 +599,10 @@ function Dashboard() {
                   <p className="dashboard-saved-empty">{savedClansError}</p>
                 )}
 
+                {savedClansActionError && (
+                  <p className="dashboard-saved-action-error">{savedClansActionError}</p>
+                )}
+
                 {!savedClansError && !hasSavedClans && (
                   <p className="dashboard-saved-empty">Save clans from search to keep a shortlist here.</p>
                 )}
@@ -600,6 +650,9 @@ function Dashboard() {
             </header>
 
             <div className="dashboard-saved-modal-list">
+              {savedClansActionError && (
+                <p className="dashboard-saved-action-error">{savedClansActionError}</p>
+              )}
               {savedClans.map((savedClan, index) => renderSavedClanRow(savedClan, "modal", index))}
             </div>
           </section>
