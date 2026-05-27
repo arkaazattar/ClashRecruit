@@ -2,11 +2,11 @@
 
 from flask import Blueprint, jsonify, request, session
 
+from ..services.rate_limiter import is_rate_limited
 from ..services.recruiter_listing import (
     get_recruiter_listing_page,
     handle_recruiter_listing_action,
 )
-from ..services.rate_limiter import is_rate_limited
 
 recruiter_bp = Blueprint("recruiter", __name__)
 RECRUITER_GET_RATE_LIMIT = 10
@@ -81,11 +81,7 @@ def _rate_limit_recruiter_action(data):
         return None
 
     response = jsonify(
-        {
-            "message": (
-                "Please wait before changing your listing again."
-            )
-        }
+        {"message": ("Please wait before changing your listing again.")}
     )
     response.headers["Retry-After"] = str(retry_after)
     return response, 429

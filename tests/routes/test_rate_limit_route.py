@@ -29,7 +29,9 @@ def test_database_count_rate_limit_skips_collection(client, monkeypatch):
     assert calls == 30
 
 
-def test_session_state_rate_limit_skips_clash_api(client, set_session, monkeypatch):
+def test_session_state_rate_limit_skips_clash_api(
+    client, set_session, monkeypatch
+):
     import ClashRecruit.routes.session_state_route as session_state_route
 
     calls = 0
@@ -49,7 +51,9 @@ def test_session_state_rate_limit_skips_clash_api(client, set_session, monkeypat
         def find_one(self, query, projection=None):
             return None
 
-    set_session(player_name="Player", player_tag="PLAYER123", clan_tag="TESTCLAN")
+    set_session(
+        player_name="Player", player_tag="PLAYER123", clan_tag="TESTCLAN"
+    )
     monkeypatch.setattr(session_state_route, "API", DummyAPI)
     monkeypatch.setattr(
         session_state_route,
