@@ -95,3 +95,32 @@ def test_home_login_invalid_player_sets_failure_session(
         assert "player_league" not in session
         assert "player_townhall" not in session
         assert "player_builderbase_trophies" not in session
+
+
+def test_home_login_rate_limits_repeated_attempts(client, monkeypatch):
+    import ClashRecruit.routes.home_route as home_route
+
+    DummyAPI.instances = []
+    monkeypatch.setattr(home_route, "API", DummyAPI)
+
+    for _ in range(home_route.LOGIN_RATE_LIMIT):
+        response = client.post(
+            "/",
+            json={"playerTag": "PLAYER123", "apiToken": "token-123"},
+        )
+        assert response.status_code == 200
+
+    response = client.post(
+        "/",
+        json={"playerTag": "PLAYER123", "apiToken": "token-123"},
+    )
+
+    assert response.status_code == 429
+    assert response.headers["Retry-After"]
+    assert response.get_json() == {
+        "message": False,
+        "receivedPlayerTag": (
+            "Too many login attempts. Please try again shortly."
+        ),
+    }
+    assert len(DummyAPI.instances) == home_route.LOGIN_RATE_LIMIT
