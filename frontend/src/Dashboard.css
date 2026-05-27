@@ -520,6 +520,10 @@
     gap: 2px;
 }
 
+.dashboard-saved-text {
+    min-width: 0;
+}
+
 .dashboard-saved-name {
     margin: 0;
     font-size: 0.85rem;
@@ -553,11 +557,53 @@
     flex: 0 0 auto;
 }
 
+.dashboard-saved-remove-btn {
+    flex: 0 0 auto;
+    border: none;
+    background: transparent;
+    color: #a6834d;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 800;
+    line-height: 1;
+    padding: 4px;
+    transition: color 120ms ease;
+}
+
+.dashboard-saved-remove-btn:hover:not(:disabled) {
+    color: var(--dash-accent-red);
+}
+
+.dashboard-saved-remove-btn:disabled {
+    cursor: wait;
+    opacity: 0.56;
+}
+
+.dashboard-saved-remove-btn:focus-visible {
+    outline: 2px solid #c8a04d;
+    outline-offset: 2px;
+}
+
 .dashboard-saved-empty {
     margin: 0;
     font-size: 0.82rem;
     color: #7a5d3d;
     line-height: 1.4;
+}
+
+.dashboard-saved-action-error {
+    margin: 0 0 8px;
+    border: 1px solid rgba(179, 58, 50, 0.28);
+    border-radius: 8px;
+    background: rgba(255, 239, 235, 0.82);
+    color: #8f3029;
+    padding: 8px 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.35;
 }
 
 .dashboard-saved-open-btn {
@@ -567,6 +613,11 @@
 }
 
 .dashboard-saved-item-clickable {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
     text-decoration: none;
     color: inherit;
     cursor: pointer;
@@ -603,7 +654,7 @@
     background: rgba(22, 16, 11, 0.44);
     backdrop-filter: blur(2px);
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     padding: 22px;
     z-index: 120;
