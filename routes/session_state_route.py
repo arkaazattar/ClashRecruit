@@ -7,11 +7,13 @@ from flask import Blueprint, jsonify, session
 from ..api.clash_api import API
 from ..config import headers
 from ..services.mongo_db_client import get_clan_collection
+from .rate_limit import rate_limit
 
 session_state_bp = Blueprint("session_state", __name__)
 
 
 @session_state_bp.route("/session-state")
+@rate_limit("session_state", limit=20, window_seconds=60)
 def session_state():
     """Return current session status, player state, and active listing info."""
     username = session.get("player_name", "Guest")
@@ -47,6 +49,7 @@ def session_state():
 
 
 @session_state_bp.route("/session-state/user-info")
+@rate_limit("session_state_user_info", limit=10, window_seconds=60)
 def session_state_user_info():
     """Return extended player info for the current session when available."""
     player_tag = session.get("player_tag", "Guest")

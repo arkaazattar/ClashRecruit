@@ -5,13 +5,35 @@ from flask import Blueprint, jsonify, request, session
 from ..api.clash_api import API
 from ..config import headers
 from ..services.mongo_db_client import get_clan_collection
+from ..services.rate_limiter import is_rate_limited
+from .rate_limit import rate_limit
 
 home_bp = Blueprint("home", __name__)
+LOGIN_RATE_LIMIT = 5
+LOGIN_RATE_WINDOW_SECONDS = 5
 
 
 @home_bp.post("/")
 def home():
     """Validate a player, store session data, and return login details."""
+    limiter_key = f"login:{request.remote_addr or 'unknown'}"
+    limited, retry_after = is_rate_limited(
+        limiter_key,
+        limit=LOGIN_RATE_LIMIT,
+        window_seconds=LOGIN_RATE_WINDOW_SECONDS,
+    )
+    if limited:
+        response = jsonify(
+            {
+                "message": False,
+                "receivedPlayerTag": (
+                    "Too many login attempts. Please try again shortly."
+                ),
+            }
+        )
+        response.headers["Retry-After"] = str(retry_after)
+        return response, 429
+
     data = request.get_json()
 
     received_tag = data.get("playerTag")
@@ -51,6 +73,7 @@ def home():
 
 
 @home_bp.get("/database_count")
+@rate_limit("database_count", limit=30, window_seconds=60)
 def database_count():
     """Return the current number of stored clans in the database."""
     clan_collection = get_clan_collection()
@@ -58,6 +81,7 @@ def database_count():
 
 
 @home_bp.post("/logout")
+@rate_limit("logout", limit=10, window_seconds=60)
 def logout():
     """Clear the current session and confirm logout."""
     session.clear()

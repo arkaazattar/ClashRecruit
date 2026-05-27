@@ -26,6 +26,13 @@ def client(app: Flask):
     return app.test_client()
 
 
+@pytest.fixture(autouse=True)
+def reset_rate_limits():
+    from ClashRecruit.services.rate_limiter import reset_rate_limits
+
+    reset_rate_limits()
+
+
 @pytest.fixture
 def set_session(client):
     def _set_session(**values):

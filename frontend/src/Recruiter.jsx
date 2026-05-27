@@ -135,7 +135,9 @@ function Recruiter() {
       })
     });    
     const data = await response.json();
-    setStatus(data.status);
+    if (response.ok && data.status !== undefined) {
+      setStatus(data.status);
+    }
     setSuccessMessage(data.message ?? "");
   };
 

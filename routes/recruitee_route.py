@@ -5,6 +5,7 @@ import re
 from flask import Blueprint, jsonify, request, session
 
 from ..services.mongo_db_client import get_clan_collection
+from .rate_limit import rate_limit
 
 recruitee_bp = Blueprint("recruitee", __name__)
 
@@ -46,6 +47,7 @@ def _should_include_total():
 
 
 @recruitee_bp.get("/recruitee")
+@rate_limit("recruitee_get", limit=60, window_seconds=60)
 def recruitee_get():
     """Return clans for the current session with optional total metadata."""
     clan_collection = get_clan_collection()
@@ -88,6 +90,7 @@ def recruitee_get():
 
 
 @recruitee_bp.post("/recruitee")
+@rate_limit("recruitee_post", limit=30, window_seconds=60)
 def recruitee_post():
     """Return clan details by tag or a filtered clan list for recruitees."""
     clan_collection = get_clan_collection()

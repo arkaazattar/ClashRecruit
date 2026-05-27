@@ -339,3 +339,160 @@ def test_recruiter_post_returns_400_for_missing_json_status(
 
     assert response.status_code == 400
     assert response.get_json() == {"message": "Invalid listing status."}
+
+
+def test_recruiter_update_allows_two_actions_per_minute(
+    client,
+    monkeypatch,
+    set_session,
+):
+    collection = DummyClanCollection(existing={"requirements": [1, 2, 3]})
+    setup_recruiter_route(monkeypatch, collection)
+    set_session(recruiter_status=True, clan_tag="TEST123")
+
+    payload = {
+        "status": "update",
+        "requiredLeague": 6,
+        "requiredBuilderLeague": 2600,
+        "requiredTownhall": 14,
+        "description": "updated_description",
+        "updateExpiry": False,
+        "expiry": "provided_expiry",
+    }
+
+    first_response = client.post("/recruiter", json=payload)
+    second_response = client.post("/recruiter", json=payload)
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 200
+
+
+def test_recruiter_update_rate_limit_blocks_third_action_before_service(
+    client,
+    monkeypatch,
+    set_session,
+):
+    collection = DummyClanCollection(existing={"requirements": [1, 2, 3]})
+    setup_recruiter_route(monkeypatch, collection)
+    set_session(recruiter_status=True, clan_tag="TEST123")
+
+    payload = {
+        "status": "update",
+        "requiredLeague": 6,
+        "requiredBuilderLeague": 2600,
+        "requiredTownhall": 14,
+        "description": "updated_description",
+        "updateExpiry": False,
+        "expiry": "provided_expiry",
+    }
+
+    for _ in range(2):
+        response = client.post("/recruiter", json=payload)
+        assert response.status_code == 200
+
+    collection.update_call = None
+    response = client.post("/recruiter", json=payload)
+
+    assert response.status_code == 429
+    assert response.headers["Retry-After"]
+    assert response.get_json() == {
+        "message": "Please wait before changing your listing again."
+    }
+    assert collection.update_call is None
+
+
+def test_recruiter_create_rate_limit_blocks_second_action_before_service(
+    client,
+    monkeypatch,
+    set_session,
+):
+    collection = DummyClanCollection()
+    setup_recruiter_route(monkeypatch, collection)
+    set_session(
+        recruiter_status=True,
+        clan_tag="TEST123",
+        player_tag="PLAYER123",
+    )
+
+    payload = {
+        "status": "new",
+        "requiredLeague": 5,
+        "requiredBuilderLeague": 2400,
+        "requiredTownhall": 13,
+        "description": "new_description",
+    }
+
+    response = client.post("/recruiter", json=payload)
+    assert response.status_code == 200
+
+    collection.inserted_doc = None
+    response = client.post("/recruiter", json=payload)
+
+    assert response.status_code == 429
+    assert response.headers["Retry-After"]
+    assert response.get_json() == {
+        "message": "Please wait before changing your listing again."
+    }
+    assert collection.inserted_doc is None
+
+
+def test_recruiter_delete_is_not_action_rate_limited(
+    client,
+    monkeypatch,
+    set_session,
+):
+    collection = DummyClanCollection(
+        existing={"requirements": [1, 2, 3]},
+        deleted_count=1,
+    )
+    setup_recruiter_route(monkeypatch, collection)
+    set_session(recruiter_status=True, clan_tag="TEST123")
+
+    response = client.post("/recruiter", json={"status": "removeListing"})
+    assert response.status_code == 200
+
+    collection.delete_query = None
+    response = client.post("/recruiter", json={"status": "removeListing"})
+
+    assert response.status_code == 200
+    assert response.get_json() == {"message": "Successfully deleted entry."}
+    assert collection.delete_query == {
+        "clan_tag": "TEST123",
+        "source": {"$ne": "clash_api_import"},
+    }
+
+
+def test_recruiter_delete_still_runs_after_limited_updates(
+    client,
+    monkeypatch,
+    set_session,
+):
+    collection = DummyClanCollection(
+        existing={"requirements": [1, 2, 3]},
+        deleted_count=1,
+    )
+    setup_recruiter_route(monkeypatch, collection)
+    set_session(recruiter_status=True, clan_tag="TEST123")
+
+    update_payload = {
+        "status": "update",
+        "requiredLeague": 6,
+        "requiredBuilderLeague": 2600,
+        "requiredTownhall": 14,
+        "description": "updated_description",
+        "updateExpiry": False,
+        "expiry": "provided_expiry",
+    }
+
+    for _ in range(3):
+        client.post("/recruiter", json=update_payload)
+
+    collection.delete_query = None
+    response = client.post("/recruiter", json={"status": "removeListing"})
+
+    assert response.status_code == 200
+    assert response.get_json() == {"message": "Successfully deleted entry."}
+    assert collection.delete_query == {
+        "clan_tag": "TEST123",
+        "source": {"$ne": "clash_api_import"},
+    }

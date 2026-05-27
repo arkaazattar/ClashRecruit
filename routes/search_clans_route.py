@@ -4,11 +4,13 @@ from flask import Blueprint, jsonify, request, session
 
 from ..api.recruitee_api import Recruitee
 from ..config import headers
+from .rate_limit import rate_limit
 
 search_clans_bp = Blueprint("search_clans", __name__)
 
 
 @search_clans_bp.post("/search_clans")
+@rate_limit("search_clans", limit=10, window_seconds=60)
 def search_clans():
     """Search clans using provided filters and return matching results."""
     filters = request.get_json() or {}
