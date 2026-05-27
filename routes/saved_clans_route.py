@@ -3,6 +3,7 @@
 from flask import Blueprint, jsonify, session
 
 from ..services.mongo_db_client import get_clan_collection, get_user_collection
+from .rate_limit import rate_limit
 
 saved_clans_bp = Blueprint("saved_clans", __name__)
 
@@ -68,6 +69,7 @@ def _hydrate_saved_clans(saved_clan_tags):
 
 
 @saved_clans_bp.get("/saved-clans")
+@rate_limit("saved_clans_get", limit=30, window_seconds=60)
 def get_saved_clans():
     """Return the current user's saved clans and limits as JSON."""
     user_collection = get_user_collection()
@@ -95,6 +97,7 @@ def get_saved_clans():
 
 
 @saved_clans_bp.post("/saved-clans/<clan_tag>")
+@rate_limit("saved_clans_post", limit=20, window_seconds=60)
 def add_saved_clan(clan_tag):
     """Return a JSON response after saving a clan tag for the current user.
 
@@ -158,6 +161,7 @@ def add_saved_clan(clan_tag):
 
 
 @saved_clans_bp.delete("/saved-clans/<clan_tag>")
+@rate_limit("saved_clans_delete", limit=20, window_seconds=60)
 def delete_saved_clan(clan_tag):
     """Return a JSON response after removing a saved clan tag for the user.
 

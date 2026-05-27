@@ -8,6 +8,7 @@ from ..services.import_clash_api_clans import (
     get_imported_clan,
 )
 from ..services.mongo_db_client import get_clan_collection
+from .rate_limit import rate_limit
 
 imported_clans_bp = Blueprint("imported_clans", __name__)
 
@@ -84,6 +85,7 @@ def _build_imported_query(filters):
 
 
 @imported_clans_bp.post("/imported_clans")
+@rate_limit("imported_clans", limit=20, window_seconds=60)
 def imported_clans_post():
     """Return clan details for a tag or a filtered imported clan list."""
     clan_collection = get_clan_collection()
