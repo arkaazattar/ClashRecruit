@@ -259,7 +259,7 @@ def test_recruitee_post_filters_by_location_name_without_location_id(
     assert collection.count_query is None
 
 
-def test_recruitee_uses_defaults_for_invalid_limit_and_offset(
+def test_recruitee_returns_400_for_invalid_limit_and_offset(
     client,
     monkeypatch,
 ):
@@ -276,17 +276,9 @@ def test_recruitee_uses_defaults_for_invalid_limit_and_offset(
 
     response = client.get("/recruitee?includeTotal=1&limit=bad&offset=bad")
 
-    assert response.status_code == 200
-    assert response.get_json() == {
-        "items": [{"clan_tag": "TEST123", "name": "test_clan"}],
-        "total": 1,
-        "limit": 10,
-        "offset": 0,
-    }
-    assert collection.find_query == {}
-    assert collection.count_query == {}
-    assert collection.cursor.skip_count == 0
-    assert collection.cursor.limit_count == 10
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "limit must be an integer."}
+    assert collection.find_query is None
 
 
 def test_recruitee_post_returns_400_for_invalid_location_id(
@@ -308,7 +300,9 @@ def test_recruitee_post_returns_400_for_invalid_location_id(
     )
 
     assert response.status_code == 400
-    assert response.get_json() == {"error": "Invalid location_id"}
+    assert response.get_json() == {
+        "error": "location_id must be an integer."
+    }
     assert collection.find_query is None
 
 
@@ -331,3 +325,88 @@ def test_recruitee_post_returns_404_for_missing_clan_tag(
     assert response.get_json() == {"error": "Clan not found"}
     assert collection.find_one_query == {"clan_tag": "MISSING"}
     assert collection.find_one_projection == {"_id": 0}
+
+
+def test_recruitee_post_returns_400_for_list_payload(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post("/recruitee", json=[])
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "Request body must be a JSON object."
+    }
+    assert collection.find_query is None
+
+
+def test_recruitee_post_returns_400_for_bad_nested_filter_shape(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post(
+        "/recruitee",
+        json={"filters": {"requirements": []}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "filters.requirements must be an object."
+    }
+    assert collection.find_query is None
+
+
+def test_recruitee_post_normalizes_numeric_string_filters(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post(
+        "/recruitee",
+        json={
+            "filters": {
+                "requirements": {
+                    "townhall": "12",
+                    "league": "4",
+                    "members": {"min": "30", "max": "45"},
+                },
+                "minClanLevel": "10",
+                "clanPoints": "35000",
+            }
+        },
+    )
+
+    assert response.status_code == 200
+    assert collection.find_query == {
+        "requirements.2": {"$gte": 12},
+        "requirements.0": {"$gte": 4},
+        "clan_info.clan_level": {"$gte": 10},
+        "clan_info.clanPoints": {"$gte": 35000},
+        "clan_info.member_count": {"$gte": 30, "$lte": 45},
+    }

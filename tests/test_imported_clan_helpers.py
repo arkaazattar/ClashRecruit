@@ -4,6 +4,7 @@ from ClashRecruit.routes.imported_clans_route import (
     _get_requested_limit,
     _get_requested_offset,
 )
+from ClashRecruit.routes.validation import RequestValidationError
 from flask import Flask
 
 
@@ -11,9 +12,8 @@ from flask import Flask
     ("path", "expected"),
     [
         ("/imported_clans", 10),
-        ("/imported_clans?limit=abc", 10),
-        ("/imported_clans?limit=0", 1),
-        ("/imported_clans?limit=500", 200),
+        ("/imported_clans?limit=1", 1),
+        ("/imported_clans?limit=200", 200),
     ],
 )
 def test_get_requested_limit(app: Flask, path: str, expected: int) -> None:
@@ -26,13 +26,34 @@ def test_get_requested_limit(app: Flask, path: str, expected: int) -> None:
     [
         ("/imported_clans", 0),
         ("/imported_clans?offset=5", 5),
-        ("/imported_clans?offset=abc", 0),
-        ("/imported_clans?offset=-10", 0),
     ],
 )
 def test_get_requested_offset(app: Flask, path: str, expected: int) -> None:
     with app.test_request_context(path):
         assert _get_requested_offset() == expected
+
+
+@pytest.mark.parametrize(
+    ("path", "message"),
+    [
+        ("/imported_clans?limit=abc", "limit must be an integer."),
+        ("/imported_clans?limit=0", "limit must be at least 1."),
+        ("/imported_clans?limit=500", "limit must be at most 200."),
+        ("/imported_clans?offset=abc", "offset must be an integer."),
+        ("/imported_clans?offset=-10", "offset must be an integer."),
+    ],
+)
+def test_invalid_pagination_raises_validation_error(
+    app: Flask,
+    path: str,
+    message: str,
+) -> None:
+    with app.test_request_context(path):
+        with pytest.raises(RequestValidationError, match=message):
+            if "limit" in path:
+                _get_requested_limit(10)
+            else:
+                _get_requested_offset()
 
 
 def test_build_imported_query_empty_filters_returns_source_only() -> None:

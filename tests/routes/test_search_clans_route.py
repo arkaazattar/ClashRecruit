@@ -99,3 +99,33 @@ def test_search_clans_maps_generic_api_error(client, monkeypatch):
         "error": "Invalid authorization",
         "reason": "accessDenied",
     }
+
+
+def test_search_clans_returns_400_for_list_payload(client, monkeypatch):
+    setup_search_route(
+        monkeypatch,
+        {"items": [], "after": None, "error": None},
+    )
+
+    response = client.post("/search_clans", json=[])
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "Request body must be a JSON object."
+    }
+    assert DummyRecruitee.instances == []
+
+
+def test_search_clans_returns_400_for_nested_filter_value(client, monkeypatch):
+    setup_search_route(
+        monkeypatch,
+        {"items": [], "after": None, "error": None},
+    )
+
+    response = client.post("/search_clans", json={"name": {"bad": "shape"}})
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "name must be a string or integer."
+    }
+    assert DummyRecruitee.instances == []

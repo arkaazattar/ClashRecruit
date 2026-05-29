@@ -97,6 +97,49 @@ def test_home_login_invalid_player_sets_failure_session(
         assert "player_builderbase_trophies" not in session
 
 
+def test_home_login_normalizes_player_tag(client, monkeypatch):
+    import ClashRecruit.routes.home_route as home_route
+
+    DummyAPI.instances = []
+    monkeypatch.setattr(home_route, "API", DummyAPI)
+
+    response = client.post(
+        "/",
+        json={"playerTag": "  #player123  ", "apiToken": "token-123"},
+    )
+
+    assert response.status_code == 200
+    assert DummyAPI.instances[0].player_tag == "PLAYER123"
+
+
+def test_home_login_returns_400_for_missing_json_object(client, monkeypatch):
+    import ClashRecruit.routes.home_route as home_route
+
+    DummyAPI.instances = []
+    monkeypatch.setattr(home_route, "API", DummyAPI)
+
+    response = client.post("/")
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "Request body must be a JSON object."
+    }
+    assert DummyAPI.instances == []
+
+
+def test_home_login_returns_400_for_invalid_player_tag(client, monkeypatch):
+    import ClashRecruit.routes.home_route as home_route
+
+    DummyAPI.instances = []
+    monkeypatch.setattr(home_route, "API", DummyAPI)
+
+    response = client.post("/", json={"playerTag": "   "})
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "playerTag is required."}
+    assert DummyAPI.instances == []
+
+
 def test_home_login_rate_limits_repeated_attempts(client, monkeypatch):
     import ClashRecruit.routes.home_route as home_route
 

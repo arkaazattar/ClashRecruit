@@ -7,6 +7,12 @@ from ..config import headers
 from ..services.mongo_db_client import get_clan_collection
 from ..services.rate_limiter import is_rate_limited
 from .rate_limit import rate_limit
+from .validation import (
+    RequestValidationError,
+    get_json_object,
+    normalize_tag,
+    optional_string,
+)
 
 home_bp = Blueprint("home", __name__)
 LOGIN_RATE_LIMIT = 5
@@ -34,10 +40,13 @@ def home():
         response.headers["Retry-After"] = str(retry_after)
         return response, 429
 
-    data = request.get_json()
+    try:
+        data = get_json_object(request)
+        received_tag = normalize_tag(data.get("playerTag"), "playerTag")
+        received_token = optional_string(data, "apiToken", max_length=128)
+    except RequestValidationError as exc:
+        return jsonify({"error": exc.message}), 400
 
-    received_tag = data.get("playerTag")
-    received_token = data.get("apiToken")
     session["player_tag"] = received_tag
     user = API(received_tag, received_token, headers)
     check_player_team = user.check_player()
