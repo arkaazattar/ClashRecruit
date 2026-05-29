@@ -24,6 +24,11 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _import_expiry(reference_time: datetime | None = None) -> datetime:
+    """Return when an imported clan should expire from the cache."""
+    return (reference_time or _now()) + IMPORTED_CLAN_RETENTION
+
+
 def _clan_collection():
     """Return the clans collection lazily."""
     return get_clan_collection()
@@ -177,6 +182,7 @@ def _normalize_discovery_item(
     seed_key: str,
 ) -> dict[str, Any]:
     """Normalize a search result clan into the imported clan document shape."""
+    discovered_at = _now()
     return {
         "clan_tag": _clean_tag(clan.get("tag")),
         "name": clan.get("name"),
@@ -184,7 +190,8 @@ def _normalize_discovery_item(
         "seed_key": seed_key,
         "requirements": [0, 0, 0],
         "requirements_source": "unsupported_by_api",
-        "last_discovered": _now(),
+        "last_discovered": discovered_at,
+        "expires": _import_expiry(discovered_at),
         "clan_info": {
             "description": None,
             "location": clan.get("location") or {},
@@ -230,6 +237,7 @@ def _build_enriched_import_document(
 ) -> dict[str, Any]:
     """Build an imported clan document enriched with detail endpoint data."""
     description = (detail_clan.get("description") or "").strip()
+    discovered_at = _now()
     return {
         "clan_tag": _clean_tag(
             search_clan.get("tag") or detail_clan.get("tag")
@@ -242,8 +250,9 @@ def _build_enriched_import_document(
             detail_clan=detail_clan,
         ),
         "requirements_source": "clash_api",
-        "last_discovered": _now(),
-        "last_updated": _now(),
+        "last_discovered": discovered_at,
+        "last_updated": discovered_at,
+        "expires": _import_expiry(discovered_at),
         "clan_info": {
             "description": description or None,
             "location": (
@@ -386,6 +395,7 @@ def discover_imported_clans(max_seeds: int = 12) -> int:
                                 "last_discovered"
                             ],
                             "last_updated": enriched_document["last_updated"],
+                            "expires": enriched_document["expires"],
                             "clan_info": enriched_document["clan_info"],
                         },
                     },
@@ -446,6 +456,7 @@ def get_imported_clan(clan_tag: str | None) -> dict[str, Any] | None:
     if detail is None:
         return None
 
+    discovered_at = _now()
     _clan_collection().update_one(
         {"clan_tag": clean_tag, "source": "clash_api_import"},
         {
@@ -455,8 +466,9 @@ def get_imported_clan(clan_tag: str | None) -> dict[str, Any] | None:
                 "source": "clash_api_import",
                 "requirements": _extract_requirements(detail_clan=detail),
                 "requirements_source": "clash_api",
-                "last_discovered": _now(),
-                "last_updated": _now(),
+                "last_discovered": discovered_at,
+                "last_updated": discovered_at,
+                "expires": _import_expiry(discovered_at),
                 "clan_info": {
                     "description": (
                         (detail.get("description") or "").strip() or None

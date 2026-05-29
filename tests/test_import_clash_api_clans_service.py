@@ -140,6 +140,7 @@ def test_normalize_discovery_item_builds_import_shell(monkeypatch):
         "requirements": [0, 0, 0],
         "requirements_source": "unsupported_by_api",
         "last_discovered": frozen_now,
+        "expires": frozen_now + import_service.IMPORTED_CLAN_RETENTION,
         "clan_info": {
             "description": None,
             "location": {"id": 32000007, "name": "International"},
@@ -207,6 +208,7 @@ def test_build_enriched_import_document_uses_detail_with_search_fallbacks(
         "requirements_source": "clash_api",
         "last_discovered": frozen_now,
         "last_updated": frozen_now,
+        "expires": frozen_now + import_service.IMPORTED_CLAN_RETENTION,
         "clan_info": {
             "description": "test description",
             "location": {"id": 32000007, "name": "International"},
@@ -460,6 +462,10 @@ def test_discover_imported_clans_resumes_upserts_and_updates_cursor(
     assert update_doc["$set"]["name"] == "test_clan"
     assert update_doc["$set"]["requirements"] == [0, 0, 13]
     assert update_doc["$set"]["last_discovered"] == frozen_now
+    assert (
+        update_doc["$set"]["expires"]
+        == frozen_now + import_service.IMPORTED_CLAN_RETENTION
+    )
 
 
 def test_discover_imported_clans_skips_low_quality_bad_tags_and_bad_detail(
@@ -747,6 +753,9 @@ def test_get_imported_clan_fetches_caches_and_returns_imported_document(
     assert set_doc["requirements"] == [0, 2200, 13]
     assert set_doc["last_discovered"] == frozen_now
     assert set_doc["last_updated"] == frozen_now
+    assert set_doc["expires"] == (
+        frozen_now + import_service.IMPORTED_CLAN_RETENTION
+    )
     assert set_doc["clan_info"] == {
         "description": "cached description",
         "location": {"id": 32000007, "name": "International"},
