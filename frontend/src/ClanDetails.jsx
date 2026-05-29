@@ -10,6 +10,29 @@ function normalizeLocation(rawLocation) {
     return "";
 }
 
+function parseDate(value) {
+    if (!value) return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatDate(value) {
+    const date = parseDate(value);
+    return date ? date.toLocaleDateString() : "Not available";
+}
+
+function getImportedClanExpiry(clanInfo) {
+    const explicitExpiry = parseDate(clanInfo.expires);
+    if (explicitExpiry) return explicitExpiry;
+
+    const discoveredAt = parseDate(clanInfo.last_discovered);
+    if (!discoveredAt) return null;
+
+    const expiry = new Date(discoveredAt);
+    expiry.setDate(expiry.getDate() + 3);
+    return expiry;
+}
+
 function ClanDetails() {
     const { clanTag } = useParams();
     const [clanInfo, setClanInfo] = useState(null);
@@ -51,6 +74,13 @@ function ClanDetails() {
 
     const requirements = clanInfo.requirements || [];
     const details = clanInfo.clan_info || {};
+    const isApiImported = clanInfo.source === "clash_api_import";
+    const attributionLabel = isApiImported
+        ? "Imported from Clash API"
+        : clanInfo.player_tag || "Unknown player";
+    const expiryDate = isApiImported
+        ? getImportedClanExpiry(clanInfo)
+        : parseDate(clanInfo.expires);
 
     return (
         <section className="clan-details-page">
@@ -82,9 +112,9 @@ function ClanDetails() {
 
                 <div className="clan-meta">
                     <p><strong>Clan Tag:</strong> {clanInfo.clan_tag}</p>
-                    <p><strong>Posted by:</strong> {clanInfo.player_tag}</p>
-                    <p><strong>Last updated:</strong> {new Date(clanInfo.last_updated).toLocaleDateString()}</p>
-                    <p><strong>Expires:</strong> {new Date(clanInfo.expires).toLocaleDateString()}</p>
+                    <p><strong>{isApiImported ? "Source:" : "Posted by:"}</strong> {attributionLabel}</p>
+                    <p><strong>Last updated:</strong> {formatDate(clanInfo.last_updated || clanInfo.last_discovered)}</p>
+                    <p><strong>Expires:</strong> {expiryDate ? expiryDate.toLocaleDateString() : "Not available"}</p>
                 </div>
             </div>
         </section>
