@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 import ClashRecruit.services.import_clash_api_clans as import_service
 import pytest
-import requests
+from ClashRecruit.clash_http_client import ClashApiError, ClashApiResponse
 
 
 @pytest.mark.parametrize(
@@ -223,18 +223,19 @@ def test_build_enriched_import_document_uses_detail_with_search_fallbacks(
 
 
 def test_search_clans_calls_api_with_timeout_and_returns_cursor(monkeypatch):
-    fake_response = Mock()
-    fake_response.json.return_value = {
-        "items": [{"tag": "#TEST123"}],
-        "paging": {"cursors": {"after": "cursor-1"}},
-    }
+    fake_response = ClashApiResponse(
+        200,
+        {
+            "items": [{"tag": "#TEST123"}],
+            "paging": {"cursors": {"after": "cursor-1"}},
+        },
+    )
     fake_get = Mock(return_value=fake_response)
-    monkeypatch.setattr(import_service.requests, "get", fake_get)
+    monkeypatch.setattr(import_service, "clash_get", fake_get)
 
     result = import_service._search_clans({"name": "test", "limit": 10})
 
     assert result == {"items": [{"tag": "#TEST123"}], "after": "cursor-1"}
-    fake_response.raise_for_status.assert_called_once_with()
     fake_get.assert_called_once_with(
         "https://api.clashofclans.com/v1/clans",
         params={"name": "test", "limit": 10},
@@ -247,8 +248,8 @@ def test_fetch_clan_detail_returns_none_for_invalid_tag_without_network(
     monkeypatch,
 ):
     monkeypatch.setattr(
-        import_service.requests,
-        "get",
+        import_service,
+        "clash_get",
         lambda *args, **kwargs: pytest.fail("network should not be called"),
     )
 
@@ -256,30 +257,31 @@ def test_fetch_clan_detail_returns_none_for_invalid_tag_without_network(
 
 
 def test_fetch_clan_detail_returns_none_for_404(monkeypatch):
-    fake_response = Mock(status_code=404)
+    fake_response = ClashApiResponse(404, {"reason": "notFound"})
     fake_get = Mock(return_value=fake_response)
-    monkeypatch.setattr(import_service.requests, "get", fake_get)
+    monkeypatch.setattr(import_service, "clash_get", fake_get)
 
     assert import_service._fetch_clan_detail("#missing") is None
-    fake_response.raise_for_status.assert_not_called()
     fake_get.assert_called_once_with(
         "https://api.clashofclans.com/v1/clans/%23MISSING",
         headers=import_service.headers,
         timeout=15,
+        allowed_statuses={404},
     )
 
 
 def test_fetch_clan_detail_raises_and_returns_json_for_success(monkeypatch):
-    fake_response = Mock(status_code=200)
-    fake_response.json.return_value = {"tag": "#TEST123", "name": "test_clan"}
+    fake_response = ClashApiResponse(
+        200,
+        {"tag": "#TEST123", "name": "test_clan"},
+    )
     fake_get = Mock(return_value=fake_response)
-    monkeypatch.setattr(import_service.requests, "get", fake_get)
+    monkeypatch.setattr(import_service, "clash_get", fake_get)
 
     assert import_service._fetch_clan_detail("test123") == {
         "tag": "#TEST123",
         "name": "test_clan",
     }
-    fake_response.raise_for_status.assert_called_once_with()
 
 
 def test_seed_state_helpers_read_update_and_reset(monkeypatch):
@@ -480,7 +482,7 @@ def test_discover_imported_clans_skips_low_quality_bad_tags_and_bad_detail(
 
     def fake_fetch(clan_tag):
         if clan_tag == "RAISES":
-            raise requests.RequestException("detail failed")
+            raise ClashApiError("detail failed")
         if clan_tag == "MISSING":
             return None
         if clan_tag == "LOWDETAIL":
@@ -534,7 +536,7 @@ def test_discover_imported_clans_breaks_seed_on_search_error(monkeypatch):
 
     def fake_search(seed):
         search_calls.append(seed)
-        raise requests.RequestException("search failed")
+        raise ClashApiError("search failed")
 
     monkeypatch.setattr(
         import_service,

@@ -1,27 +1,28 @@
 from unittest.mock import Mock
 
+import ClashRecruit.api.recruiter_api as recruiter_api
 from ClashRecruit.api.recruiter_api import Recruiter
+from ClashRecruit.clash_http_client import ClashApiResponse
 from constants import KNOWN_STABLE_TAG, MOCK_HEADERS
 
 
 def test_pull_clan_requirements_success(monkeypatch) -> None:
     user = Recruiter(KNOWN_STABLE_TAG, MOCK_HEADERS)
 
-    fake_response = Mock()
-    fake_response.json.return_value = {
-        "items": [
-            {
-                "requiredTownhallLevel": 12,
-                "requiredBuilderBaseTrophies": 2300,
-            }
-        ]
-    }
+    fake_response = ClashApiResponse(
+        200,
+        {
+            "items": [
+                {
+                    "requiredTownhallLevel": 12,
+                    "requiredBuilderBaseTrophies": 2300,
+                }
+            ]
+        },
+    )
     mock_get = Mock(return_value=fake_response)
 
-    monkeypatch.setattr(
-        "ClashRecruit.api.recruiter_api.requests.get",
-        mock_get,
-    )
+    monkeypatch.setattr(recruiter_api, "clash_get", mock_get)
 
     requirements = user.pull_clan_requirements()
 
@@ -29,7 +30,6 @@ def test_pull_clan_requirements_success(monkeypatch) -> None:
     mock_get.assert_called_once_with(
         f"https://api.clashofclans.com/v1/clans?name=%23{KNOWN_STABLE_TAG}",
         headers=MOCK_HEADERS,
-        timeout=10,
     )
 
 
@@ -38,11 +38,10 @@ def test_pull_clan_requirements_defaults_when_api_returns_no_items(
 ) -> None:
     user = Recruiter(KNOWN_STABLE_TAG, MOCK_HEADERS)
 
-    fake_response = Mock()
-    fake_response.json.return_value = {"items": []}
     monkeypatch.setattr(
-        "ClashRecruit.api.recruiter_api.requests.get",
-        Mock(return_value=fake_response),
+        recruiter_api,
+        "clash_get",
+        Mock(return_value=ClashApiResponse(200, {"items": []})),
     )
 
     assert user.pull_clan_requirements() == [0, 0, 0]
@@ -53,11 +52,10 @@ def test_pull_clan_requirements_defaults_when_items_missing(
 ) -> None:
     user = Recruiter(KNOWN_STABLE_TAG, MOCK_HEADERS)
 
-    fake_response = Mock()
-    fake_response.json.return_value = {}
     monkeypatch.setattr(
-        "ClashRecruit.api.recruiter_api.requests.get",
-        Mock(return_value=fake_response),
+        recruiter_api,
+        "clash_get",
+        Mock(return_value=ClashApiResponse(200, {})),
     )
 
     assert user.pull_clan_requirements() == [0, 0, 0]
@@ -66,24 +64,23 @@ def test_pull_clan_requirements_defaults_when_items_missing(
 def test_lookup_clan_full_payload(monkeypatch) -> None:
     user = Recruiter(KNOWN_STABLE_TAG, MOCK_HEADERS)
 
-    fake_response = Mock()
-    fake_response.json.return_value = {
-        "name": "Test Clan",
-        "type": "inviteOnly",
-        "description": "Friendly and active",
-        "location": {"id": 32000007, "name": "Canada"},
-        "badgeUrls": {"medium": "badge-medium-url"},
-        "clanLevel": 14,
-        "members": 40,
-        "warFrequency": "always",
-        "clanPoints": 42000,
-    }
+    fake_response = ClashApiResponse(
+        200,
+        {
+            "name": "Test Clan",
+            "type": "inviteOnly",
+            "description": "Friendly and active",
+            "location": {"id": 32000007, "name": "Canada"},
+            "badgeUrls": {"medium": "badge-medium-url"},
+            "clanLevel": 14,
+            "members": 40,
+            "warFrequency": "always",
+            "clanPoints": 42000,
+        },
+    )
     mock_get = Mock(return_value=fake_response)
 
-    monkeypatch.setattr(
-        "ClashRecruit.api.recruiter_api.requests.get",
-        mock_get,
-    )
+    monkeypatch.setattr(recruiter_api, "clash_get", mock_get)
 
     result = user.lookup_clan()
 
@@ -101,21 +98,16 @@ def test_lookup_clan_full_payload(monkeypatch) -> None:
     mock_get.assert_called_once_with(
         f"https://api.clashofclans.com/v1/clans/%23{KNOWN_STABLE_TAG}",
         headers=MOCK_HEADERS,
-        timeout=10,
     )
 
 
 def test_lookup_clan_member_count_mode(monkeypatch) -> None:
     user = Recruiter(KNOWN_STABLE_TAG, MOCK_HEADERS)
 
-    fake_response = Mock()
-    fake_response.json.return_value = {"members": 48}
+    fake_response = ClashApiResponse(200, {"members": 48})
     mock_get = Mock(return_value=fake_response)
 
-    monkeypatch.setattr(
-        "ClashRecruit.api.recruiter_api.requests.get",
-        mock_get,
-    )
+    monkeypatch.setattr(recruiter_api, "clash_get", mock_get)
 
     result = user.lookup_clan("member_count")
 
@@ -125,14 +117,10 @@ def test_lookup_clan_member_count_mode(monkeypatch) -> None:
 def test_lookup_clan_description_mode(monkeypatch) -> None:
     user = Recruiter(KNOWN_STABLE_TAG, MOCK_HEADERS)
 
-    fake_response = Mock()
-    fake_response.json.return_value = {"description": "War focused clan"}
+    fake_response = ClashApiResponse(200, {"description": "War focused clan"})
     mock_get = Mock(return_value=fake_response)
 
-    monkeypatch.setattr(
-        "ClashRecruit.api.recruiter_api.requests.get",
-        mock_get,
-    )
+    monkeypatch.setattr(recruiter_api, "clash_get", mock_get)
 
     result = user.lookup_clan("description")
 

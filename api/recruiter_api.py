@@ -1,8 +1,6 @@
 """API helpers for recruiter workflows and clan listing metadata."""
 
-import requests
-
-REQUEST_TIMEOUT_SECONDS = 10
+from ..clash_http_client import get as clash_get
 
 
 class Recruiter:
@@ -25,12 +23,11 @@ class Recruiter:
         Returns:
             list: Clan requirements in order `[league, builder, townhall]`.
         """
-        response = requests.get(
+        response = clash_get(
             f"https://api.clashofclans.com/v1/clans?name=%23{self.clan_tag}",
             headers=self.headers,
-            timeout=REQUEST_TIMEOUT_SECONDS,
         )
-        self.storage = response.json()
+        self.storage = response.payload
         long_list = self.storage.get("items") or []
         required_townhall = 0
         required_builder_trophies = 0
@@ -60,12 +57,11 @@ class Recruiter:
         Returns:
             dict: Clan metadata payload for the selected request mode.
         """
-        response = requests.get(
+        response = clash_get(
             f"https://api.clashofclans.com/v1/clans/%23{self.clan_tag}",
             headers=self.headers,
-            timeout=REQUEST_TIMEOUT_SECONDS,
         )
-        response = response.json()
+        response = response.payload
         rsp: dict[str, object] = {}
 
         if request is None:

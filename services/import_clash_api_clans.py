@@ -3,9 +3,10 @@
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-import requests
 from celery.signals import worker_ready
 
+from ..clash_http_client import ClashApiError
+from ..clash_http_client import get as clash_get
 from ..config import headers
 from .celery_app import app
 from .mongo_db_client import (
@@ -115,14 +116,13 @@ def _build_discovery_seeds() -> list[dict[str, Any]]:
 
 def _search_clans(filters: dict[str, Any]) -> dict[str, Any]:
     """Search clans from Clash API and return items with cursor metadata."""
-    response = requests.get(
+    response = clash_get(
         "https://api.clashofclans.com/v1/clans",
         params=filters,
         headers=headers,
         timeout=15,
     )
-    response.raise_for_status()
-    payload = response.json()
+    payload = response.payload
     return {
         "items": payload.get("items", []),
         "after": payload.get("paging", {}).get("cursors", {}).get("after"),
@@ -164,17 +164,17 @@ def _fetch_clan_detail(clan_tag: str | None) -> dict[str, Any] | None:
         return None
 
     encoded_tag = f"%23{clean_tag}"
-    response = requests.get(
+    response = clash_get(
         f"https://api.clashofclans.com/v1/clans/{encoded_tag}",
         headers=headers,
         timeout=15,
+        allowed_statuses={404},
     )
 
     if response.status_code == 404:
         return None
 
-    response.raise_for_status()
-    return response.json()
+    return response.payload
 
 
 def _normalize_discovery_item(
@@ -345,7 +345,7 @@ def discover_imported_clans(max_seeds: int = 12) -> int:
 
             try:
                 search_result = _search_clans(request_seed)
-            except requests.RequestException:
+            except ClashApiError:
                 break
 
             clans = search_result.get("items", [])
@@ -369,7 +369,7 @@ def discover_imported_clans(max_seeds: int = 12) -> int:
 
                 try:
                     detail = _fetch_clan_detail(clan_tag)
-                except requests.RequestException:
+                except ClashApiError:
                     continue
 
                 if detail is None or not _passes_quality_gate(detail):

@@ -1,7 +1,6 @@
 """Service for fetching and updating Clash of Clans location data."""
 
-import requests
-
+from ..clash_http_client import get as clash_get
 from ..config import headers
 from ..services.mongo_db_client import get_location_collection
 
@@ -18,11 +17,11 @@ def get_locations(headers) -> list:
     Returns:
         list: The list of all locations returned from the Clash of Clans API.
     """
-    response = requests.get(
+    response = clash_get(
         "https://api.clashofclans.com/v1/locations",
         headers=headers,
     )
-    list_of_locations = response.json().get("items", None)
+    list_of_locations = response.payload.get("items", None)
 
     return list_of_locations
 
