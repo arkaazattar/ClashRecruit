@@ -4,6 +4,7 @@ from flask import Blueprint, jsonify, session
 
 from ..services.mongo_db_client import get_clan_collection, get_user_collection
 from .rate_limit import rate_limit
+from .validation import RequestValidationError, normalize_tag
 
 saved_clans_bp = Blueprint("saved_clans", __name__)
 
@@ -109,7 +110,10 @@ def add_saved_clan(clan_tag):
     if not player_tag:
         return jsonify({"message": "Unauthorized"}), 401
 
-    normalized_tag = clan_tag.lstrip("#")
+    try:
+        normalized_tag = normalize_tag(clan_tag, "clan_tag")
+    except RequestValidationError as exc:
+        return jsonify({"error": exc.message}), 400
 
     current_doc = (
         user_collection.find_one(
@@ -174,7 +178,10 @@ def delete_saved_clan(clan_tag):
     if not player_tag:
         return jsonify({"message": "Unauthorized"}), 401
 
-    normalized_tag = clan_tag.lstrip("#")
+    try:
+        normalized_tag = normalize_tag(clan_tag, "clan_tag")
+    except RequestValidationError as exc:
+        return jsonify({"error": exc.message}), 400
 
     user_collection.update_one(
         {"player_tag": player_tag},

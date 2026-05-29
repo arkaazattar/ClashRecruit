@@ -7,6 +7,13 @@ from ..services.recruiter_listing import (
     get_recruiter_listing_page,
     handle_recruiter_listing_action,
 )
+from .validation import (
+    RequestValidationError,
+    get_json_object,
+    optional_bool,
+    optional_string,
+    required_int,
+)
 
 recruiter_bp = Blueprint("recruiter", __name__)
 RECRUITER_GET_RATE_LIMIT = 10
@@ -34,7 +41,11 @@ def recruit():
         )
         return jsonify(payload), status_code
 
-    data = request.get_json(silent=True) or {}
+    try:
+        data = _validate_recruiter_payload(get_json_object(request))
+    except RequestValidationError as exc:
+        return jsonify({"error": exc.message}), 400
+
     limited_response = _rate_limit_recruiter_action(data)
     if limited_response:
         return limited_response
@@ -85,3 +96,50 @@ def _rate_limit_recruiter_action(data):
     )
     response.headers["Retry-After"] = str(retry_after)
     return response, 429
+
+
+def _validate_recruiter_payload(data):
+    """Return normalized recruiter action data."""
+    status = optional_string(data, "status")
+    if status not in {"new", "update", "removeListing"}:
+        raise RequestValidationError("Invalid listing status.")
+
+    normalized = {"status": status}
+    if status == "removeListing":
+        return normalized
+
+    normalized["requiredLeague"] = required_int(
+        data,
+        "requiredLeague",
+        min_value=0,
+        max_value=34,
+    )
+    normalized["requiredBuilderLeague"] = required_int(
+        data,
+        "requiredBuilderLeague",
+        min_value=0,
+    )
+    normalized["requiredTownhall"] = required_int(
+        data,
+        "requiredTownhall",
+        min_value=0,
+        max_value=25,
+    )
+    normalized["description"] = optional_string(
+        data,
+        "description",
+        max_length=5000,
+    )
+
+    if status == "update":
+        update_expiry = optional_bool(data, "updateExpiry")
+        if update_expiry is None:
+            raise RequestValidationError("updateExpiry is required.")
+        normalized["updateExpiry"] = update_expiry
+        if not update_expiry:
+            expiry = optional_string(data, "expiry", max_length=128)
+            if not expiry:
+                raise RequestValidationError("expiry is required.")
+            normalized["expiry"] = expiry
+
+    return normalized

@@ -9,6 +9,15 @@ from ..services.import_clash_api_clans import (
 )
 from ..services.mongo_db_client import get_clan_collection
 from .rate_limit import rate_limit
+from .validation import (
+    RequestValidationError,
+    ensure_object,
+    get_json_object,
+    normalize_tag,
+    optional_int,
+    optional_string,
+    query_int,
+)
 
 imported_clans_bp = Blueprint("imported_clans", __name__)
 
@@ -17,30 +26,18 @@ MAX_LIMIT = 200
 
 def _get_requested_limit(default_limit):
     """Return the validated `limit` query param capped to allowed bounds."""
-    raw_limit = request.args.get("limit")
-    if raw_limit is None:
-        return default_limit
-
-    try:
-        parsed_limit = int(raw_limit)
-    except (TypeError, ValueError):
-        return default_limit
-
-    return max(1, min(parsed_limit, MAX_LIMIT))
+    return query_int(
+        request,
+        "limit",
+        default=default_limit,
+        min_value=1,
+        max_value=MAX_LIMIT,
+    )
 
 
 def _get_requested_offset():
     """Return the validated `offset` query param with a minimum of zero."""
-    raw_offset = request.args.get("offset")
-    if raw_offset is None:
-        return 0
-
-    try:
-        parsed_offset = int(raw_offset)
-    except (TypeError, ValueError):
-        return 0
-
-    return max(0, parsed_offset)
+    return query_int(request, "offset", default=0, min_value=0)
 
 
 def _build_imported_query(filters):
@@ -88,11 +85,15 @@ def _build_imported_query(filters):
 @rate_limit("imported_clans", limit=20, window_seconds=60)
 def imported_clans_post():
     """Return clan details for a tag or a filtered imported clan list."""
+    try:
+        default_limit = 10
+        requested_limit = _get_requested_limit(default_limit)
+        requested_offset = _get_requested_offset()
+        raw_form = _validate_imported_payload(get_json_object(request))
+    except RequestValidationError as exc:
+        return jsonify({"error": exc.message}), 400
+
     clan_collection = get_clan_collection()
-    default_limit = 10
-    requested_limit = _get_requested_limit(default_limit)
-    requested_offset = _get_requested_offset()
-    raw_form = request.get_json() or {}
 
     clan_tag = raw_form.get("clanTag") or raw_form.get("clan_tag")
     if clan_tag:
@@ -128,3 +129,73 @@ def imported_clans_post():
             "offset": requested_offset,
         }
     )
+
+
+def _validate_imported_payload(payload):
+    """Return normalized imported-clans POST payload."""
+    normalized = {}
+    raw_tag = payload.get("clanTag") or payload.get("clan_tag")
+    if raw_tag is not None:
+        normalized["clanTag"] = normalize_tag(raw_tag, "clanTag")
+        return normalized
+
+    filters = ensure_object(payload.get("filters"), "filters")
+    normalized["filters"] = _validate_imported_filters(filters)
+    return normalized
+
+
+def _validate_imported_filters(filters):
+    normalized = {}
+
+    name = optional_string(filters, "name", max_length=120)
+    if name:
+        normalized["name"] = name
+
+    min_clan_level = optional_int(filters, "minClanLevel", min_value=0)
+    if min_clan_level is not None:
+        normalized["minClanLevel"] = min_clan_level
+    clan_points = optional_int(filters, "clanPoints", min_value=0)
+    if clan_points is not None:
+        normalized["clanPoints"] = clan_points
+
+    requirements = ensure_object(
+        filters.get("requirements"),
+        "filters.requirements",
+    )
+    members = ensure_object(
+        requirements.get("members"),
+        "filters.requirements.members",
+    )
+    normalized_members = _validate_members_filter(members)
+    if normalized_members:
+        normalized["requirements"] = {"members": normalized_members}
+
+    war_frequency = optional_string(filters, "warFrequency", max_length=40)
+    if war_frequency:
+        normalized["warFrequency"] = war_frequency
+
+    location = optional_string(filters, "location", max_length=120)
+    if location:
+        normalized["location"] = location
+
+    return normalized
+
+
+def _validate_members_filter(members):
+    normalized = {}
+    min_members = optional_int(members, "min", min_value=0, max_value=50)
+    max_members = optional_int(members, "max", min_value=0, max_value=50)
+    if (
+        min_members is not None
+        and max_members is not None
+        and min_members > max_members
+    ):
+        raise RequestValidationError(
+            "filters.requirements.members.min must be less than or equal "
+            "to max."
+        )
+    if min_members is not None:
+        normalized["min"] = min_members
+    if max_members is not None:
+        normalized["max"] = max_members
+    return normalized

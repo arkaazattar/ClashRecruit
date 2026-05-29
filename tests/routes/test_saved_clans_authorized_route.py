@@ -212,6 +212,26 @@ def test_saved_clans_post_adds_normalized_tag(
     )
 
 
+def test_saved_clans_post_returns_400_for_empty_tag(
+    client,
+    monkeypatch,
+    set_session,
+):
+    import ClashRecruit.routes.saved_clans_route as saved_clans_route
+
+    monkeypatch.setattr(
+        saved_clans_route,
+        "get_user_collection",
+        lambda: object(),
+    )
+    set_session(player_tag="PLAYER123")
+
+    response = client.post("/saved-clans/%20%20")
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "clan_tag is required."}
+
+
 def test_saved_clans_post_returns_existing_without_update(
     client,
     monkeypatch,

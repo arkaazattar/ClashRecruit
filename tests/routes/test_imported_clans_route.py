@@ -154,3 +154,67 @@ def test_imported_clans_post_returns_404_for_missing_tag(
 
     assert response.status_code == 404
     assert response.get_json() == {"error": "Imported clan not found"}
+
+
+def test_imported_clans_post_returns_400_for_bad_filter_shape(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.imported_clans_route as imported_clans_route
+
+    monkeypatch.setattr(
+        imported_clans_route,
+        "get_clan_collection",
+        lambda: object(),
+    )
+
+    response = client.post(
+        "/imported_clans",
+        json={"filters": {"requirements": {"members": []}}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "filters.requirements.members must be an object."
+    }
+
+
+def test_imported_clans_post_returns_400_for_invalid_numeric_filter(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.imported_clans_route as imported_clans_route
+
+    monkeypatch.setattr(
+        imported_clans_route,
+        "get_clan_collection",
+        lambda: object(),
+    )
+
+    response = client.post(
+        "/imported_clans",
+        json={"filters": {"clanPoints": "many"}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "clanPoints must be an integer."
+    }
+
+
+def test_imported_clans_post_returns_400_for_invalid_limit(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.imported_clans_route as imported_clans_route
+
+    monkeypatch.setattr(
+        imported_clans_route,
+        "get_clan_collection",
+        lambda: object(),
+    )
+
+    response = client.post("/imported_clans?limit=bad", json={})
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "limit must be an integer."}

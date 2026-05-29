@@ -5,6 +5,7 @@ from flask import Blueprint, jsonify, request, session
 from ..api.recruitee_api import Recruitee
 from ..config import headers
 from .rate_limit import rate_limit
+from .validation import RequestValidationError, get_json_object
 
 search_clans_bp = Blueprint("search_clans", __name__)
 
@@ -13,7 +14,11 @@ search_clans_bp = Blueprint("search_clans", __name__)
 @rate_limit("search_clans", limit=10, window_seconds=60)
 def search_clans():
     """Search clans using provided filters and return matching results."""
-    filters = request.get_json() or {}
+    try:
+        filters = _validate_search_filters(get_json_object(request))
+    except RequestValidationError as exc:
+        return jsonify({"error": exc.message}), 400
+
     user = Recruitee(
         session.get("player_tag"),
         headers,
@@ -45,3 +50,21 @@ def search_clans():
         ), error.get("status") or 400
 
     return jsonify(clans)
+
+
+def _validate_search_filters(filters):
+    """Return a shallow-normalized Clash clan search filter dict."""
+    normalized = {}
+    for key, value in filters.items():
+        if value is None:
+            continue
+        if isinstance(value, bool) or not isinstance(value, (str, int)):
+            raise RequestValidationError(
+                f"{key} must be a string or integer."
+            )
+        if isinstance(value, str):
+            value = value.strip()
+            if not value:
+                continue
+        normalized[key] = value
+    return normalized
