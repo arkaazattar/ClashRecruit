@@ -2,12 +2,12 @@
 
 from typing import Literal
 
-import requests
+from ..clash_http_client import get as clash_get
+from ..clash_http_client import post as clash_post
 
 REQUESTOPTIONS = Literal[
     "expLevel", "leagueTier", "builderBaseLeague", "builderHallLevel", "clan"
 ]
-REQUEST_TIMEOUT_SECONDS = 10
 
 
 class API:
@@ -49,13 +49,12 @@ class API:
             f"%23{self.user_tag}/verifytoken"
         )
 
-        response = requests.post(
+        response = clash_post(
             url,
             headers=self.headers,
             json=self.json_data,
-            timeout=REQUEST_TIMEOUT_SECONDS,
         )
-        self.apistorage = response.json()
+        self.apistorage = response.payload
 
         status = self.apistorage.get("status")
 
@@ -89,12 +88,11 @@ class API:
             self.reason = "User is a Guest"
             return False
         url = f"https://api.clashofclans.com/v1/players/%23{self.user_tag}"
-        response = requests.get(
+        response = clash_get(
             url,
             headers=self.headers,
-            timeout=REQUEST_TIMEOUT_SECONDS,
         )
-        self.storage = response.json()
+        self.storage = response.payload
         reason = self.storage.get("reason")
 
         if reason == "notFound":

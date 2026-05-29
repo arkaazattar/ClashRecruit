@@ -1,15 +1,16 @@
 from unittest.mock import Mock
 
 import ClashRecruit.services.get_locations as locations_service
+from ClashRecruit.clash_http_client import ClashApiResponse
 
 
 def test_get_locations_returns_items_from_api(monkeypatch):
-    fake_response = Mock()
-    fake_response.json.return_value = {
-        "items": [{"id": 32000007, "name": "International"}]
-    }
+    fake_response = ClashApiResponse(
+        200,
+        {"items": [{"id": 32000007, "name": "International"}]},
+    )
     fake_get = Mock(return_value=fake_response)
-    monkeypatch.setattr(locations_service.requests, "get", fake_get)
+    monkeypatch.setattr(locations_service, "clash_get", fake_get)
 
     result = locations_service.get_locations({"Authorization": "Bearer token"})
 

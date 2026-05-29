@@ -1,8 +1,7 @@
 """API helpers for recruitee-facing clan search requests."""
 
-import requests
-
-REQUEST_TIMEOUT_SECONDS = 10
+from ..clash_http_client import ClashApiHTTPError
+from ..clash_http_client import get as clash_get
 
 
 class Recruitee:
@@ -37,21 +36,16 @@ class Recruitee:
         if after:
             filter["after"] = after
 
-        response = requests.get(
-            url,
-            params=filter,
-            headers=self.headers,
-            timeout=REQUEST_TIMEOUT_SECONDS,
-        )
-
-        storage = response.json()
-
         error = None
-        if response.status_code >= 400:
+        try:
+            response = clash_get(url, params=filter, headers=self.headers)
+            storage = response.payload
+        except ClashApiHTTPError as exc:
+            storage = exc.payload
             error = {
                 "reason": storage.get("reason"),
                 "message": storage.get("message"),
-                "status": response.status_code,
+                "status": exc.status_code,
             }
 
         return {

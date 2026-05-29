@@ -2,6 +2,7 @@ from unittest.mock import Mock
 
 import ClashRecruit.services.maxtownhall as maxtownhall
 import pytest
+from ClashRecruit.clash_http_client import ClashApiResponse
 
 
 class DummyCache:
@@ -38,14 +39,15 @@ def test_refresh_fetches_max_townhall_on_cache_miss(monkeypatch):
 
 def test_get_max_townhall_fetches_top_player_detail_and_caches(monkeypatch):
     cache = DummyCache()
-    ranking_response = Mock()
-    ranking_response.json.return_value = {"items": [{"tag": "#PLAYER123"}]}
-    player_response = Mock()
-    player_response.json.return_value = {"townHallLevel": "17"}
+    ranking_response = ClashApiResponse(
+        200,
+        {"items": [{"tag": "#PLAYER123"}]},
+    )
+    player_response = ClashApiResponse(200, {"townHallLevel": "17"})
     fake_get = Mock(side_effect=[ranking_response, player_response])
 
     monkeypatch.setattr(maxtownhall, "get_cache", lambda: cache)
-    monkeypatch.setattr(maxtownhall.requests, "get", fake_get)
+    monkeypatch.setattr(maxtownhall, "clash_get", fake_get)
 
     result = maxtownhall.get_max_townhall(
         {"Authorization": "Bearer token"}
@@ -61,14 +63,12 @@ def test_get_max_townhall_fetches_top_player_detail_and_caches(monkeypatch):
             ),
             {
                 "headers": {"Authorization": "Bearer token"},
-                "timeout": 10,
             },
         ),
         (
             ("https://api.clashofclans.com/v1/players/%23PLAYER123",),
             {
                 "headers": {"Authorization": "Bearer token"},
-                "timeout": 10,
             },
         ),
     ]
@@ -77,13 +77,14 @@ def test_get_max_townhall_fetches_top_player_detail_and_caches(monkeypatch):
 def test_get_max_townhall_raises_when_player_detail_has_no_townhall(
     monkeypatch,
 ):
-    ranking_response = Mock()
-    ranking_response.json.return_value = {"items": [{"tag": "#PLAYER123"}]}
-    player_response = Mock()
-    player_response.json.return_value = {}
+    ranking_response = ClashApiResponse(
+        200,
+        {"items": [{"tag": "#PLAYER123"}]},
+    )
+    player_response = ClashApiResponse(200, {})
     monkeypatch.setattr(
-        maxtownhall.requests,
-        "get",
+        maxtownhall,
+        "clash_get",
         Mock(side_effect=[ranking_response, player_response]),
     )
 
