@@ -320,7 +320,7 @@ def test_recruiter_post_returns_400_for_unknown_status(
     response = client.post("/recruiter", json={"status": "unexpected"})
 
     assert response.status_code == 400
-    assert response.get_json() == {"message": "Invalid listing status."}
+    assert response.get_json() == {"error": "Invalid listing status."}
     assert collection.inserted_doc is None
     assert collection.update_call is None
     assert collection.delete_query is None
@@ -338,7 +338,52 @@ def test_recruiter_post_returns_400_for_missing_json_status(
     response = client.post("/recruiter")
 
     assert response.status_code == 400
-    assert response.get_json() == {"message": "Invalid listing status."}
+    assert response.get_json() == {
+        "error": "Request body must be a JSON object."
+    }
+
+
+def test_recruiter_post_returns_400_for_list_payload(
+    client,
+    monkeypatch,
+    set_session,
+):
+    collection = DummyClanCollection(existing={"requirements": [1, 2, 3]})
+    setup_recruiter_route(monkeypatch, collection)
+    set_session(recruiter_status=True, clan_tag="TEST123")
+
+    response = client.post("/recruiter", json=[])
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "Request body must be a JSON object."
+    }
+
+
+def test_recruiter_post_returns_400_for_bad_requirement_type(
+    client,
+    monkeypatch,
+    set_session,
+):
+    collection = DummyClanCollection()
+    setup_recruiter_route(monkeypatch, collection)
+    set_session(recruiter_status=True, clan_tag="TEST123")
+
+    response = client.post(
+        "/recruiter",
+        json={
+            "status": "new",
+            "requiredLeague": "high",
+            "requiredBuilderLeague": 2400,
+            "requiredTownhall": 13,
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "requiredLeague must be an integer."
+    }
+    assert collection.inserted_doc is None
 
 
 def test_recruiter_update_allows_two_actions_per_minute(
