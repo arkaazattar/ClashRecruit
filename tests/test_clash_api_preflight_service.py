@@ -2,12 +2,12 @@ from unittest.mock import Mock
 
 import ClashRecruit.services.clash_api_preflight as preflight
 import pytest
+from ClashRecruit.clash_http_client import ClashApiHTTPError, ClashApiResponse
 
 
 def test_run_clash_api_preflight_returns_for_success(monkeypatch):
-    fake_response = Mock(status_code=200)
-    fake_get = Mock(return_value=fake_response)
-    monkeypatch.setattr(preflight.requests, "get", fake_get)
+    fake_get = Mock(return_value=ClashApiResponse(200, {"items": []}))
+    monkeypatch.setattr(preflight, "clash_get", fake_get)
 
     result = preflight.run_clash_api_preflight({"Authorization": "token"})
 
@@ -22,12 +22,15 @@ def test_run_clash_api_preflight_returns_for_success(monkeypatch):
 
 
 def test_run_clash_api_preflight_raises_for_api_error(monkeypatch):
-    fake_response = Mock(status_code=403)
-    fake_response.json.return_value = {"reason": "accessDenied.invalidIp"}
     monkeypatch.setattr(
-        preflight.requests,
-        "get",
-        Mock(return_value=fake_response),
+        preflight,
+        "clash_get",
+        Mock(
+            side_effect=ClashApiHTTPError(
+                403,
+                {"reason": "accessDenied.invalidIp"},
+            )
+        ),
     )
 
     with pytest.raises(Exception, match="HTTP 403: accessDenied.invalidIp"):
@@ -35,12 +38,10 @@ def test_run_clash_api_preflight_raises_for_api_error(monkeypatch):
 
 
 def test_run_clash_api_preflight_uses_unknown_reason_fallback(monkeypatch):
-    fake_response = Mock(status_code=500)
-    fake_response.json.return_value = {}
     monkeypatch.setattr(
-        preflight.requests,
-        "get",
-        Mock(return_value=fake_response),
+        preflight,
+        "clash_get",
+        Mock(side_effect=ClashApiHTTPError(500, {})),
     )
 
     with pytest.raises(Exception, match="HTTP 500: unknown"):

@@ -2,10 +2,9 @@
 
 from functools import lru_cache
 
-import requests
 from diskcache import Cache
 
-REQUEST_TIMEOUT_SECONDS = 10
+from ..clash_http_client import get as clash_get
 
 
 @lru_cache(maxsize=1)
@@ -28,21 +27,19 @@ def get_max_townhall(headers) -> int:
         ValueError: If the API response does not include a valid
             ``townHallLevel`` value.
     """
-    response = requests.get(
+    response = clash_get(
         "https://api.clashofclans.com/v1/locations/32000249/"
         "rankings/players?limit=1",
         headers=headers,
-        timeout=REQUEST_TIMEOUT_SECONDS,
     )
-    response = response.json()
+    response = response.payload
     tag = response["items"][0]["tag"]
     tag = tag[1:]
-    response = requests.get(
+    response = clash_get(
         f"https://api.clashofclans.com/v1/players/%23{tag}",
         headers=headers,
-        timeout=REQUEST_TIMEOUT_SECONDS,
     )
-    response = response.json()
+    response = response.payload
     max_townhall = response.get("townHallLevel")
     if max_townhall is None:
         raise ValueError("Missing 'townHallLevel' in Clash API response.")
