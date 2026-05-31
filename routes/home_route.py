@@ -47,6 +47,10 @@ def home():
     except RequestValidationError as exc:
         return jsonify({"error": exc.message}), 400
 
+    session.pop("player_league", None)
+    session.pop("player_townhall", None)
+    session.pop("player_townhall_weapon_level", None)
+    session.pop("player_builderbase_trophies", None)
     session["player_tag"] = received_tag
     user = API(received_tag, received_token, headers)
     check_player_team = user.check_player()
@@ -61,6 +65,7 @@ def home():
         session["clan_tag"] = clan_tag
         session["player_league"] = user.league
         session["player_townhall"] = user.townhall
+        session["player_townhall_weapon_level"] = user.townhallWeaponLevel
         session["player_builderbase_trophies"] = user.builder_trophies
     else:
         status = False
