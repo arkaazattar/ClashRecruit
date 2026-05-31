@@ -40,6 +40,8 @@ def run_startup_tasks_from_env() -> None:
         initialize_mongo()
 
 
+run_startup_tasks_from_env()
+
+
 if __name__ == "__main__":
-    run_startup_tasks_from_env()
     app.run(port=5000)

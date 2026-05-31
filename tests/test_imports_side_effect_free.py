@@ -62,6 +62,25 @@ class ImportSideEffectsTests(unittest.TestCase):
                 with self.subTest(module=module_name):
                     importlib.import_module(module_name)
 
+    def test_app_import_runs_preflight_when_enabled(self):
+        self._clear_repo_modules()
+
+        with patch.dict(
+            os.environ,
+            {
+                "DBURI": "",
+                "CLASH_INIT_DB_ON_START": "False",
+                "CLASH_DEV_PREFLIGHT": "true",
+            },
+            clear=False,
+        ):
+            with patch(
+                "ClashRecruit.services.clash_api_preflight.clash_get"
+            ) as mock_get:
+                importlib.import_module("ClashRecruit.app")
+
+        mock_get.assert_called_once()
+
 
 if __name__ == "__main__":
     unittest.main()
