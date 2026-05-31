@@ -56,6 +56,40 @@ function normalizeUserInfo(data) {
   };
 }
 
+function readStoredUserInfo(username) {
+  if (!username) {
+    return null;
+  }
+
+  try {
+    const storedValue = sessionStorage.getItem("dashboard_user_info");
+    if (!storedValue) {
+      return null;
+    }
+
+    const parsed = JSON.parse(storedValue);
+    if (parsed.username !== username || !parsed.data) {
+      return null;
+    }
+
+    return normalizeUserInfo(parsed.data);
+  } catch {
+    return null;
+  }
+}
+
+function storeUserInfo(username, data) {
+  if (!username) {
+    sessionStorage.removeItem("dashboard_user_info");
+    return;
+  }
+
+  sessionStorage.setItem(
+    "dashboard_user_info",
+    JSON.stringify({ username, data })
+  );
+}
+
 function normalizeClanRoleLabel(roleValue) {
   if (!roleValue) {
     return "N/A";
@@ -94,10 +128,14 @@ function normalizeSavedClanTag(tagValue) {
 
 function Dashboard() {
   usePageTitle("Dashboard | ClashRecruit")
+  const { user, townhall, townhallWeaponLevel, recruitStatus, hasActiveListing, sessionStateLoaded } = useOutletContext();
+  const normalizedUser = user === "Guest" ? null : user;
 
   const [loading, setLoading] = useState(true);
   const [townHallImage, setTownHallImage] = useState(null);
-  const [userInfo, setUserInfo] = useState(null);
+  const [userInfo, setUserInfo] = useState(
+    () => readStoredUserInfo(normalizedUser)
+  );
   const [savedClans, setSavedClans] = useState([]);
   const [savedClansError, setSavedClansError] = useState("");
   const [savedClansActionError, setSavedClansActionError] = useState("");
@@ -105,8 +143,6 @@ function Dashboard() {
   const [removingSavedClanTag, setRemovingSavedClanTag] = useState("");
   const [copiedTag, setCopiedTag] = useState("");
   const copyResetTimerRef = useRef(null);
-  const { user, townhall, townhallWeaponLevel, recruitStatus, hasActiveListing, sessionStateLoaded } = useOutletContext();
-  const normalizedUser = user === "Guest" ? null : user;
 
   useEffect(() => {
     if (!sessionStateLoaded) {
@@ -116,6 +152,7 @@ function Dashboard() {
 
     let isMounted = true;
     setLoading(true);
+    setUserInfo(readStoredUserInfo(normalizedUser));
 
     const resolvedTownHallImage = getTownHallAsset(
       townhall,
@@ -125,9 +162,22 @@ function Dashboard() {
     Promise.all([
       preloadImage(resolvedTownHallImage).then(() => resolvedTownHallImage),
       fetch("/session-state/user-info", { credentials: "include" })
-        .then((res) => res.json())
-        .then((data) => normalizeUserInfo(data))
-        .catch(() => null),
+        .then((res) => {
+          if (!res.ok) {
+            return undefined;
+          }
+
+          return res.json();
+        })
+        .then((data) => {
+          if (data === undefined) {
+            return undefined;
+          }
+
+          storeUserInfo(normalizedUser, data);
+          return normalizeUserInfo(data);
+        })
+        .catch(() => undefined),
       fetch("/saved-clans", { credentials: "include" })
         .then(async (res) => {
           if (!res.ok) {
@@ -150,7 +200,9 @@ function Dashboard() {
         }
 
         setTownHallImage(nextTownHallImage);
-        setUserInfo(nextUserInfo);
+        if (nextUserInfo !== undefined) {
+          setUserInfo(nextUserInfo);
+        }
         setSavedClans(nextSaved.savedClanList);
         setSavedClansError(nextSaved.savedError);
       })
