@@ -16,6 +16,10 @@ def get_cache() -> Cache:
 def get_max_townhall(headers) -> int:
     """Fetch and cache the current highest observed Town Hall level.
 
+    Clash does not expose a metadata endpoint for the current max Town Hall.
+    This uses a top leaderboard player as the best available live signal and
+    caches the result.
+
     Args:
         headers (dict[str, str]): HTTP headers sent with Clash of Clans API
             requests.

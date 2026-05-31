@@ -1,160 +1,179 @@
-# ClashRecruiter
+# ClashRecruit
 
-ClashRecruiter is a full-stack web application for managing and recruiting Clash of Clans players.
+ClashRecruit is a full-stack web application for Clash of Clans recruiting. Recruiters can publish clan listings, players can browse and filter listings, and logged-in users can save clans.
 
-The frontend is built with React (Create React App) and the backend is a Flask API, using session-based authentication and API-driven data.
-
----
+The backend is a Flask API backed by MongoDB, Redis, and Celery. The frontend is a React app created with Create React App.
 
 ## Tech Stack
 
 Frontend:
-- React (Create React App)
+- React
 - React Router
 - Native Fetch API
+- Create React App tooling
 
 Backend:
-- Flask
-- Python
-- MongoDB
-
----
-
-## Project Structure
-
-clashrecruit/
-- frontend/        React Frontend
-- api/             Flask Backend
-- routes/          Flask API Routes
-- services/        Supporting Python Modules
-- app.py           Flask Configuration
-- config.py        Relevant .env Imports
-- README.md
-
----
-
-## Getting Started
-
-### Prerequisites
-- Node.js 20.x
-- npm 10.x
 - Python 3.12
-- pip / virtualenv
-- Docker + Docker Compose
+- Flask
+- MongoDB
+- Redis
+- Celery
+- Clash of Clans API
 
-Version files in repo:
-- `.python-version` -> `3.12`
-- `.nvmrc` -> `20`
-- `frontend/package.json` engines -> Node `20.x`, npm `10.x`
+## Repository Layout
 
----
-
-## Installation
-
-### Backend + Celery + Redis (Docker Compose)
+```text
+ClashRecruit/
+├── api/                 Clash API wrappers
+├── routes/              Flask route handlers
+├── services/            Backend service modules
+├── tests/               Backend pytest suite
+├── frontend/            React frontend
+├── app.py               Flask application entrypoint
+├── clash_http_client.py Shared Clash API HTTP client
+├── config.py            Environment-backed config
+├── docker-compose.yml   Local backend/worker/Redis stack
+├── Dockerfile           Backend image
+├── pyproject.toml       Ruff and pytest config
+└── requirements.txt     Pinned backend dependencies
 ```
+
+## Runtime Versions
+
+Use the versions declared in the repo:
+
+- Python: `3.12` via `.python-version`
+- Node: `20` via `.nvmrc`
+- npm: `10.x` via `frontend/package.json`
+
+The backend Docker image also uses Python 3.12.
+
+## Environment
+
+Create a `.env` file in the repository root:
+
+```env
+FLASKSECRETKEY=your_secret_key
+DBURI=your_mongodb_connection_string
+APIKEY=your_clash_of_clans_api_key
+```
+
+Optional development flags:
+
+```env
+CLASH_DEV_PREFLIGHT=False
+CLASH_INIT_DB_ON_START=False
+```
+
+- `CLASH_DEV_PREFLIGHT=true` runs a lightweight Clash API reachability check at backend startup.
+- `CLASH_INIT_DB_ON_START=true` pings MongoDB and creates required indexes at backend startup.
+
+## Local Development
+
+### Backend with Docker Compose
+
+From the repository root:
+
+```bash
 docker compose up --build
 ```
 
 This starts:
-- Flask backend (`web`) on `http://127.0.0.1:5000`
-- Celery worker (`worker`)
-- Celery beat scheduler (`beat`)
-- Redis broker (`redis`)
+- Flask backend on `http://127.0.0.1:5000`
+- Redis
+- Celery worker
+- Celery beat scheduler
 
-Stop everything:
-```
+Stop the stack:
+
+```bash
 docker compose down
 ```
 
----
+### Backend Manually
 
-### Backend + Celery (Local/Manual)
-```
-python -m venv venv  
-source venv/bin/activate  
-pip install -r requirements.txt  
-```
+Create a virtual environment and install backend dependencies:
 
-Start Redis (if using Docker for Redis):
-```
-docker start redis
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
 ```
 
-Start backend:
-```
-flask run
-```
+Start Redis separately, then run the backend from the repository root:
 
-In separate terminals, start Celery:
-```
-celery -A ClashRecruit.services.celery_app:app worker --loglevel=info
-celery -A ClashRecruit.services.celery_app:app beat --loglevel=info
+```bash
+PYTHONPATH="$(pwd)/.." CLASH_DEV_PREFLIGHT=False CLASH_INIT_DB_ON_START=False \
+  flask --app ClashRecruit.app run --host=127.0.0.1 --port=5000
 ```
 
-Backend runs at `http://127.0.0.1:5000`.
+In separate terminals, run Celery when background jobs are needed:
 
----
-
-### Frontend (React)
-```
-cd frontend  
-npm install  
-npm start  
-```
-Frontend runs at:  
-http://localhost:3000
-
----
-
-## Proxy Configuration (Development)
-
-This project uses Create React App’s built-in proxy to forward frontend requests to the Flask backend.
-
-In frontend/package.json:
-
-"proxy": "http://127.0.0.1:5000"
-
-This allows frontend requests like:
-
-```
-fetch("/session-state", { 
-    credentials: "include" 
-})
+```bash
+PYTHONPATH="$(pwd)/.." celery -A ClashRecruit.services.celery_app:app worker --loglevel=info
+PYTHONPATH="$(pwd)/.." celery -A ClashRecruit.services.celery_app:app beat --loglevel=info
 ```
 
-to be forwarded automatically to:
+### Frontend
 
-http://127.0.0.1:5000/session-state
-
-This avoids hardcoding backend URLs and prevents CORS issues during local development.
-
----
-
-## Environment Variables
-
-Create a .env file in the root directory and enter:
-```
-FLASKSECRETKEY=your_secret_key  
-DBURI=your_db_uri
-APIKEY=your_clash_of_clans_apikey  
-```
-**Note: DBURI should be your entire DBURI.** 
-
-Example Below:
-```
-DBURI=mongodb+srv://arkaazattar_db_user:<db_password>@clashrecruit.poawkmg.mongodb.net/?appName=clashrecruit
+```bash
+cd frontend
+npm install
+npm start
 ```
 
----
+The frontend runs at `http://localhost:3000` and proxies API requests to `http://127.0.0.1:5000`.
 
-## Future Improvements
+## Checks
 
-- Migrate frontend from Create React App to Vite
-- Improve session persistence handling
-- Add a production reverse proxy (NGINX)
+Backend checks:
 
----
+```bash
+.venv/bin/python -m ruff check .
+.venv/bin/python -m pytest
+```
+
+Frontend checks:
+
+```bash
+cd frontend
+npm test -- --watchAll=false --passWithNoTests
+npm run build
+```
+
+There is not currently an explicit frontend `lint` script.
+
+## CI
+
+Backend CI is defined in `.github/workflows/backend-ci.yml`.
+
+On pull requests and pushes to `main`, it:
+- sets up Python 3.12
+- installs `requirements.txt`
+- runs Ruff
+- runs pytest
+
+Frontend CI is not currently defined.
+
+## Deployment Checklist
+
+This is not a full production hardening guide, but these items should be
+checked before putting the app behind a public URL.
+
+For a small deployment, configure at minimum:
+- `FLASKSECRETKEY`
+- `DBURI`
+- `APIKEY`
+- Redis/Celery if scheduled import or refresh jobs are needed
+- a production frontend build
+- a production Flask runner such as Gunicorn rather than `flask run`
+- a trusted CORS/frontend origin instead of local development defaults
+
+Before deploying publicly, verify:
+- backend tests pass
+- frontend build passes
+- MongoDB indexes are initialized
+- Clash API key is valid for the deployment IP
 
 ## License
 
