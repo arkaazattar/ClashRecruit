@@ -3,6 +3,17 @@
 from ..clash_http_client import get as clash_get
 
 
+def extract_clan_requirements(payload: object) -> list[int]:
+    """Extract clan requirements from a Clash clan detail payload."""
+    if not isinstance(payload, dict):
+        return [0, 0, 0]
+
+    required_league = 0
+    required_builder_trophies = payload.get("requiredBuilderBaseTrophies") or 0
+    required_townhall = payload.get("requiredTownhallLevel") or 0
+    return [required_league, required_builder_trophies, required_townhall]
+
+
 class Recruiter:
     """Wrap Clash API calls used by recruiter-facing routes."""
 
@@ -24,25 +35,11 @@ class Recruiter:
             list: Clan requirements in order `[league, builder, townhall]`.
         """
         response = clash_get(
-            f"https://api.clashofclans.com/v1/clans?name=%23{self.clan_tag}",
+            f"https://api.clashofclans.com/v1/clans/%23{self.clan_tag}",
             headers=self.headers,
         )
         self.storage = response.payload
-        long_list = self.storage.get("items") or []
-        required_townhall = 0
-        required_builder_trophies = 0
-        required_league = 0
-        for i in range(len(long_list)):
-            required_townhall = long_list[i].get("requiredTownhallLevel")
-            required_builder_trophies = long_list[i].get(
-                "requiredBuilderBaseTrophies"
-            )
-
-        self.new_clan_requirements(
-            required_league,
-            required_builder_trophies,
-            required_townhall,
-        )
+        self.new_clan_requirements(*extract_clan_requirements(self.storage))
 
         return self.requirements
 

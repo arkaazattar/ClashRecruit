@@ -12,12 +12,8 @@ def test_pull_clan_requirements_success(monkeypatch) -> None:
     fake_response = ClashApiResponse(
         200,
         {
-            "items": [
-                {
-                    "requiredTownhallLevel": 12,
-                    "requiredBuilderBaseTrophies": 2300,
-                }
-            ]
+            "requiredTownhallLevel": 12,
+            "requiredBuilderBaseTrophies": 2300,
         },
     )
     mock_get = Mock(return_value=fake_response)
@@ -28,26 +24,12 @@ def test_pull_clan_requirements_success(monkeypatch) -> None:
 
     assert requirements == [0, 2300, 12]
     mock_get.assert_called_once_with(
-        f"https://api.clashofclans.com/v1/clans?name=%23{KNOWN_STABLE_TAG}",
+        f"https://api.clashofclans.com/v1/clans/%23{KNOWN_STABLE_TAG}",
         headers=MOCK_HEADERS,
     )
 
 
-def test_pull_clan_requirements_defaults_when_api_returns_no_items(
-    monkeypatch,
-) -> None:
-    user = Recruiter(KNOWN_STABLE_TAG, MOCK_HEADERS)
-
-    monkeypatch.setattr(
-        recruiter_api,
-        "clash_get",
-        Mock(return_value=ClashApiResponse(200, {"items": []})),
-    )
-
-    assert user.pull_clan_requirements() == [0, 0, 0]
-
-
-def test_pull_clan_requirements_defaults_when_items_missing(
+def test_pull_clan_requirements_defaults_when_payload_is_empty(
     monkeypatch,
 ) -> None:
     user = Recruiter(KNOWN_STABLE_TAG, MOCK_HEADERS)
@@ -59,6 +41,29 @@ def test_pull_clan_requirements_defaults_when_items_missing(
     )
 
     assert user.pull_clan_requirements() == [0, 0, 0]
+
+
+def test_pull_clan_requirements_defaults_when_payload_is_malformed(
+    monkeypatch,
+) -> None:
+    user = Recruiter(KNOWN_STABLE_TAG, MOCK_HEADERS)
+
+    monkeypatch.setattr(
+        recruiter_api,
+        "clash_get",
+        Mock(return_value=ClashApiResponse(200, [])),
+    )
+
+    assert user.pull_clan_requirements() == [0, 0, 0]
+
+
+def test_extract_clan_requirements_defaults_missing_values() -> None:
+    assert recruiter_api.extract_clan_requirements({}) == [0, 0, 0]
+
+
+def test_extract_clan_requirements_defaults_malformed_payloads() -> None:
+    assert recruiter_api.extract_clan_requirements(None) == [0, 0, 0]
+    assert recruiter_api.extract_clan_requirements([]) == [0, 0, 0]
 
 
 def test_lookup_clan_full_payload(monkeypatch) -> None:
