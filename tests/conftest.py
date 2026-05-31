@@ -1,8 +1,12 @@
+import os
 import sys
 from pathlib import Path
 
 import pytest
 from flask import Flask
+
+os.environ.setdefault("CLASH_DEV_PREFLIGHT", "False")
+os.environ.setdefault("CLASH_INIT_DB_ON_START", "False")
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PROJECT_PARENT = PROJECT_ROOT.parent
