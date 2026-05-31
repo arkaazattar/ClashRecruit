@@ -19,6 +19,7 @@ function Recruiter() {
   const [status, setStatus] = useState(null);
   const [updateExpiry, setUpdateExpiry] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [loadError, setLoadError] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [Listing, setListing] = useState("View Listing");
   const deleteNavigateTimerRef = useRef(null);
@@ -50,6 +51,15 @@ function Recruiter() {
           return;
         }
 
+        if (!recruiterResponse.ok) {
+          const errorData = await recruiterResponse.json().catch(() => ({}));
+          setLoadError(
+            errorData.message || "Please try again shortly."
+          );
+          setLoading(false);
+          return;
+        }
+
         const recruiterData = await recruiterResponse.json();
 
         if (!isMounted) {
@@ -63,10 +73,12 @@ function Recruiter() {
         setClanDescription(recruiterData.clanDescription);
         setStatus(recruiterData.status);
         setListing(recruiterData.status ? "Close Listing" : "View Listing");
+        setLoadError("");
         setLoading(false);
       } catch {
         if (isMounted) {
-          navigate("/dashboard");
+          setLoadError("Please try again shortly.");
+          setLoading(false);
         }
       }
     }
@@ -171,6 +183,26 @@ function Recruiter() {
 
   if (loading) {
     return <LoadingScreen />;
+  }
+
+  if (loadError) {
+    return (
+      <section className="recruiter-page recruiter-error-page">
+        <div className="recruiter-header">
+          <h2>Recruit Players</h2>
+          <p>{loadError}</p>
+        </div>
+
+        <div className="recruiter-error-links">
+          <a href="/recruit">Try again</a>
+          <Link
+            to="/dashboard"
+          >
+            Return to dashboard
+          </Link>
+        </div>
+      </section>
+    );
   }
 
   return (

@@ -5,6 +5,31 @@
     background: transparent;
 }
 
+.recruiter-error-page {
+    min-height: 45vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.recruiter-error-links {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+}
+
+.recruiter-error-links a {
+    color: black;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.recruiter-error-links a:hover {
+    text-decoration: underline;
+}
+
 .recruiter-loading {
     padding: 24px;
     background: transparent;
