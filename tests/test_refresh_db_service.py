@@ -50,7 +50,8 @@ def test_refresh_membercount_updates_stale_entries(monkeypatch):
     refresh_db.refresh_membercount()
 
     assert clan_collection.find_query == {
-        "last_updated": {"$lte": frozen_now - refresh_db.THRESHOLD}
+        "last_updated": {"$lte": frozen_now - refresh_db.THRESHOLD},
+        "expires": {"$gt": frozen_now},
     }
     assert [instance.clan_tag for instance in DummyRecruiter.instances] == [
         "TEST123",

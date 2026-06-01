@@ -16,6 +16,7 @@ class DummyClanCollection:
         self.deleted_count = deleted_count
         self.find_one_query = None
         self.inserted_doc = None
+        self.replace_call = None
         self.update_call = None
         self.delete_query = None
 
@@ -24,6 +25,10 @@ class DummyClanCollection:
         return self.existing
 
     def insert_one(self, doc):
+        self.inserted_doc = doc
+
+    def replace_one(self, query, doc, upsert=False):
+        self.replace_call = (query, doc, upsert)
         self.inserted_doc = doc
 
     def update_one(self, query, update):
@@ -104,6 +109,7 @@ def test_get_recruiter_listing_page_returns_existing_listing(monkeypatch):
     assert collection.find_one_query == {
         "clan_tag": "TEST123",
         "source": {"$ne": "clash_api_import"},
+        "expires": {"$gt": FROZEN_NOW},
     }
     assert DummyRecruiter.instances[0].pull_called is True
     assert DummyRecruiter.instances[0].lookup_modes == []
@@ -158,6 +164,11 @@ def test_create_recruiter_listing_inserts_live_listing(monkeypatch):
     assert payload["status"] == expiry
     assert collection.inserted_doc["last_updated"] == FROZEN_NOW
     assert collection.inserted_doc["expires"] == expiry
+    assert collection.replace_call == (
+        {"clan_tag": "TEST123", "source": {"$ne": "clash_api_import"}},
+        collection.inserted_doc,
+        True,
+    )
 
 
 def test_update_recruiter_listing_refreshes_expiry(monkeypatch):

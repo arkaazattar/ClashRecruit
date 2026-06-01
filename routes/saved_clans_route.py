@@ -1,5 +1,7 @@
 """Register routes for saved a users saved clans."""
 
+from datetime import datetime, timezone
+
 from flask import Blueprint, jsonify, session
 
 from ..services.mongo_db_client import get_clan_collection, get_user_collection
@@ -29,9 +31,10 @@ def _hydrate_saved_clans(saved_clan_tags):
             provided saved clan tags.
     """
     clan_collection = get_clan_collection()
+    now = datetime.now(timezone.utc)
     listings = list(
         clan_collection.find(
-            {"clan_tag": {"$in": saved_clan_tags}},
+            {"clan_tag": {"$in": saved_clan_tags}, "expires": {"$gt": now}},
             {
                 "_id": 0,
                 "clan_tag": 1,

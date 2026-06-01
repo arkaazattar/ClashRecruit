@@ -1,6 +1,7 @@
 """Register routes for handling recruitee requests."""
 
 import re
+from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request, session
 
@@ -43,6 +44,13 @@ def _should_include_total():
     return request.args.get("includeTotal", "0") == "1"
 
 
+def _active_listing_query(query=None):
+    """Return a listing query scoped to listings that have not expired."""
+    active_query = dict(query or {})
+    active_query["expires"] = {"$gt": datetime.now(timezone.utc)}
+    return active_query
+
+
 @recruitee_bp.get("/recruitee")
 @rate_limit("recruitee_get", limit=60, window_seconds=60)
 def recruitee_get():
@@ -67,9 +75,10 @@ def recruitee_get():
             },
             "requirements.2": {"$lte": session.get("player_townhall")},
         }
+    query = _active_listing_query(base_query)
 
     data = list(
-        clan_collection.find(base_query, {"_id": 0})
+        clan_collection.find(query, {"_id": 0})
         .sort([("last_updated", -1), ("clan_tag", 1)])
         .skip(requested_offset)
         .limit(requested_limit)
@@ -78,7 +87,7 @@ def recruitee_get():
     if not _should_include_total():
         return jsonify(data)
 
-    total = clan_collection.count_documents(base_query)
+    total = clan_collection.count_documents(query)
     return jsonify(
         {
             "items": data,
@@ -105,7 +114,9 @@ def recruitee_post():
 
     clan_tag = raw_form.get("clanTag") or raw_form.get("clan_tag")
     if clan_tag:
-        data = clan_collection.find_one({"clan_tag": clan_tag}, {"_id": 0})
+        data = clan_collection.find_one(
+            _active_listing_query({"clan_tag": clan_tag}), {"_id": 0}
+        )
         if data is None:
             return jsonify({"error": "Clan not found"}), 404
         return jsonify(data)
@@ -158,6 +169,7 @@ def recruitee_post():
         if location_name:
             query["clan_info.location.name"] = location_name
 
+    query = _active_listing_query(query)
     data = list(
         clan_collection.find(query, {"_id": 0})
         .sort([("last_updated", -1), ("clan_tag", 1)])
