@@ -304,6 +304,92 @@ def test_check_player_request_subset_without_clan_num_items_5(
     assert result["num_items"] == 5
 
 
+def test_check_player_handles_missing_optional_fields(monkeypatch) -> None:
+    user = API("valid_user", api=None, headers=MOCK_HEADERS)
+
+    monkeypatch.setattr(
+        "ClashRecruit.api.clash_api.clash_get",
+        Mock(return_value=ClashApiResponse(200, {"name": "valid_user"})),
+    )
+
+    assert user.check_player() is True
+    assert user.league == 0
+    assert user.townhall == 0
+    assert user.builder_trophies == 0
+    assert user.townhallWeaponLevel is None
+    assert user.recruiter_status is False
+    assert user.clantag is None
+    assert user.user_name == "valid_user"
+
+
+@pytest.mark.parametrize(
+    "league_tier",
+    [
+        None,
+        {},
+        {"name": None},
+        {"name": "Legend League"},
+    ],
+)
+def test_check_player_handles_malformed_league_tier(
+    monkeypatch,
+    league_tier,
+) -> None:
+    user = API("valid_user", api=None, headers=MOCK_HEADERS)
+
+    monkeypatch.setattr(
+        "ClashRecruit.api.clash_api.clash_get",
+        Mock(
+            return_value=ClashApiResponse(
+                200,
+                {
+                    "leagueTier": league_tier,
+                    "townHallLevel": 17,
+                    "builderBaseTrophies": 2000,
+                    "clan": {"tag": "#mock_clan_tag"},
+                    "role": "leader",
+                    "name": "valid_user",
+                },
+            )
+        ),
+    )
+
+    assert user.check_player() is True
+    assert user.league == 0
+
+
+@pytest.mark.parametrize(
+    ("payload", "expected_clan"),
+    [
+        ({"clan": None, "role": "leader"}, None),
+        ({"clan": "bad", "role": "leader"}, None),
+        ({"clan": {"tag": "#X"}, "role": None}, "X"),
+    ],
+)
+def test_check_player_handles_malformed_clan_and_role(
+    monkeypatch,
+    payload,
+    expected_clan,
+) -> None:
+    user = API("valid_user", api=None, headers=MOCK_HEADERS)
+    payload = {
+        "leagueTier": {"name": "Unranked"},
+        "townHallLevel": 17,
+        "builderBaseTrophies": 2000,
+        "name": "valid_user",
+        **payload,
+    }
+
+    monkeypatch.setattr(
+        "ClashRecruit.api.clash_api.clash_get",
+        Mock(return_value=ClashApiResponse(200, payload)),
+    )
+
+    assert user.check_player() is True
+    assert user.recruiter_status is False
+    assert user.clantag == expected_clan
+
+
 @pytest.mark.parametrize(
     ("payload", "expected"),
     [
@@ -312,6 +398,9 @@ def test_check_player_request_subset_without_clan_num_items_5(
         ({"clan": {"tag": "#X"}, "role": "admin"}, True),
         ({"clan": {"tag": "#X"}, "role": "member"}, False),
         ({"role": "leader", "clan": {}}, False),
+        ({"role": "leader", "clan": None}, False),
+        ({"role": None, "clan": {"tag": "#X"}}, False),
+        ({"clan": {"tag": "#X"}}, False),
     ],
 )
 def test_recruiting_role_matrix(payload: dict, expected: bool) -> None:
