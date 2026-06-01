@@ -445,6 +445,52 @@ def test_imported_clans_post_returns_400_for_invalid_numeric_filter(
     }
 
 
+def test_imported_clans_post_returns_400_for_huge_clan_points(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.imported_clans_route as imported_clans_route
+
+    monkeypatch.setattr(
+        imported_clans_route,
+        "get_clan_collection",
+        lambda: object(),
+    )
+
+    response = client.post(
+        "/imported_clans",
+        json={"filters": {"clanPoints": 400001}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "clanPoints must be at most 400000."
+    }
+
+
+def test_imported_clans_post_returns_400_for_huge_min_clan_level(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.imported_clans_route as imported_clans_route
+
+    monkeypatch.setattr(
+        imported_clans_route,
+        "get_clan_collection",
+        lambda: object(),
+    )
+
+    response = client.post(
+        "/imported_clans",
+        json={"filters": {"minClanLevel": 100}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "minClanLevel must be at most 99."
+    }
+
+
 def test_imported_clans_post_returns_400_for_invalid_limit(
     client,
     monkeypatch,

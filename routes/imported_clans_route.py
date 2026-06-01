@@ -27,6 +27,8 @@ from .validation import (
 imported_clans_bp = Blueprint("imported_clans", __name__)
 
 MAX_LIMIT = 200
+MAX_CLAN_LEVEL = 99
+MAX_CLAN_POINTS = 400000
 IMPORTED_PAYLOAD_FIELDS = {"clanTag", "filters"}
 IMPORTED_FILTER_FIELDS = {
     "name",
@@ -174,10 +176,20 @@ def _validate_imported_filters(filters):
     if name:
         normalized["name"] = name
 
-    min_clan_level = optional_int(filters, "minClanLevel", min_value=0)
+    min_clan_level = optional_int(
+        filters,
+        "minClanLevel",
+        min_value=0,
+        max_value=MAX_CLAN_LEVEL,
+    )
     if min_clan_level is not None:
         normalized["minClanLevel"] = min_clan_level
-    clan_points = optional_int(filters, "clanPoints", min_value=0)
+    clan_points = optional_int(
+        filters,
+        "clanPoints",
+        min_value=0,
+        max_value=MAX_CLAN_POINTS,
+    )
     if clan_points is not None:
         normalized["clanPoints"] = clan_points
 

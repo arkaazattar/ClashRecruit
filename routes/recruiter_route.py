@@ -2,6 +2,8 @@
 
 from flask import Blueprint, jsonify, request, session
 
+from ..config import headers
+from ..services.maxtownhall import refresh
 from ..services.rate_limiter import is_rate_limited
 from ..services.recruiter_listing import (
     get_recruiter_listing_page,
@@ -160,8 +162,12 @@ def _validate_recruiter_payload(data):
         data,
         "requiredTownhall",
         min_value=0,
-        max_value=25,
     )
+    max_townhall = refresh(headers)
+    if normalized["requiredTownhall"] > max_townhall:
+        raise RequestValidationError(
+            f"requiredTownhall must be at most {max_townhall}."
+        )
     normalized["description"] = optional_string(
         data,
         "description",

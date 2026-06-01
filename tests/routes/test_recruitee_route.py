@@ -345,6 +345,7 @@ def test_recruitee_post_filters_and_paginates_with_total(
         "get_clan_collection",
         lambda: collection,
     )
+    monkeypatch.setattr(recruitee_route, "refresh", lambda headers: 17)
 
     response = client.post(
         "/recruitee?includeTotal=1&limit=2&offset=0",
@@ -747,6 +748,80 @@ def test_recruitee_post_returns_400_for_unknown_nested_filter_field(
     assert collection.find_query is None
 
 
+def test_recruitee_post_rejects_townhall_above_current_max(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+    monkeypatch.setattr(recruitee_route, "refresh", lambda headers: 17)
+
+    response = client.post(
+        "/recruitee",
+        json={"filters": {"requirements": {"townhall": 18}}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "townhall must be at most 17."}
+    assert collection.find_query is None
+
+
+def test_recruitee_post_rejects_clan_points_above_max(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post(
+        "/recruitee",
+        json={"filters": {"clanPoints": 400001}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "clanPoints must be at most 400000."
+    }
+    assert collection.find_query is None
+
+
+def test_recruitee_post_rejects_min_clan_level_above_max(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post(
+        "/recruitee",
+        json={"filters": {"minClanLevel": 100}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "minClanLevel must be at most 99."
+    }
+    assert collection.find_query is None
+
+
 def test_recruitee_post_returns_400_for_invalid_war_frequency(
     client,
     monkeypatch,
@@ -806,6 +881,7 @@ def test_recruitee_post_normalizes_numeric_string_filters(
         "get_clan_collection",
         lambda: collection,
     )
+    monkeypatch.setattr(recruitee_route, "refresh", lambda headers: 17)
 
     response = client.post(
         "/recruitee",

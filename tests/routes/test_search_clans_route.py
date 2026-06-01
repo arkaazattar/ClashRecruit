@@ -164,6 +164,48 @@ def test_search_clans_returns_400_for_negative_number(client, monkeypatch):
     assert DummyRecruitee.instances == []
 
 
+def test_search_clans_returns_400_for_huge_min_clan_points(
+    client,
+    monkeypatch,
+):
+    setup_search_route(
+        monkeypatch,
+        {"items": [], "after": None, "error": None},
+    )
+
+    response = client.post(
+        "/search_clans",
+        json={"minClanPoints": 400001},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "minClanPoints must be at most 400000."
+    }
+    assert DummyRecruitee.instances == []
+
+
+def test_search_clans_returns_400_for_huge_min_clan_level(
+    client,
+    monkeypatch,
+):
+    setup_search_route(
+        monkeypatch,
+        {"items": [], "after": None, "error": None},
+    )
+
+    response = client.post(
+        "/search_clans",
+        json={"minClanLevel": 100},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "minClanLevel must be at most 99."
+    }
+    assert DummyRecruitee.instances == []
+
+
 def test_search_clans_returns_400_for_invalid_war_frequency(
     client,
     monkeypatch,

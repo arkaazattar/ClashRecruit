@@ -17,6 +17,8 @@ from .validation import (
 
 search_clans_bp = Blueprint("search_clans", __name__)
 
+MAX_CLAN_LEVEL = 99
+MAX_CLAN_POINTS = 400000
 SEARCH_FILTER_FIELDS = {
     "name",
     "warFrequency",
@@ -125,12 +127,14 @@ def _validate_search_filters(filters):
         normalized,
         "minClanPoints",
         min_value=0,
+        max_value=MAX_CLAN_POINTS,
     )
     _copy_optional_int(
         filters,
         normalized,
         "minClanLevel",
         min_value=1,
+        max_value=MAX_CLAN_LEVEL,
     )
     _copy_optional_int(
         filters,

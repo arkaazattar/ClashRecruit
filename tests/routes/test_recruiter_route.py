@@ -63,9 +63,11 @@ class DummyRecruiter:
 
 
 def setup_recruiter_route(monkeypatch, collection):
+    import ClashRecruit.routes.recruiter_route as recruiter_route
     import ClashRecruit.services.recruiter_listing as recruiter_listing
 
     DummyRecruiter.instances = []
+    monkeypatch.setattr(recruiter_route, "refresh", lambda headers: 17)
     monkeypatch.setattr(recruiter_listing, "Recruiter", DummyRecruiter)
     monkeypatch.setattr(
         recruiter_listing,
@@ -536,6 +538,32 @@ def test_recruiter_post_returns_400_for_huge_builder_league(
     assert response.status_code == 400
     assert response.get_json() == {
         "error": "requiredBuilderLeague must be at most 10000."
+    }
+    assert collection.inserted_doc is None
+
+
+def test_recruiter_post_returns_400_for_townhall_above_current_max(
+    client,
+    monkeypatch,
+    set_session,
+):
+    collection = DummyClanCollection()
+    setup_recruiter_route(monkeypatch, collection)
+    set_session(recruiter_status=True, clan_tag="TEST123")
+
+    response = client.post(
+        "/recruiter",
+        json={
+            "status": "new",
+            "requiredLeague": 5,
+            "requiredBuilderLeague": 2600,
+            "requiredTownhall": 18,
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "requiredTownhall must be at most 17."
     }
     assert collection.inserted_doc is None
 

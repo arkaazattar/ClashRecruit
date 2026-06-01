@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request, session
 
+from ..config import headers
+from ..services.maxtownhall import refresh
 from ..services.mongo_db_client import get_clan_collection
 from .rate_limit import rate_limit
 from .validation import (
@@ -25,6 +27,8 @@ from .validation import (
 recruitee_bp = Blueprint("recruitee", __name__)
 
 MAX_LIMIT = 200
+MAX_CLAN_LEVEL = 99
+MAX_CLAN_POINTS = 400000
 RECRUITEE_PAYLOAD_FIELDS = {"clanTag", "filters"}
 RECRUITEE_FILTER_FIELDS = {
     "name",
@@ -274,9 +278,13 @@ def _validate_filter_payload(filters):
         requirements,
         "townhall",
         min_value=0,
-        max_value=25,
     )
     if townhall is not None:
+        max_townhall = refresh(headers)
+        if townhall > max_townhall:
+            raise RequestValidationError(
+                f"townhall must be at most {max_townhall}."
+            )
         normalized_requirements["townhall"] = townhall
     league = optional_int(requirements, "league", min_value=0, max_value=34)
     if league is not None:
@@ -292,10 +300,20 @@ def _validate_filter_payload(filters):
     if normalized_requirements:
         normalized["requirements"] = normalized_requirements
 
-    min_clan_level = optional_int(filters, "minClanLevel", min_value=0)
+    min_clan_level = optional_int(
+        filters,
+        "minClanLevel",
+        min_value=0,
+        max_value=MAX_CLAN_LEVEL,
+    )
     if min_clan_level is not None:
         normalized["minClanLevel"] = min_clan_level
-    clan_points = optional_int(filters, "clanPoints", min_value=0)
+    clan_points = optional_int(
+        filters,
+        "clanPoints",
+        min_value=0,
+        max_value=MAX_CLAN_POINTS,
+    )
     if clan_points is not None:
         normalized["clanPoints"] = clan_points
 
