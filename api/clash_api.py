@@ -1,5 +1,6 @@
 """Core Clash API wrapper for player validation and profile lookups."""
 
+import re
 from typing import Literal
 
 from ..clash_http_client import get as clash_get
@@ -8,6 +9,7 @@ from ..clash_http_client import post as clash_post
 REQUESTOPTIONS = Literal[
     "expLevel", "leagueTier", "builderBaseLeague", "builderHallLevel", "clan"
 ]
+LEAGUE_RANK_PATTERN = re.compile(r"(\d+)$")
 
 
 class API:
@@ -92,7 +94,7 @@ class API:
             url,
             headers=self.headers,
         )
-        self.storage = response.payload
+        self.storage = _normalize_player_payload(response.payload)
         reason = self.storage.get("reason")
 
         if reason == "notFound":
@@ -106,13 +108,7 @@ class API:
         if self.json_data["token"] and not self.check_player_api():
             return False
 
-        self.league = self.storage.get("leagueTier").get("name")
-
-        if self.league != "Unranked":
-            self.league = int(self.league[-2:])
-
-        else:
-            self.league = 0
+        self.league = _parse_league_rank(self.storage["leagueTier"])
 
         self.townhall = self.storage.get("townHallLevel")
         self.builder_trophies = self.storage.get("builderBaseTrophies")
@@ -121,7 +117,8 @@ class API:
             self.townhallWeaponLevel = self.storage.get("townHallWeaponLevel")
 
         self.recruiter_status = self.recruiting(self.storage)
-        self.clantag = self.storage.get("clan", {}).get("tag", None)
+        clan = self.storage.get("clan")
+        self.clantag = clan.get("tag") if isinstance(clan, dict) else None
         if self.clantag:
             self.clantag = self.clantag[1:]
         self.user_name = self.storage.get("name")
@@ -133,6 +130,7 @@ class API:
                 response[request_key] = self.storage.get(request_key, None)
 
             if response.get("clan", None):
+                response["clan"] = dict(response["clan"])
                 response["clan"]["role"] = self.storage.get("role")
                 response["num_items"] = 6
             else:
@@ -154,11 +152,72 @@ class API:
         """
         roles = ["leader", "coleader", "admin"]
 
-        clan_tag = data.get("clan", {}).get("tag", 0)
-        if clan_tag == 0:
+        clan = data.get("clan")
+        if not isinstance(clan, dict) or not clan.get("tag"):
             return False
 
-        if data["role"].lower() not in roles:
+        role = data.get("role")
+        if not isinstance(role, str) or role.lower() not in roles:
             return False
 
         return True
+
+
+def _normalize_player_payload(payload: dict[str, object]) -> dict[str, object]:
+    """Return a player payload with safe defaults for nested access."""
+    normalized = dict(payload)
+
+    league_tier = normalized.get("leagueTier")
+    if not isinstance(league_tier, dict):
+        league_tier = {}
+
+    league_name = league_tier.get("name")
+    if not isinstance(league_name, str):
+        league_name = "Unranked"
+
+    normalized["leagueTier"] = {**league_tier, "name": league_name}
+    normalized["townHallLevel"] = _int_or_default(
+        normalized.get("townHallLevel"),
+    )
+    normalized["builderBaseTrophies"] = _int_or_default(
+        normalized.get("builderBaseTrophies"),
+    )
+
+    clan = normalized.get("clan")
+    if not isinstance(clan, dict):
+        normalized["clan"] = None
+
+    role = normalized.get("role")
+    if not isinstance(role, str):
+        normalized["role"] = ""
+
+    name = normalized.get("name")
+    if not isinstance(name, str):
+        normalized["name"] = "Guest"
+
+    return normalized
+
+
+def _parse_league_rank(league_tier: object) -> int:
+    if not isinstance(league_tier, dict):
+        return 0
+
+    league_name = league_tier.get("name")
+    if league_name == "Unranked" or not isinstance(league_name, str):
+        return 0
+
+    match = LEAGUE_RANK_PATTERN.search(league_name)
+    if match is None:
+        return 0
+
+    return int(match.group(1))
+
+
+def _int_or_default(value: object, default: int = 0) -> int:
+    if isinstance(value, bool):
+        return default
+
+    if isinstance(value, int):
+        return value
+
+    return default
