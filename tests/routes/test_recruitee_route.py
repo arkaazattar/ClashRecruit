@@ -544,6 +544,84 @@ def test_recruitee_post_returns_404_for_missing_clan_tag(
     assert collection.find_one_projection == {"_id": 0}
 
 
+def test_recruitee_post_returns_400_for_empty_payload(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post("/recruitee", json={})
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": (
+            "recruitee payload must include exactly one of "
+            "clanTag or filters."
+        )
+    }
+    assert collection.find_query is None
+    assert collection.find_one_query is None
+
+
+def test_recruitee_post_returns_400_for_ambiguous_payload(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post(
+        "/recruitee",
+        json={"clanTag": "TEST123", "filters": {}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": (
+            "recruitee payload must include exactly one of "
+            "clanTag or filters."
+        )
+    }
+    assert collection.find_query is None
+    assert collection.find_one_query is None
+
+
+def test_recruitee_post_returns_400_for_clan_tag_alias(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post("/recruitee", json={"clan_tag": "TEST123"})
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "Unsupported recruitee field: clan_tag."
+    }
+    assert collection.find_query is None
+    assert collection.find_one_query is None
+
+
 def test_recruitee_post_returns_400_for_list_payload(
     client,
     monkeypatch,

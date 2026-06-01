@@ -90,6 +90,21 @@ def ensure_allowed_fields(
         )
 
 
+def ensure_exactly_one_field(
+    payload: dict[str, Any],
+    field_names: set[str],
+    object_name: str,
+) -> str:
+    """Return the single present field from a one-of request contract."""
+    present_fields = sorted(field_names & set(payload))
+    if len(present_fields) != 1:
+        expected = " or ".join(sorted(field_names))
+        raise RequestValidationError(
+            f"{object_name} must include exactly one of {expected}."
+        )
+    return present_fields[0]
+
+
 def optional_string(
     payload: dict[str, Any],
     field_name: str,
@@ -109,6 +124,19 @@ def optional_string(
             f"{field_name} must be {max_length} characters or fewer."
         )
     return normalized
+
+
+def required_string(
+    payload: dict[str, Any],
+    field_name: str,
+    *,
+    max_length: int | None = None,
+) -> str:
+    """Return a required trimmed string field."""
+    value = optional_string(payload, field_name, max_length=max_length)
+    if not value:
+        raise RequestValidationError(f"{field_name} is required.")
+    return value
 
 
 def optional_bool(payload: dict[str, Any], field_name: str) -> bool | None:

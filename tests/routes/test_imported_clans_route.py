@@ -192,6 +192,78 @@ def test_imported_clans_post_returns_404_for_missing_tag(
     assert response.get_json() == {"error": "Imported clan not found"}
 
 
+def test_imported_clans_post_returns_400_for_empty_payload(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.imported_clans_route as imported_clans_route
+
+    monkeypatch.setattr(
+        imported_clans_route,
+        "get_clan_collection",
+        lambda: object(),
+    )
+
+    response = client.post("/imported_clans", json={})
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": (
+            "imported clans payload must include exactly one of "
+            "clanTag or filters."
+        )
+    }
+
+
+def test_imported_clans_post_returns_400_for_ambiguous_payload(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.imported_clans_route as imported_clans_route
+
+    monkeypatch.setattr(
+        imported_clans_route,
+        "get_clan_collection",
+        lambda: object(),
+    )
+
+    response = client.post(
+        "/imported_clans",
+        json={"clanTag": "TEST123", "filters": {}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": (
+            "imported clans payload must include exactly one of "
+            "clanTag or filters."
+        )
+    }
+
+
+def test_imported_clans_post_returns_400_for_clan_tag_alias(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.imported_clans_route as imported_clans_route
+
+    monkeypatch.setattr(
+        imported_clans_route,
+        "get_clan_collection",
+        lambda: object(),
+    )
+
+    response = client.post(
+        "/imported_clans",
+        json={"clan_tag": "TEST123"},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "Unsupported imported clans field: clan_tag."
+    }
+
+
 def test_imported_clans_post_returns_400_for_bad_filter_shape(
     client,
     monkeypatch,

@@ -10,6 +10,7 @@ from .validation import (
     CLASH_WAR_FREQUENCIES,
     RequestValidationError,
     ensure_allowed_fields,
+    ensure_exactly_one_field,
     ensure_object,
     get_json_object,
     normalize_tag,
@@ -225,12 +226,17 @@ def recruitee_post():
 def _validate_recruitee_payload(payload):
     """Return normalized recruitee POST payload."""
     ensure_allowed_fields(payload, RECRUITEE_PAYLOAD_FIELDS, "recruitee")
+    payload_mode = ensure_exactly_one_field(
+        payload,
+        RECRUITEE_PAYLOAD_FIELDS,
+        "recruitee payload",
+    )
     normalized = {}
-    if "clanTag" in payload:
+    if payload_mode == "clanTag":
         normalized["clanTag"] = normalize_tag(payload["clanTag"], "clanTag")
         return normalized
 
-    filters = ensure_object(payload.get("filters"), "filters")
+    filters = ensure_object(payload["filters"], "filters")
     normalized["filters"] = _validate_filter_payload(filters)
     return normalized
 

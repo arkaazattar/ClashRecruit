@@ -13,6 +13,7 @@ from .validation import (
     CLASH_WAR_FREQUENCIES,
     RequestValidationError,
     ensure_allowed_fields,
+    ensure_exactly_one_field,
     ensure_object,
     get_json_object,
     normalize_tag,
@@ -148,12 +149,17 @@ def imported_clans_post():
 def _validate_imported_payload(payload):
     """Return normalized imported-clans POST payload."""
     ensure_allowed_fields(payload, IMPORTED_PAYLOAD_FIELDS, "imported clans")
+    payload_mode = ensure_exactly_one_field(
+        payload,
+        IMPORTED_PAYLOAD_FIELDS,
+        "imported clans payload",
+    )
     normalized = {}
-    if "clanTag" in payload:
+    if payload_mode == "clanTag":
         normalized["clanTag"] = normalize_tag(payload["clanTag"], "clanTag")
         return normalized
 
-    filters = ensure_object(payload.get("filters"), "filters")
+    filters = ensure_object(payload["filters"], "filters")
     normalized["filters"] = _validate_imported_filters(filters)
     return normalized
 

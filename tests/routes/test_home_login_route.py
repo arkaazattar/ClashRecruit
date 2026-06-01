@@ -150,6 +150,41 @@ def test_home_login_returns_400_for_invalid_player_tag(client, monkeypatch):
     assert DummyAPI.instances == []
 
 
+def test_home_login_returns_400_for_missing_api_token(client, monkeypatch):
+    import ClashRecruit.routes.home_route as home_route
+
+    DummyAPI.instances = []
+    monkeypatch.setattr(home_route, "API", DummyAPI)
+
+    response = client.post("/", json={"playerTag": "PLAYER123"})
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "apiToken is required."}
+    assert DummyAPI.instances == []
+
+
+def test_home_login_returns_400_for_unknown_field(client, monkeypatch):
+    import ClashRecruit.routes.home_route as home_route
+
+    DummyAPI.instances = []
+    monkeypatch.setattr(home_route, "API", DummyAPI)
+
+    response = client.post(
+        "/",
+        json={
+            "playerTag": "PLAYER123",
+            "apiToken": "token-123",
+            "extra": "nope",
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "Unsupported login field: extra."
+    }
+    assert DummyAPI.instances == []
+
+
 def test_home_login_rate_limits_repeated_attempts(client, monkeypatch):
     import ClashRecruit.routes.home_route as home_route
 
