@@ -35,6 +35,11 @@ RECRUITEE_FILTER_FIELDS = {
 }
 RECRUITEE_REQUIREMENT_FIELDS = {"townhall", "league", "members"}
 MEMBER_FILTER_FIELDS = {"min", "max"}
+MATCHMAKING_SESSION_FIELDS = {
+    "player_league": "requirements.0",
+    "player_builderbase_trophies": "requirements.1",
+    "player_townhall": "requirements.2",
+}
 
 
 def _get_requested_limit(default_limit):
@@ -59,6 +64,34 @@ def _should_include_total():
     return query_bool(request, "includeTotal", default=False)
 
 
+def _get_matchmaking_base_query():
+    """Return a safe clan match query for the current session."""
+    player_name = session.get("player_name", None)
+    if not player_name or player_name == "Guest":
+        return {}
+
+    stats = {}
+    for session_key, query_key in MATCHMAKING_SESSION_FIELDS.items():
+        value = session.get(session_key)
+        if value is None:
+            return {}
+        stats[query_key] = _session_int(value, session_key)
+
+    return {query_key: {"$lte": value} for query_key, value in stats.items()}
+
+
+def _session_int(value, field_name):
+    if isinstance(value, bool):
+        raise RequestValidationError(f"{field_name} is invalid.")
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str):
+        stripped = value.strip()
+        if stripped and stripped.isdecimal():
+            return int(stripped)
+    raise RequestValidationError(f"{field_name} is invalid.")
+
+
 @recruitee_bp.get("/recruitee")
 @rate_limit("recruitee_get", limit=60, window_seconds=60)
 def recruitee_get():
@@ -72,18 +105,10 @@ def recruitee_get():
         return jsonify({"error": exc.message}), 400
 
     clan_collection = get_clan_collection()
-    player_name = session.get("player_name", None)
-
-    if not player_name or player_name == "Guest":
-        base_query = {}
-    else:
-        base_query = {
-            "requirements.0": {"$lte": session.get("player_league")},
-            "requirements.1": {
-                "$lte": session.get("player_builderbase_trophies")
-            },
-            "requirements.2": {"$lte": session.get("player_townhall")},
-        }
+    try:
+        base_query = _get_matchmaking_base_query()
+    except RequestValidationError as exc:
+        return jsonify({"error": exc.message}), 400
 
     data = list(
         clan_collection.find(base_query, {"_id": 0})

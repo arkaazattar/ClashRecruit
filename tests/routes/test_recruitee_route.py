@@ -101,6 +101,96 @@ def test_recruitee_get_filters_logged_in_player_with_total(
     assert collection.cursor.limit_count == 1
 
 
+def test_recruitee_get_falls_back_to_guest_query_for_incomplete_stats(
+    client,
+    monkeypatch,
+    set_session,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection(
+        [{"clan_tag": "TEST1", "name": "test_clan_1"}]
+    )
+
+    set_session(
+        player_name="test_player",
+        player_league=5,
+        player_townhall=13,
+    )
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.get("/recruitee")
+
+    assert response.status_code == 200
+    assert response.get_json() == [
+        {"clan_tag": "TEST1", "name": "test_clan_1"}
+    ]
+    assert collection.find_query == {}
+
+
+def test_recruitee_get_normalizes_string_matchmaking_stats(
+    client,
+    monkeypatch,
+    set_session,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+
+    set_session(
+        player_name="test_player",
+        player_league="5",
+        player_builderbase_trophies="2200",
+        player_townhall="13",
+    )
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.get("/recruitee")
+
+    assert response.status_code == 200
+    assert collection.find_query == {
+        "requirements.0": {"$lte": 5},
+        "requirements.1": {"$lte": 2200},
+        "requirements.2": {"$lte": 13},
+    }
+
+
+def test_recruitee_get_returns_400_for_malformed_matchmaking_stat(
+    client,
+    monkeypatch,
+    set_session,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+
+    set_session(
+        player_name="test_player",
+        player_league="not-a-league",
+        player_builderbase_trophies=2200,
+        player_townhall=13,
+    )
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.get("/recruitee")
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "player_league is invalid."}
+    assert collection.find_query is None
+
+
 def test_recruitee_get_returns_guest_default_raw_list(
     client,
     monkeypatch,
