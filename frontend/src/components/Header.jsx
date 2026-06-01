@@ -32,6 +32,8 @@ function Header({ user , hasActiveListing}) {
 
     const handleLogout = async () => {
         sessionStorage.removeItem("player_name");
+        sessionStorage.removeItem("session_state");
+        sessionStorage.removeItem("dashboard_user_info");
         setOpen(false);
 
         await fetch("/logout", {

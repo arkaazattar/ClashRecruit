@@ -10,6 +10,7 @@ class DummyAPI:
         self.clantag = "TESTCLAN"
         self.league = 5
         self.townhall = 13
+        self.townhallWeaponLevel = 2
         self.builder_trophies = 2400
         self.reason = None
         DummyAPI.instances.append(self)
@@ -62,16 +63,24 @@ def test_home_login_valid_player_sets_session(
         assert session["clan_tag"] == "TESTCLAN"
         assert session["player_league"] == 5
         assert session["player_townhall"] == 13
+        assert session["player_townhall_weapon_level"] == 2
         assert session["player_builderbase_trophies"] == 2400
 
 
 def test_home_login_invalid_player_sets_failure_session(
     client,
     monkeypatch,
+    set_session,
 ):
     import ClashRecruit.routes.home_route as home_route
 
     monkeypatch.setattr(home_route, "API", InvalidDummyAPI)
+    set_session(
+        player_league=5,
+        player_townhall=13,
+        player_townhall_weapon_level=2,
+        player_builderbase_trophies=2400,
+    )
 
     response = client.post(
         "/",
@@ -94,6 +103,7 @@ def test_home_login_invalid_player_sets_failure_session(
         assert session["clan_tag"] is None
         assert "player_league" not in session
         assert "player_townhall" not in session
+        assert "player_townhall_weapon_level" not in session
         assert "player_builderbase_trophies" not in session
 
 

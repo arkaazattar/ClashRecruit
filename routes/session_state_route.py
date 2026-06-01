@@ -24,12 +24,8 @@ def session_state():
     clan_tag = session.get("clan_tag")
 
     if username != "Guest":
-        player_tag = session.get("player_tag")
-        user = API(player_tag, None, headers)
-        user.check_player()
-        townhall = user.townhall
-        townhallWeaponLevel = user.townhallWeaponLevel
-        clan_tag = user.clantag or clan_tag
+        townhall = session.get("player_townhall")
+        townhallWeaponLevel = session.get("player_townhall_weapon_level")
 
     if clan_tag:
         clan_collection = get_clan_collection()

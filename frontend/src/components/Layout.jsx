@@ -19,12 +19,62 @@ function readStoredUser() {
     return normalizeUser(sessionStorage.getItem("player_name"));
 }
 
+function readStoredShellState() {
+    const fallback = {
+        user: readStoredUser(),
+        hasActiveListing: false,
+        recruitStatus: false,
+        townhall: null,
+        townhallWeaponLevel: 0
+    };
+
+    try {
+        const storedValue = sessionStorage.getItem("session_state");
+        if (!storedValue) {
+            return fallback;
+        }
+
+        const parsed = JSON.parse(storedValue);
+        return {
+            user: normalizeUser(parsed.username),
+            hasActiveListing: Boolean(parsed.has_active_listing),
+            recruitStatus: Boolean(parsed.recruit_status),
+            townhall: parsed.townhall ?? null,
+            townhallWeaponLevel: parsed.townhallWeaponLevel ?? 0
+        };
+    } catch {
+        return fallback;
+    }
+}
+
+function storeShellState(data) {
+    const username = normalizeUser(data.username);
+
+    if (username) {
+        sessionStorage.setItem("player_name", username);
+        sessionStorage.setItem("session_state", JSON.stringify(data));
+    } else {
+        sessionStorage.removeItem("player_name");
+        sessionStorage.removeItem("session_state");
+        sessionStorage.removeItem("dashboard_user_info");
+    }
+}
+
 const Layout = () => {
-    const [user, setUser] = useState(() => readStoredUser());
-    const [hasActiveListing, setHasActiveListing] = useState(false);
-    const [recruitStatus, setRecruitStatus] = useState(false);
-    const [townhall, setTownhall] = useState(null);
-    const [townhallWeaponLevel, setTownhallWeaponLevel] = useState(0);
+    const storedShellState = readStoredShellState();
+    const [user, setUser] = useState(() => storedShellState.user);
+    const [hasActiveListing, setHasActiveListing] = useState(
+        () => storedShellState.hasActiveListing
+    );
+    const [recruitStatus, setRecruitStatus] = useState(
+        () => storedShellState.recruitStatus
+    );
+    const [townhall, setTownhall] = useState(
+        () => storedShellState.townhall
+    );
+    const [townhallWeaponLevel, setTownhallWeaponLevel] = useState(
+        () => storedShellState.townhallWeaponLevel
+    );
     const [sessionStateLoaded, setSessionStateLoaded] = useState(false);
 
     useEffect(() => {
@@ -38,12 +88,24 @@ const Layout = () => {
                 setTownhall(null);
                 setTownhallWeaponLevel(0);
                 setSessionStateLoaded(false);
+                sessionStorage.removeItem("session_state");
+                sessionStorage.removeItem("dashboard_user_info");
             }
 
             fetch("/session-state", { credentials: "include" })
-                .then((res) => res.json())
+                .then((res) => {
+                    if (!res.ok) {
+                        return null;
+                    }
+
+                    return res.json();
+                })
                 .then((data) => {
                     if (!isMounted) return;
+                    if (!data) {
+                        setSessionStateLoaded(true);
+                        return;
+                    }
 
                     const username = normalizeUser(data.username);
                     setUser(username);
@@ -52,21 +114,10 @@ const Layout = () => {
                     setTownhall(data.townhall);
                     setTownhallWeaponLevel(data.townhallWeaponLevel);
                     setSessionStateLoaded(true);
-
-                    if (username) {
-                        sessionStorage.setItem("player_name", username);
-                    } else {
-                        sessionStorage.removeItem("player_name");
-                    }
+                    storeShellState(data);
                 })
                 .catch(() => {
                     if (!isMounted) return;
-                    setUser(null);
-                    setHasActiveListing(false);
-                    setRecruitStatus(false);
-                    setTownhall(null);
-                    setTownhallWeaponLevel(0);
-                    sessionStorage.removeItem("player_name");
                     setSessionStateLoaded(true);
                 });
         };
