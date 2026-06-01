@@ -99,6 +99,61 @@ def test_session_state_returns_logged_in_player_and_active_listing(
     assert collection.find_one_projection == {"_id": 1}
 
 
+def test_session_state_normalizes_session_clan_tag(
+    client,
+    monkeypatch,
+    set_session,
+):
+    import ClashRecruit.routes.session_state_route as session_state_route
+
+    collection = DummyClanCollection(listing={"_id": "listing-id"})
+    set_session(
+        player_name="test_player",
+        clan_tag="#sessionclan",
+        player_townhall=14,
+        player_townhall_weapon_level=3,
+    )
+    monkeypatch.setattr(
+        session_state_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.get("/session-state")
+
+    assert response.status_code == 200
+    assert response.get_json()["has_active_listing"] is True
+    assert collection.find_one_query["clan_tag"] == "SESSIONCLAN"
+
+
+def test_session_state_ignores_malformed_session_clan_tag(
+    client,
+    monkeypatch,
+    set_session,
+):
+    import ClashRecruit.routes.session_state_route as session_state_route
+
+    def fail_get_clan_collection():
+        raise AssertionError("Mongo should not be called for bad clan tag")
+
+    set_session(
+        player_name="test_player",
+        clan_tag="bad-tag!",
+        player_townhall=14,
+        player_townhall_weapon_level=3,
+    )
+    monkeypatch.setattr(
+        session_state_route,
+        "get_clan_collection",
+        fail_get_clan_collection,
+    )
+
+    response = client.get("/session-state")
+
+    assert response.status_code == 200
+    assert response.get_json()["has_active_listing"] is False
+
+
 def test_session_state_returns_logged_in_player_without_active_listing(
     client,
     monkeypatch,

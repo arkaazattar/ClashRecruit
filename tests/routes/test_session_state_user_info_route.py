@@ -65,3 +65,50 @@ def test_session_state_user_info_returns_player_stats(
         "builderHallLevel",
         "clan",
     ]
+
+
+def test_session_state_user_info_normalizes_player_tag(
+    client,
+    monkeypatch,
+    set_session,
+):
+    import ClashRecruit.routes.session_state_route as session_state_route
+
+    class DummyAPI:
+        instances = []
+
+        def __init__(self, player_tag, api_token, headers):
+            self.player_tag = player_tag
+            DummyAPI.instances.append(self)
+
+        def check_player(self, fields):
+            return {"player_tag": self.player_tag}
+
+    set_session(player_tag="#player123")
+    monkeypatch.setattr(session_state_route, "API", DummyAPI)
+
+    response = client.get("/session-state/user-info")
+
+    assert response.status_code == 200
+    assert response.get_json() == {"player_tag": "PLAYER123"}
+    assert DummyAPI.instances[0].player_tag == "PLAYER123"
+
+
+def test_session_state_user_info_returns_empty_for_malformed_player_tag(
+    client,
+    monkeypatch,
+    set_session,
+):
+    import ClashRecruit.routes.session_state_route as session_state_route
+
+    class FailIfCalledAPI:
+        def __init__(self, *args, **kwargs):
+            raise AssertionError("API should not be called for bad player tag")
+
+    set_session(player_tag="bad-tag!")
+    monkeypatch.setattr(session_state_route, "API", FailIfCalledAPI)
+
+    response = client.get("/session-state/user-info")
+
+    assert response.status_code == 200
+    assert response.get_json() == {}
