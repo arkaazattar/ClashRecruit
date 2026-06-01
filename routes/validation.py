@@ -6,6 +6,13 @@ from typing import Any
 from flask import Request
 
 TAG_PATTERN = re.compile(r"^[A-Z0-9]+$")
+CLASH_WAR_FREQUENCIES = {
+    "always",
+    "moreThanOncePerWeek",
+    "oncePerWeek",
+    "lessThanOncePerWeek",
+    "never",
+}
 
 
 class RequestValidationError(ValueError):
@@ -51,6 +58,19 @@ def ensure_object(value: Any, field_name: str) -> dict[str, Any]:
     return value
 
 
+def ensure_allowed_fields(
+    payload: dict[str, Any],
+    allowed_fields: set[str],
+    object_name: str,
+) -> None:
+    """Raise when a request object contains unsupported fields."""
+    unknown_fields = sorted(set(payload) - allowed_fields)
+    if unknown_fields:
+        raise RequestValidationError(
+            f"Unsupported {object_name} field: {unknown_fields[0]}."
+        )
+
+
 def optional_string(
     payload: dict[str, Any],
     field_name: str,
@@ -79,6 +99,20 @@ def optional_bool(payload: dict[str, Any], field_name: str) -> bool | None:
         return None
     if not isinstance(value, bool):
         raise RequestValidationError(f"{field_name} must be a boolean.")
+    return value
+
+
+def optional_enum(
+    payload: dict[str, Any],
+    field_name: str,
+    allowed_values: set[str],
+) -> str | None:
+    """Return an optional string enum field."""
+    value = optional_string(payload, field_name, max_length=40)
+    if not value:
+        return None
+    if value not in allowed_values:
+        raise RequestValidationError(f"{field_name} is invalid.")
     return value
 
 

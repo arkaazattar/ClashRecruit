@@ -7,10 +7,13 @@ from flask import Blueprint, jsonify, request, session
 from ..services.mongo_db_client import get_clan_collection
 from .rate_limit import rate_limit
 from .validation import (
+    CLASH_WAR_FREQUENCIES,
     RequestValidationError,
+    ensure_allowed_fields,
     ensure_object,
     get_json_object,
     normalize_tag,
+    optional_enum,
     optional_int,
     optional_string,
     query_int,
@@ -19,6 +22,18 @@ from .validation import (
 recruitee_bp = Blueprint("recruitee", __name__)
 
 MAX_LIMIT = 200
+RECRUITEE_PAYLOAD_FIELDS = {"clanTag", "filters"}
+RECRUITEE_FILTER_FIELDS = {
+    "name",
+    "requirements",
+    "minClanLevel",
+    "clanPoints",
+    "warFrequency",
+    "location_id",
+    "location",
+}
+RECRUITEE_REQUIREMENT_FIELDS = {"townhall", "league", "members"}
+MEMBER_FILTER_FIELDS = {"min", "max"}
 
 
 def _get_requested_limit(default_limit):
@@ -181,6 +196,7 @@ def recruitee_post():
 
 def _validate_recruitee_payload(payload):
     """Return normalized recruitee POST payload."""
+    ensure_allowed_fields(payload, RECRUITEE_PAYLOAD_FIELDS, "recruitee")
     normalized = {}
     if "clanTag" in payload:
         normalized["clanTag"] = normalize_tag(payload["clanTag"], "clanTag")
@@ -192,6 +208,7 @@ def _validate_recruitee_payload(payload):
 
 
 def _validate_filter_payload(filters):
+    ensure_allowed_fields(filters, RECRUITEE_FILTER_FIELDS, "filter")
     normalized = {}
 
     name = optional_string(filters, "name", max_length=120)
@@ -201,6 +218,11 @@ def _validate_filter_payload(filters):
     requirements = ensure_object(
         filters.get("requirements"),
         "filters.requirements",
+    )
+    ensure_allowed_fields(
+        requirements,
+        RECRUITEE_REQUIREMENT_FIELDS,
+        "requirements",
     )
     normalized_requirements = {}
     townhall = optional_int(
@@ -232,7 +254,11 @@ def _validate_filter_payload(filters):
     if clan_points is not None:
         normalized["clanPoints"] = clan_points
 
-    war_frequency = optional_string(filters, "warFrequency", max_length=40)
+    war_frequency = optional_enum(
+        filters,
+        "warFrequency",
+        CLASH_WAR_FREQUENCIES,
+    )
     if war_frequency:
         normalized["warFrequency"] = war_frequency
 
@@ -248,6 +274,7 @@ def _validate_filter_payload(filters):
 
 
 def _validate_members_filter(members):
+    ensure_allowed_fields(members, MEMBER_FILTER_FIELDS, "members")
     normalized = {}
     min_members = optional_int(members, "min", min_value=0, max_value=50)
     max_members = optional_int(members, "max", min_value=0, max_value=50)

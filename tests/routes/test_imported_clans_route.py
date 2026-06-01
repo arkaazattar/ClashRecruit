@@ -215,6 +215,134 @@ def test_imported_clans_post_returns_400_for_bad_filter_shape(
     }
 
 
+def test_imported_clans_post_returns_400_for_unknown_filter_field(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.imported_clans_route as imported_clans_route
+
+    monkeypatch.setattr(
+        imported_clans_route,
+        "get_clan_collection",
+        lambda: object(),
+    )
+
+    response = client.post(
+        "/imported_clans",
+        json={"filters": {"unexpected": "value"}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "Unsupported filter field: unexpected."
+    }
+
+
+def test_imported_clans_post_returns_400_for_unknown_nested_filter_field(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.imported_clans_route as imported_clans_route
+
+    monkeypatch.setattr(
+        imported_clans_route,
+        "get_clan_collection",
+        lambda: object(),
+    )
+
+    response = client.post(
+        "/imported_clans",
+        json={"filters": {"requirements": {"members": {"minimum": 30}}}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "Unsupported members field: minimum."
+    }
+
+
+def test_imported_clans_post_returns_400_for_invalid_war_frequency(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.imported_clans_route as imported_clans_route
+
+    monkeypatch.setattr(
+        imported_clans_route,
+        "get_clan_collection",
+        lambda: object(),
+    )
+
+    response = client.post(
+        "/imported_clans",
+        json={"filters": {"warFrequency": "sometimes"}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "warFrequency is invalid."}
+
+
+def test_imported_clans_post_allows_empty_filters_as_browse(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.imported_clans_route as imported_clans_route
+
+    class DummyCursor:
+        def __init__(self, docs):
+            self.docs = docs
+            self.sort_fields = None
+            self.skip_count = None
+            self.limit_count = None
+
+        def sort(self, fields):
+            self.sort_fields = fields
+            return self
+
+        def skip(self, count):
+            self.skip_count = count
+            return self
+
+        def limit(self, count):
+            self.limit_count = count
+            return self
+
+        def __iter__(self):
+            return iter(self.docs)
+
+    class DummyClanCollection:
+        def __init__(self):
+            self.cursor = DummyCursor(
+                [{"clan_tag": "ONE", "name": "First"}]
+            )
+            self.count_query = None
+            self.find_query = None
+
+        def count_documents(self, query):
+            self.count_query = query
+            return 1
+
+        def find(self, query, projection):
+            self.find_query = query
+            return self.cursor
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        imported_clans_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post("/imported_clans", json={"filters": {}})
+
+    assert response.status_code == 200
+    assert response.get_json()["items"] == [
+        {"clan_tag": "ONE", "name": "First"}
+    ]
+    assert collection.count_query == {"source": "clash_api_import"}
+    assert collection.find_query == {"source": "clash_api_import"}
+
+
 def test_imported_clans_post_returns_400_for_invalid_numeric_filter(
     client,
     monkeypatch,

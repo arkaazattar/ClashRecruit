@@ -6,21 +6,17 @@ from ..api.recruitee_api import Recruitee
 from ..config import headers
 from .rate_limit import rate_limit
 from .validation import (
+    CLASH_WAR_FREQUENCIES,
     RequestValidationError,
+    ensure_allowed_fields,
     get_json_object,
+    optional_enum,
     optional_int,
     optional_string,
 )
 
 search_clans_bp = Blueprint("search_clans", __name__)
 
-WAR_FREQUENCIES = {
-    "always",
-    "moreThanOncePerWeek",
-    "oncePerWeek",
-    "lessThanOncePerWeek",
-    "never",
-}
 SEARCH_FILTER_FIELDS = {
     "name",
     "warFrequency",
@@ -80,17 +76,19 @@ def search_clans():
 
 def _validate_search_filters(filters):
     """Return normalized Clash clan search filters and pagination cursor."""
-    _reject_unknown_fields(filters)
+    ensure_allowed_fields(filters, ALLOWED_SEARCH_FIELDS, "search")
 
     normalized = {}
     name = optional_string(filters, "name", max_length=120)
     if name:
         normalized["name"] = name
 
-    war_frequency = optional_string(filters, "warFrequency", max_length=40)
+    war_frequency = optional_enum(
+        filters,
+        "warFrequency",
+        CLASH_WAR_FREQUENCIES,
+    )
     if war_frequency:
-        if war_frequency not in WAR_FREQUENCIES:
-            raise RequestValidationError("warFrequency is invalid.")
         normalized["warFrequency"] = war_frequency
 
     _copy_optional_int(
@@ -154,14 +152,6 @@ def _validate_search_filters(filters):
         )
 
     return normalized, after
-
-
-def _reject_unknown_fields(filters):
-    unknown_fields = sorted(set(filters) - ALLOWED_SEARCH_FIELDS)
-    if unknown_fields:
-        raise RequestValidationError(
-            f"Unsupported search field: {unknown_fields[0]}."
-        )
 
 
 def _copy_optional_int(filters, normalized, field_name, **bounds):

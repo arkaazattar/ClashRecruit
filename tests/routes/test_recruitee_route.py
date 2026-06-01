@@ -416,6 +416,103 @@ def test_recruitee_post_returns_400_for_bad_nested_filter_shape(
     assert collection.find_query is None
 
 
+def test_recruitee_post_returns_400_for_unknown_filter_field(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post(
+        "/recruitee",
+        json={"filters": {"unexpected": "value"}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "Unsupported filter field: unexpected."
+    }
+    assert collection.find_query is None
+
+
+def test_recruitee_post_returns_400_for_unknown_nested_filter_field(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post(
+        "/recruitee",
+        json={"filters": {"requirements": {"members": {"minimum": 30}}}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "Unsupported members field: minimum."
+    }
+    assert collection.find_query is None
+
+
+def test_recruitee_post_returns_400_for_invalid_war_frequency(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post(
+        "/recruitee",
+        json={"filters": {"warFrequency": "sometimes"}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "warFrequency is invalid."}
+    assert collection.find_query is None
+
+
+def test_recruitee_post_allows_empty_filters_as_browse(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection(
+        [{"clan_tag": "TEST123", "name": "test_clan"}]
+    )
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post("/recruitee", json={"filters": {}})
+
+    assert response.status_code == 200
+    assert response.get_json() == [
+        {"clan_tag": "TEST123", "name": "test_clan"}
+    ]
+    assert collection.find_query == {}
+
+
 def test_recruitee_post_normalizes_numeric_string_filters(
     client,
     monkeypatch,
