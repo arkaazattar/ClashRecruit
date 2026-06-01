@@ -9,6 +9,7 @@ from ..services.recruiter_listing import (
 )
 from .validation import (
     RequestValidationError,
+    ensure_allowed_fields,
     get_json_object,
     optional_bool,
     optional_string,
@@ -23,6 +24,16 @@ RECRUITER_ACTION_RATE_LIMITS = {
     "new": 1,
     "update": 2,
 }
+MAX_BUILDER_BASE_TROPHIES = 10000
+NEW_LISTING_FIELDS = {
+    "status",
+    "requiredLeague",
+    "requiredBuilderLeague",
+    "requiredTownhall",
+    "description",
+}
+UPDATE_LISTING_FIELDS = NEW_LISTING_FIELDS | {"updateExpiry", "expiry"}
+REMOVE_LISTING_FIELDS = {"status"}
 
 
 @recruiter_bp.route("/recruiter", methods=["GET", "POST"])
@@ -106,7 +117,13 @@ def _validate_recruiter_payload(data):
 
     normalized = {"status": status}
     if status == "removeListing":
+        ensure_allowed_fields(data, REMOVE_LISTING_FIELDS, "recruiter")
         return normalized
+
+    allowed_fields = (
+        UPDATE_LISTING_FIELDS if status == "update" else NEW_LISTING_FIELDS
+    )
+    ensure_allowed_fields(data, allowed_fields, "recruiter")
 
     normalized["requiredLeague"] = required_int(
         data,
@@ -118,6 +135,7 @@ def _validate_recruiter_payload(data):
         data,
         "requiredBuilderLeague",
         min_value=0,
+        max_value=MAX_BUILDER_BASE_TROPHIES,
     )
     normalized["requiredTownhall"] = required_int(
         data,
@@ -136,10 +154,5 @@ def _validate_recruiter_payload(data):
         if update_expiry is None:
             raise RequestValidationError("updateExpiry is required.")
         normalized["updateExpiry"] = update_expiry
-        if not update_expiry:
-            expiry = optional_string(data, "expiry", max_length=128)
-            if not expiry:
-                raise RequestValidationError("expiry is required.")
-            normalized["expiry"] = expiry
 
     return normalized

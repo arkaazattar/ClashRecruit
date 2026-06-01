@@ -196,8 +196,13 @@ def test_update_recruiter_listing_refreshes_expiry(monkeypatch):
     }
 
 
-def test_update_recruiter_listing_preserves_provided_expiry(monkeypatch):
-    collection = DummyClanCollection(existing={"requirements": [1, 2, 3]})
+def test_update_recruiter_listing_preserves_existing_expiry(monkeypatch):
+    collection = DummyClanCollection(
+        existing={
+            "requirements": [1, 2, 3],
+            "expires": "existing_expiry",
+        },
+    )
     setup_recruiter_listing(monkeypatch, collection)
 
     payload, status_code = recruiter_listing.update_recruiter_listing(
@@ -208,7 +213,7 @@ def test_update_recruiter_listing_preserves_provided_expiry(monkeypatch):
             "requiredTownhall": 14,
             "description": "updated_description",
             "updateExpiry": False,
-            "expiry": "provided_expiry",
+            "expiry": "client_controlled_expiry",
         },
     )
     _, update_doc = collection.update_call
@@ -216,8 +221,12 @@ def test_update_recruiter_listing_preserves_provided_expiry(monkeypatch):
 
     assert status_code == 200
     assert payload == {
-        "status": "provided_expiry",
+        "status": "existing_expiry",
         "message": "Listing updated successfully.",
+    }
+    assert collection.find_one_query == {
+        "clan_tag": "TEST123",
+        "source": {"$ne": "clash_api_import"},
     }
     assert "expires" not in set_doc
 

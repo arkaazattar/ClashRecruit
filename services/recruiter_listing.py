@@ -123,7 +123,8 @@ def update_recruiter_listing(
         update_doc["expires"] = expiry
         status = expiry
     else:
-        status = data.get("expiry")
+        existing = clan_collection.find_one(_listing_query(clan_tag)) or {}
+        status = existing.get("expires")
 
     clan_collection.update_one(
         _listing_query(clan_tag),
