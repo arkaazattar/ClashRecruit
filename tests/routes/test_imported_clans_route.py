@@ -74,6 +74,7 @@ def test_imported_clans_post_filters_and_paginates(
 
     expected_query = {
         "source": "clash_api_import",
+        "expires": collection.find_query["expires"],
         "name": {"$regex": "Test\\.\\*", "$options": "i"},
         "clan_info.clan_level": {"$gte": 12},
         "clan_info.clanPoints": {"$gte": 40000},
@@ -91,6 +92,7 @@ def test_imported_clans_post_filters_and_paginates(
     }
     assert collection.count_query == expected_query
     assert collection.find_query == expected_query
+    assert "$gt" in collection.find_query["expires"]
     assert collection.find_projection == {"_id": 0}
     assert collection.cursor.sort_fields == [
         ("last_discovered", -1),

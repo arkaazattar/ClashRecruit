@@ -686,10 +686,15 @@ def test_get_imported_clan_returns_cached_document_without_fetch(
     assert result == cached
     assert clan_collection.find_one_calls == [
         (
-            {"clan_tag": "TEST123", "source": "clash_api_import"},
+            {
+                "clan_tag": "TEST123",
+                "source": "clash_api_import",
+                "expires": clan_collection.find_one_calls[0][0]["expires"],
+            },
             {"_id": 0},
         )
     ]
+    assert "$gt" in clan_collection.find_one_calls[0][0]["expires"]
 
 
 def test_get_imported_clan_fetches_caches_and_returns_imported_document(

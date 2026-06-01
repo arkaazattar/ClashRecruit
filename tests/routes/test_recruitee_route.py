@@ -81,6 +81,7 @@ def test_recruitee_get_filters_logged_in_player_with_total(
         "requirements.0": {"$lte": 5},
         "requirements.1": {"$lte": 2200},
         "requirements.2": {"$lte": 13},
+        "expires": collection.find_query["expires"],
     }
 
     assert response.status_code == 200
@@ -92,6 +93,7 @@ def test_recruitee_get_filters_logged_in_player_with_total(
     }
     assert collection.find_query == expected_query
     assert collection.count_query == expected_query
+    assert "$gt" in collection.find_query["expires"]
     assert collection.find_projection == {"_id": 0}
     assert collection.cursor.sort_fields == [
         ("last_updated", -1),
@@ -129,7 +131,10 @@ def test_recruitee_get_returns_guest_default_raw_list(
         {"clan_tag": "TEST1", "name": "test_clan_1"},
         {"clan_tag": "TEST2", "name": "test_clan_2"},
     ]
-    assert collection.find_query == {}
+    assert collection.find_query == {
+        "expires": collection.find_query["expires"],
+    }
+    assert "$gt" in collection.find_query["expires"]
     assert collection.count_query is None
     assert collection.cursor.skip_count == 0
     assert collection.cursor.limit_count == 10
@@ -182,6 +187,7 @@ def test_recruitee_post_filters_and_paginates_with_total(
         "clan_info.member_count": {"$gte": 30, "$lte": 45},
         "clan_info.warFrequency": "always",
         "clan_info.location.id": 32000007,
+        "expires": collection.find_query["expires"],
     }
 
     assert response.status_code == 200
@@ -196,6 +202,7 @@ def test_recruitee_post_filters_and_paginates_with_total(
     }
     assert collection.find_query == expected_query
     assert collection.count_query == expected_query
+    assert "$gt" in collection.find_query["expires"]
     assert collection.find_projection == {"_id": 0}
     assert collection.cursor.sort_fields == [
         ("last_updated", -1),
@@ -224,7 +231,11 @@ def test_recruitee_post_returns_clan_by_tag(
 
     assert response.status_code == 200
     assert response.get_json() == {"clan_tag": "TEST123", "name": "test_clan"}
-    assert collection.find_one_query == {"clan_tag": "TEST123"}
+    assert collection.find_one_query == {
+        "clan_tag": "TEST123",
+        "expires": collection.find_one_query["expires"],
+    }
+    assert "$gt" in collection.find_one_query["expires"]
     assert collection.find_one_projection == {"_id": 0}
     assert collection.find_query is None
 
@@ -255,7 +266,9 @@ def test_recruitee_post_filters_by_location_name_without_location_id(
     ]
     assert collection.find_query == {
         "clan_info.location.name": "International",
+        "expires": collection.find_query["expires"],
     }
+    assert "$gt" in collection.find_query["expires"]
     assert collection.count_query is None
 
 
@@ -323,7 +336,11 @@ def test_recruitee_post_returns_404_for_missing_clan_tag(
 
     assert response.status_code == 404
     assert response.get_json() == {"error": "Clan not found"}
-    assert collection.find_one_query == {"clan_tag": "MISSING"}
+    assert collection.find_one_query == {
+        "clan_tag": "MISSING",
+        "expires": collection.find_one_query["expires"],
+    }
+    assert "$gt" in collection.find_one_query["expires"]
     assert collection.find_one_projection == {"_id": 0}
 
 
@@ -409,4 +426,6 @@ def test_recruitee_post_normalizes_numeric_string_filters(
         "clan_info.clan_level": {"$gte": 10},
         "clan_info.clanPoints": {"$gte": 35000},
         "clan_info.member_count": {"$gte": 30, "$lte": 45},
+        "expires": collection.find_query["expires"],
     }
+    assert "$gt" in collection.find_query["expires"]

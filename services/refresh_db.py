@@ -40,6 +40,7 @@ def refresh_membercount() -> None:
                 "last_updated": {
                     "$lte": datetime.now(timezone.utc) - THRESHOLD
                 },
+                "expires": {"$gt": datetime.now(timezone.utc)},
             }
         )
     )

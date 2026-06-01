@@ -56,8 +56,14 @@ def test_invalid_pagination_raises_validation_error(
                 _get_requested_offset()
 
 
-def test_build_imported_query_empty_filters_returns_source_only() -> None:
-    assert _build_imported_query({}) == {"source": "clash_api_import"}
+def test_build_imported_query_empty_filters_returns_active_imports() -> None:
+    query = _build_imported_query({})
+
+    assert query == {
+        "source": "clash_api_import",
+        "expires": query["expires"],
+    }
+    assert "$gt" in query["expires"]
 
 
 def test_build_imported_query_escapes_name_and_ignores_empty() -> None:
@@ -71,8 +77,10 @@ def test_build_imported_query_escapes_name_and_ignores_empty() -> None:
 
     assert query == {
         "source": "clash_api_import",
+        "expires": query["expires"],
         "name": {"$regex": "test\\.\\*\\(name\\)", "$options": "i"},
     }
+    assert "$gt" in query["expires"]
 
 
 @pytest.mark.parametrize(
@@ -94,6 +102,7 @@ def test_build_imported_query_member_ranges(
     )
 
     assert query["source"] == "clash_api_import"
+    assert "$gt" in query["expires"]
     assert query["clan_info.member_count"] == expected
 
 
@@ -109,8 +118,10 @@ def test_build_imported_query_all_scalar_filters() -> None:
 
     assert query == {
         "source": "clash_api_import",
+        "expires": query["expires"],
         "clan_info.clan_level": {"$gte": 10},
         "clan_info.clanPoints": {"$gte": 35000},
         "clan_info.warFrequency": "always",
         "clan_info.location.name": "International",
     }
+    assert "$gt" in query["expires"]

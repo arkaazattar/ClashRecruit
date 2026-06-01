@@ -16,7 +16,7 @@ def get_recruiter_listing_page(
 ) -> tuple[dict[str, object], int]:
     """Return recruiter listing form data for a clan."""
     clan_collection = get_clan_collection()
-    existing = clan_collection.find_one(_listing_query(clan_tag))
+    existing = clan_collection.find_one(_active_listing_query(clan_tag))
 
     recruiter = _recruiter_with_requirements(clan_tag)
     if existing:
@@ -95,7 +95,11 @@ def create_recruiter_listing(
         "expires": expiry,
     }
     render_data = document.copy()
-    clan_collection.insert_one(document)
+    clan_collection.replace_one(
+        _listing_query(clan_tag),
+        document,
+        upsert=True,
+    )
     render_data["status"] = expiry
     render_data["message"] = "Listing created successfully."
 
@@ -150,6 +154,12 @@ def _listing_query(clan_tag: str | None) -> dict[str, object]:
         "clan_tag": clan_tag,
         "source": {"$ne": "clash_api_import"},
     }
+
+
+def _active_listing_query(clan_tag: str | None) -> dict[str, object]:
+    query = _listing_query(clan_tag)
+    query["expires"] = {"$gt": datetime.now(timezone.utc)}
+    return query
 
 
 def _recruiter_with_requirements(clan_tag: str | None) -> Recruiter:

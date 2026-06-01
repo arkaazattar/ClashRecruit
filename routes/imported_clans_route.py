@@ -1,6 +1,7 @@
 """Register routes for handling imported clans."""
 
 import re
+from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request
 
@@ -44,6 +45,7 @@ def _build_imported_query(filters):
     """Build a MongoDB query for imported clans from request filter data."""
     query = {
         "source": "clash_api_import",
+        "expires": {"$gt": datetime.now(timezone.utc)},
     }
 
     name = filters.get("name")

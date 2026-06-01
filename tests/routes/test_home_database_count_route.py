@@ -3,7 +3,7 @@ def test_database_count_returns_mocked_count(client, monkeypatch):
 
     class DummyCollection:
         def count_documents(self, query):
-            assert query == {}
+            assert "$gt" in query["expires"]
             return 42
 
     monkeypatch.setattr(
