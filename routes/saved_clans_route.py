@@ -73,11 +73,11 @@ def _hydrate_saved_clans(saved_clan_tags):
 @rate_limit("saved_clans_get", limit=30, window_seconds=60)
 def get_saved_clans():
     """Return the current user's saved clans and limits as JSON."""
-    user_collection = get_user_collection()
-    player_tag = session.get("player_tag")
-    if not player_tag:
+    player_tag = _validated_session_player_tag()
+    if player_tag is None:
         return jsonify({"message": "Unauthorized"}), 401
 
+    user_collection = get_user_collection()
     user_doc = (
         user_collection.find_one(
             {"player_tag": player_tag},
@@ -105,11 +105,11 @@ def add_saved_clan(clan_tag):
     Args:
         clan_tag (str): The clan tag to save for the current user.
     """
-    user_collection = get_user_collection()
-    player_tag = session.get("player_tag")
-    if not player_tag:
+    player_tag = _validated_session_player_tag()
+    if player_tag is None:
         return jsonify({"message": "Unauthorized"}), 401
 
+    user_collection = get_user_collection()
     try:
         normalized_tag = normalize_tag(clan_tag, "clan_tag")
     except RequestValidationError as exc:
@@ -173,11 +173,11 @@ def delete_saved_clan(clan_tag):
         clan_tag (str): The clan tag to remove from the current user's saved
             clans.
     """
-    user_collection = get_user_collection()
-    player_tag = session.get("player_tag")
-    if not player_tag:
+    player_tag = _validated_session_player_tag()
+    if player_tag is None:
         return jsonify({"message": "Unauthorized"}), 401
 
+    user_collection = get_user_collection()
     try:
         normalized_tag = normalize_tag(clan_tag, "clan_tag")
     except RequestValidationError as exc:
@@ -191,3 +191,10 @@ def delete_saved_clan(clan_tag):
     return jsonify(
         {"message": "Saved clan removed.", "clan_tag": normalized_tag}
     ), 200
+
+
+def _validated_session_player_tag():
+    try:
+        return normalize_tag(session.get("player_tag"), "player_tag")
+    except RequestValidationError:
+        return None

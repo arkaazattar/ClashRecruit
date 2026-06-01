@@ -67,6 +67,45 @@ def test_saved_clans_get_hydrates_available_and_missing_listings(
     }
 
 
+def test_saved_clans_get_normalizes_session_player_tag(
+    client,
+    monkeypatch,
+    set_session,
+):
+    import ClashRecruit.routes.saved_clans_route as saved_clans_route
+
+    class DummyUserCollection:
+        def find_one(self, query, projection):
+            assert query == {"player_tag": "PLAYER123"}
+            assert projection == {"_id": 0, "saved_clans": 1}
+            return {"saved_clans": []}
+
+    class DummyClanCollection:
+        def find(self, query, projection):
+            return []
+
+    set_session(player_tag="#player123")
+    monkeypatch.setattr(
+        saved_clans_route,
+        "get_user_collection",
+        lambda: DummyUserCollection(),
+    )
+    monkeypatch.setattr(
+        saved_clans_route,
+        "get_clan_collection",
+        lambda: DummyClanCollection(),
+    )
+
+    response = client.get("/saved-clans")
+
+    assert response.status_code == 200
+    assert response.get_json() == {
+        "saved_clans": [],
+        "count": 0,
+        "max_saved_clans": 10,
+    }
+
+
 def test_saved_clans_get_returns_empty_saved_list(
     client,
     monkeypatch,
