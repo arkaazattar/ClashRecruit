@@ -13,7 +13,8 @@ def test_saved_clans_get_hydrates_available_and_missing_listings(
 
     class DummyClanCollection:
         def find(self, query, projection):
-            assert query == {"clan_tag": {"$in": ["ABC123", "MISSING"]}}
+            assert query["clan_tag"] == {"$in": ["ABC123", "MISSING"]}
+            assert "$gt" in query["expires"]
             assert projection == {
                 "_id": 0,
                 "clan_tag": 1,
@@ -121,7 +122,8 @@ def test_saved_clans_get_returns_empty_saved_list(
 
     class DummyClanCollection:
         def find(self, query, projection):
-            assert query == {"clan_tag": {"$in": []}}
+            assert query["clan_tag"] == {"$in": []}
+            assert "$gt" in query["expires"]
             assert projection == {
                 "_id": 0,
                 "clan_tag": 1,

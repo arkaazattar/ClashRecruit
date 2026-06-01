@@ -446,7 +446,11 @@ def get_imported_clan(clan_tag: str | None) -> dict[str, Any] | None:
         return None
 
     clan = _clan_collection().find_one(
-        {"clan_tag": clean_tag, "source": "clash_api_import"},
+        {
+            "clan_tag": clean_tag,
+            "source": "clash_api_import",
+            "expires": {"$gt": _now()},
+        },
         {"_id": 0},
     )
     if clan is not None:
@@ -486,6 +490,10 @@ def get_imported_clan(clan_tag: str | None) -> dict[str, Any] | None:
         upsert=True,
     )
     return _clan_collection().find_one(
-        {"clan_tag": clean_tag, "source": "clash_api_import"},
+        {
+            "clan_tag": clean_tag,
+            "source": "clash_api_import",
+            "expires": {"$gt": _now()},
+        },
         {"_id": 0},
     )

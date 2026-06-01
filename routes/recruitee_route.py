@@ -1,6 +1,7 @@
 """Register routes for handling recruitee requests."""
 
 import re
+from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request, session
 
@@ -59,7 +60,6 @@ def _get_requested_offset():
     return query_int(request, "offset", default=0, min_value=0)
 
 
-
 def _should_include_total():
     """Return whether the response should include paginated total metadata."""
     return query_bool(request, "includeTotal", default=False)
@@ -93,6 +93,13 @@ def _session_int(value, field_name):
     raise RequestValidationError(f"{field_name} is invalid.")
 
 
+def _active_listing_query(query=None):
+    """Return a listing query scoped to listings that have not expired."""
+    active_query = dict(query or {})
+    active_query["expires"] = {"$gt": datetime.now(timezone.utc)}
+    return active_query
+
+
 @recruitee_bp.get("/recruitee")
 @rate_limit("recruitee_get", limit=60, window_seconds=60)
 def recruitee_get():
@@ -110,9 +117,10 @@ def recruitee_get():
         base_query = _get_matchmaking_base_query()
     except RequestValidationError as exc:
         return jsonify({"error": exc.message}), 400
+    query = _active_listing_query(base_query)
 
     data = list(
-        clan_collection.find(base_query, {"_id": 0})
+        clan_collection.find(query, {"_id": 0})
         .sort([("last_updated", -1), ("clan_tag", 1)])
         .skip(requested_offset)
         .limit(requested_limit)
@@ -121,7 +129,7 @@ def recruitee_get():
     if not include_total:
         return jsonify(data)
 
-    total = clan_collection.count_documents(base_query)
+    total = clan_collection.count_documents(query)
     return jsonify(
         {
             "items": data,
@@ -149,7 +157,9 @@ def recruitee_post():
 
     clan_tag = raw_form.get("clanTag")
     if clan_tag is not None:
-        data = clan_collection.find_one({"clan_tag": clan_tag}, {"_id": 0})
+        data = clan_collection.find_one(
+            _active_listing_query({"clan_tag": clan_tag}), {"_id": 0}
+        )
         if data is None:
             return jsonify({"error": "Clan not found"}), 404
         return jsonify(data)
@@ -202,6 +212,7 @@ def recruitee_post():
         if location_name:
             query["clan_info.location.name"] = location_name
 
+    query = _active_listing_query(query)
     data = list(
         clan_collection.find(query, {"_id": 0})
         .sort([("last_updated", -1), ("clan_tag", 1)])

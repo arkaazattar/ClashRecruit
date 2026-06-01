@@ -1,5 +1,7 @@
 """Register home routes for login, logout, and database count requests."""
 
+from datetime import datetime, timezone
+
 from flask import Blueprint, jsonify, request, session
 
 from ..api.clash_api import API
@@ -94,7 +96,13 @@ def home():
 def database_count():
     """Return the current number of stored clans in the database."""
     clan_collection = get_clan_collection()
-    return jsonify({"clan_count": clan_collection.count_documents({})})
+    return jsonify(
+        {
+            "clan_count": clan_collection.count_documents(
+                {"expires": {"$gt": datetime.now(timezone.utc)}}
+            )
+        }
+    )
 
 
 @home_bp.post("/logout")
