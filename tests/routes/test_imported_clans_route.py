@@ -135,6 +135,42 @@ def test_imported_clans_post_returns_clan_by_tag(
     assert lookup_calls == ["TEST123"]
 
 
+def test_imported_clans_post_returns_400_for_empty_clan_tag(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.imported_clans_route as imported_clans_route
+
+    monkeypatch.setattr(
+        imported_clans_route,
+        "get_clan_collection",
+        lambda: object(),
+    )
+
+    response = client.post("/imported_clans", json={"clanTag": ""})
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "clanTag is required."}
+
+
+def test_imported_clans_post_returns_400_for_bad_clan_tag_type(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.imported_clans_route as imported_clans_route
+
+    monkeypatch.setattr(
+        imported_clans_route,
+        "get_clan_collection",
+        lambda: object(),
+    )
+
+    response = client.post("/imported_clans", json={"clanTag": []})
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "clanTag must be a string."}
+
+
 def test_imported_clans_post_returns_404_for_missing_tag(
     client,
     monkeypatch,
@@ -152,10 +188,82 @@ def test_imported_clans_post_returns_404_for_missing_tag(
         lambda clan_tag: None,
     )
 
-    response = client.post("/imported_clans", json={"clan_tag": "MISSING"})
+    response = client.post("/imported_clans", json={"clanTag": "MISSING"})
 
     assert response.status_code == 404
     assert response.get_json() == {"error": "Imported clan not found"}
+
+
+def test_imported_clans_post_returns_400_for_empty_payload(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.imported_clans_route as imported_clans_route
+
+    monkeypatch.setattr(
+        imported_clans_route,
+        "get_clan_collection",
+        lambda: object(),
+    )
+
+    response = client.post("/imported_clans", json={})
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": (
+            "imported clans payload must include exactly one of "
+            "clanTag or filters."
+        )
+    }
+
+
+def test_imported_clans_post_returns_400_for_ambiguous_payload(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.imported_clans_route as imported_clans_route
+
+    monkeypatch.setattr(
+        imported_clans_route,
+        "get_clan_collection",
+        lambda: object(),
+    )
+
+    response = client.post(
+        "/imported_clans",
+        json={"clanTag": "TEST123", "filters": {}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": (
+            "imported clans payload must include exactly one of "
+            "clanTag or filters."
+        )
+    }
+
+
+def test_imported_clans_post_returns_400_for_clan_tag_alias(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.imported_clans_route as imported_clans_route
+
+    monkeypatch.setattr(
+        imported_clans_route,
+        "get_clan_collection",
+        lambda: object(),
+    )
+
+    response = client.post(
+        "/imported_clans",
+        json={"clan_tag": "TEST123"},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "Unsupported imported clans field: clan_tag."
+    }
 
 
 def test_imported_clans_post_returns_400_for_bad_filter_shape(
@@ -181,6 +289,139 @@ def test_imported_clans_post_returns_400_for_bad_filter_shape(
     }
 
 
+def test_imported_clans_post_returns_400_for_unknown_filter_field(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.imported_clans_route as imported_clans_route
+
+    monkeypatch.setattr(
+        imported_clans_route,
+        "get_clan_collection",
+        lambda: object(),
+    )
+
+    response = client.post(
+        "/imported_clans",
+        json={"filters": {"unexpected": "value"}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "Unsupported filter field: unexpected."
+    }
+
+
+def test_imported_clans_post_returns_400_for_unknown_nested_filter_field(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.imported_clans_route as imported_clans_route
+
+    monkeypatch.setattr(
+        imported_clans_route,
+        "get_clan_collection",
+        lambda: object(),
+    )
+
+    response = client.post(
+        "/imported_clans",
+        json={"filters": {"requirements": {"members": {"minimum": 30}}}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "Unsupported members field: minimum."
+    }
+
+
+def test_imported_clans_post_returns_400_for_invalid_war_frequency(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.imported_clans_route as imported_clans_route
+
+    monkeypatch.setattr(
+        imported_clans_route,
+        "get_clan_collection",
+        lambda: object(),
+    )
+
+    response = client.post(
+        "/imported_clans",
+        json={"filters": {"warFrequency": "sometimes"}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "warFrequency is invalid."}
+
+
+def test_imported_clans_post_allows_empty_filters_as_browse(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.imported_clans_route as imported_clans_route
+
+    class DummyCursor:
+        def __init__(self, docs):
+            self.docs = docs
+            self.sort_fields = None
+            self.skip_count = None
+            self.limit_count = None
+
+        def sort(self, fields):
+            self.sort_fields = fields
+            return self
+
+        def skip(self, count):
+            self.skip_count = count
+            return self
+
+        def limit(self, count):
+            self.limit_count = count
+            return self
+
+        def __iter__(self):
+            return iter(self.docs)
+
+    class DummyClanCollection:
+        def __init__(self):
+            self.cursor = DummyCursor(
+                [{"clan_tag": "ONE", "name": "First"}]
+            )
+            self.count_query = None
+            self.find_query = None
+
+        def count_documents(self, query):
+            self.count_query = query
+            return 1
+
+        def find(self, query, projection):
+            self.find_query = query
+            return self.cursor
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        imported_clans_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post("/imported_clans", json={"filters": {}})
+
+    assert response.status_code == 200
+    assert response.get_json()["items"] == [
+        {"clan_tag": "ONE", "name": "First"}
+    ]
+    expected_query = {
+        "source": "clash_api_import",
+        "expires": collection.find_query["expires"],
+    }
+    assert "$gt" in collection.find_query["expires"]
+    assert collection.count_query == expected_query
+    assert collection.find_query == expected_query
+
+
 def test_imported_clans_post_returns_400_for_invalid_numeric_filter(
     client,
     monkeypatch,
@@ -201,6 +442,52 @@ def test_imported_clans_post_returns_400_for_invalid_numeric_filter(
     assert response.status_code == 400
     assert response.get_json() == {
         "error": "clanPoints must be an integer."
+    }
+
+
+def test_imported_clans_post_returns_400_for_huge_clan_points(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.imported_clans_route as imported_clans_route
+
+    monkeypatch.setattr(
+        imported_clans_route,
+        "get_clan_collection",
+        lambda: object(),
+    )
+
+    response = client.post(
+        "/imported_clans",
+        json={"filters": {"clanPoints": 400001}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "clanPoints must be at most 400000."
+    }
+
+
+def test_imported_clans_post_returns_400_for_huge_min_clan_level(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.imported_clans_route as imported_clans_route
+
+    monkeypatch.setattr(
+        imported_clans_route,
+        "get_clan_collection",
+        lambda: object(),
+    )
+
+    response = client.post(
+        "/imported_clans",
+        json={"filters": {"minClanLevel": 100}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "minClanLevel must be at most 99."
     }
 
 

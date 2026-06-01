@@ -58,6 +58,43 @@ function normalizeListingPayload(payload) {
   };
 }
 
+async function getResponseErrorMessage(response, fallbackMessage) {
+  const payload = await response.json().catch(() => ({}));
+  return formatApiErrorMessage(payload.error || payload.message || fallbackMessage);
+}
+
+function formatApiErrorMessage(message) {
+  const trimmed = String(message || "").trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  const fieldMessage = trimmed.match(
+    /^([A-Za-z][A-Za-z0-9_.]*)(\s+(?:is|must|should|cannot)\b.*)$/
+  );
+  if (fieldMessage) {
+    return `${formatFieldName(fieldMessage[1])}${fieldMessage[2]}`;
+  }
+
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+}
+
+function formatFieldName(fieldName) {
+  const readable = fieldName
+    .split(".")
+    .map((part) => (
+      part
+        .replace(/_/g, " ")
+        .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    ))
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+
+  return readable.charAt(0).toUpperCase() + readable.slice(1);
+}
+
 function LookingForClan() {
     usePageTitle("Find a Clan | ClashRecruit")
     
@@ -165,7 +202,9 @@ function LookingForClan() {
         : await fetch(url);
 
       if (!response.ok) {
-        throw new Error("Failed to load clans.");
+        throw new Error(
+          await getResponseErrorMessage(response, "Failed to load clans.")
+        );
       }
 
       const payload = await response.json();
@@ -260,7 +299,14 @@ function LookingForClan() {
           },
           body: JSON.stringify(filterPayload),
         });
-        if (!response.ok) throw new Error("Failed to fetch filtered clans.");
+        if (!response.ok) {
+          throw new Error(
+            await getResponseErrorMessage(
+              response,
+              "Failed to fetch filtered clans."
+            )
+          );
+        }
         const data = await response.json();
         if (controller.signal.aborted) {
           return;
@@ -270,7 +316,9 @@ function LookingForClan() {
         setTotalResults(normalized.total);
       } catch (error) {
         if (error.name !== "AbortError") {
-          setFilterError("Could not apply filters right now. Please try again.");
+          setFilterError(
+            error.message || "Could not apply filters right now. Please try again."
+          );
         }
       } finally {
         if (requestControllerRef.current === controller) {

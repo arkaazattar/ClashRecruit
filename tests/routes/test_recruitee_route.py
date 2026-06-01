@@ -48,6 +48,13 @@ class DummyClanCollection:
         return self.tag_result
 
 
+def expected_active_query(collection, query=None):
+    expected = dict(query or {})
+    expected["expires"] = collection.find_query["expires"]
+    assert "$gt" in collection.find_query["expires"]
+    return expected
+
+
 def test_recruitee_get_filters_logged_in_player_with_total(
     client,
     monkeypatch,
@@ -103,6 +110,99 @@ def test_recruitee_get_filters_logged_in_player_with_total(
     assert collection.cursor.limit_count == 1
 
 
+def test_recruitee_get_falls_back_to_guest_query_for_incomplete_stats(
+    client,
+    monkeypatch,
+    set_session,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection(
+        [{"clan_tag": "TEST1", "name": "test_clan_1"}]
+    )
+
+    set_session(
+        player_name="test_player",
+        player_league=5,
+        player_townhall=13,
+    )
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.get("/recruitee")
+
+    assert response.status_code == 200
+    assert response.get_json() == [
+        {"clan_tag": "TEST1", "name": "test_clan_1"}
+    ]
+    assert collection.find_query == expected_active_query(collection)
+
+
+def test_recruitee_get_normalizes_string_matchmaking_stats(
+    client,
+    monkeypatch,
+    set_session,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+
+    set_session(
+        player_name="test_player",
+        player_league="5",
+        player_builderbase_trophies="2200",
+        player_townhall="13",
+    )
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.get("/recruitee")
+
+    assert response.status_code == 200
+    assert collection.find_query == expected_active_query(
+        collection,
+        {
+            "requirements.0": {"$lte": 5},
+            "requirements.1": {"$lte": 2200},
+            "requirements.2": {"$lte": 13},
+        },
+    )
+
+
+def test_recruitee_get_returns_400_for_malformed_matchmaking_stat(
+    client,
+    monkeypatch,
+    set_session,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+
+    set_session(
+        player_name="test_player",
+        player_league="not-a-league",
+        player_builderbase_trophies=2200,
+        player_townhall=13,
+    )
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.get("/recruitee")
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "player_league is invalid."}
+    assert collection.find_query is None
+
+
 def test_recruitee_get_returns_guest_default_raw_list(
     client,
     monkeypatch,
@@ -140,6 +240,92 @@ def test_recruitee_get_returns_guest_default_raw_list(
     assert collection.cursor.limit_count == 10
 
 
+def test_recruitee_get_accepts_true_include_total(
+    client,
+    monkeypatch,
+    set_session,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection(
+        [{"clan_tag": "TEST1", "name": "test_clan_1"}]
+    )
+
+    set_session(player_name="Guest")
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.get("/recruitee?includeTotal=true")
+
+    assert response.status_code == 200
+    assert response.get_json() == {
+        "items": [{"clan_tag": "TEST1", "name": "test_clan_1"}],
+        "total": 1,
+        "limit": 10,
+        "offset": 0,
+    }
+    expected_query = expected_active_query(collection)
+    assert collection.find_query == expected_query
+    assert collection.count_query == expected_query
+
+
+def test_recruitee_get_accepts_false_include_total(
+    client,
+    monkeypatch,
+    set_session,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection(
+        [{"clan_tag": "TEST1", "name": "test_clan_1"}]
+    )
+
+    set_session(player_name="Guest")
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.get("/recruitee?includeTotal=false")
+
+    assert response.status_code == 200
+    assert response.get_json() == [
+        {"clan_tag": "TEST1", "name": "test_clan_1"}
+    ]
+    assert collection.find_query == expected_active_query(collection)
+    assert collection.count_query is None
+
+
+def test_recruitee_get_returns_400_for_invalid_include_total(
+    client,
+    monkeypatch,
+    set_session,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+
+    set_session(player_name="Guest")
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.get("/recruitee?includeTotal=maybe")
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "includeTotal must be true or false."
+    }
+    assert collection.find_query is None
+    assert collection.count_query is None
+
+
 def test_recruitee_post_filters_and_paginates_with_total(
     client,
     monkeypatch,
@@ -159,6 +345,7 @@ def test_recruitee_post_filters_and_paginates_with_total(
         "get_clan_collection",
         lambda: collection,
     )
+    monkeypatch.setattr(recruitee_route, "refresh", lambda headers: 17)
 
     response = client.post(
         "/recruitee?includeTotal=1&limit=2&offset=0",
@@ -238,6 +425,48 @@ def test_recruitee_post_returns_clan_by_tag(
     assert "$gt" in collection.find_one_query["expires"]
     assert collection.find_one_projection == {"_id": 0}
     assert collection.find_query is None
+
+
+def test_recruitee_post_returns_400_for_empty_clan_tag(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post("/recruitee", json={"clanTag": ""})
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "clanTag is required."}
+    assert collection.find_query is None
+    assert collection.find_one_query is None
+
+
+def test_recruitee_post_returns_400_for_bad_clan_tag_type(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post("/recruitee", json={"clanTag": []})
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "clanTag must be a string."}
+    assert collection.find_query is None
+    assert collection.find_one_query is None
 
 
 def test_recruitee_post_filters_by_location_name_without_location_id(
@@ -344,6 +573,84 @@ def test_recruitee_post_returns_404_for_missing_clan_tag(
     assert collection.find_one_projection == {"_id": 0}
 
 
+def test_recruitee_post_returns_400_for_empty_payload(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post("/recruitee", json={})
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": (
+            "recruitee payload must include exactly one of "
+            "clanTag or filters."
+        )
+    }
+    assert collection.find_query is None
+    assert collection.find_one_query is None
+
+
+def test_recruitee_post_returns_400_for_ambiguous_payload(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post(
+        "/recruitee",
+        json={"clanTag": "TEST123", "filters": {}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": (
+            "recruitee payload must include exactly one of "
+            "clanTag or filters."
+        )
+    }
+    assert collection.find_query is None
+    assert collection.find_one_query is None
+
+
+def test_recruitee_post_returns_400_for_clan_tag_alias(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post("/recruitee", json={"clan_tag": "TEST123"})
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "Unsupported recruitee field: clan_tag."
+    }
+    assert collection.find_query is None
+    assert collection.find_one_query is None
+
+
 def test_recruitee_post_returns_400_for_list_payload(
     client,
     monkeypatch,
@@ -391,6 +698,177 @@ def test_recruitee_post_returns_400_for_bad_nested_filter_shape(
     assert collection.find_query is None
 
 
+def test_recruitee_post_returns_400_for_unknown_filter_field(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post(
+        "/recruitee",
+        json={"filters": {"unexpected": "value"}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "Unsupported filter field: unexpected."
+    }
+    assert collection.find_query is None
+
+
+def test_recruitee_post_returns_400_for_unknown_nested_filter_field(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post(
+        "/recruitee",
+        json={"filters": {"requirements": {"members": {"minimum": 30}}}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "Unsupported members field: minimum."
+    }
+    assert collection.find_query is None
+
+
+def test_recruitee_post_rejects_townhall_above_current_max(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+    monkeypatch.setattr(recruitee_route, "refresh", lambda headers: 17)
+
+    response = client.post(
+        "/recruitee",
+        json={"filters": {"requirements": {"townhall": 18}}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "townhall must be at most 17."}
+    assert collection.find_query is None
+
+
+def test_recruitee_post_rejects_clan_points_above_max(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post(
+        "/recruitee",
+        json={"filters": {"clanPoints": 400001}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "clanPoints must be at most 400000."
+    }
+    assert collection.find_query is None
+
+
+def test_recruitee_post_rejects_min_clan_level_above_max(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post(
+        "/recruitee",
+        json={"filters": {"minClanLevel": 100}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "minClanLevel must be at most 99."
+    }
+    assert collection.find_query is None
+
+
+def test_recruitee_post_returns_400_for_invalid_war_frequency(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post(
+        "/recruitee",
+        json={"filters": {"warFrequency": "sometimes"}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "warFrequency is invalid."}
+    assert collection.find_query is None
+
+
+def test_recruitee_post_allows_empty_filters_as_browse(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection(
+        [{"clan_tag": "TEST123", "name": "test_clan"}]
+    )
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post("/recruitee", json={"filters": {}})
+
+    assert response.status_code == 200
+    assert response.get_json() == [
+        {"clan_tag": "TEST123", "name": "test_clan"}
+    ]
+    assert collection.find_query == expected_active_query(collection)
+
+
 def test_recruitee_post_normalizes_numeric_string_filters(
     client,
     monkeypatch,
@@ -403,6 +881,7 @@ def test_recruitee_post_normalizes_numeric_string_filters(
         "get_clan_collection",
         lambda: collection,
     )
+    monkeypatch.setattr(recruitee_route, "refresh", lambda headers: 17)
 
     response = client.post(
         "/recruitee",

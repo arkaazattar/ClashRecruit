@@ -8,6 +8,7 @@ from ..api.clash_api import API
 from ..config import headers
 from ..services.mongo_db_client import get_clan_collection
 from .rate_limit import rate_limit
+from .validation import RequestValidationError, normalize_tag
 
 session_state_bp = Blueprint("session_state", __name__)
 
@@ -21,7 +22,7 @@ def session_state():
     has_active_listing = False
     townhall = None
     townhallWeaponLevel = None
-    clan_tag = session.get("clan_tag")
+    clan_tag = _normalized_session_tag("clan_tag")
 
     if username != "Guest":
         townhall = session.get("player_townhall")
@@ -48,9 +49,9 @@ def session_state():
 @rate_limit("session_state_user_info", limit=10, window_seconds=60)
 def session_state_user_info():
     """Return extended player info for the current session when available."""
-    player_tag = session.get("player_tag", "Guest")
+    player_tag = _normalized_session_tag("player_tag")
 
-    if player_tag == "Guest":
+    if player_tag is None:
         return jsonify({})
 
     user = API(player_tag, None, headers)
@@ -65,3 +66,15 @@ def session_state_user_info():
     )
 
     return jsonify(stats or {})
+
+
+def _normalized_session_tag(field_name):
+    value = session.get(field_name)
+    if value is None or value == "Guest":
+        return None
+
+    try:
+        return normalize_tag(value, field_name)
+    except RequestValidationError:
+        session.pop(field_name, None)
+        return None

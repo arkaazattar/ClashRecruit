@@ -5,21 +5,47 @@ from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request, session
 
+from ..config import headers
+from ..services.maxtownhall import refresh
 from ..services.mongo_db_client import get_clan_collection
 from .rate_limit import rate_limit
 from .validation import (
+    CLASH_WAR_FREQUENCIES,
     RequestValidationError,
+    ensure_allowed_fields,
+    ensure_exactly_one_field,
     ensure_object,
     get_json_object,
     normalize_tag,
+    optional_enum,
     optional_int,
     optional_string,
+    query_bool,
     query_int,
 )
 
 recruitee_bp = Blueprint("recruitee", __name__)
 
 MAX_LIMIT = 200
+MAX_CLAN_LEVEL = 99
+MAX_CLAN_POINTS = 400000
+RECRUITEE_PAYLOAD_FIELDS = {"clanTag", "filters"}
+RECRUITEE_FILTER_FIELDS = {
+    "name",
+    "requirements",
+    "minClanLevel",
+    "clanPoints",
+    "warFrequency",
+    "location_id",
+    "location",
+}
+RECRUITEE_REQUIREMENT_FIELDS = {"townhall", "league", "members"}
+MEMBER_FILTER_FIELDS = {"min", "max"}
+MATCHMAKING_SESSION_FIELDS = {
+    "player_league": "requirements.0",
+    "player_builderbase_trophies": "requirements.1",
+    "player_townhall": "requirements.2",
+}
 
 
 def _get_requested_limit(default_limit):
@@ -38,10 +64,37 @@ def _get_requested_offset():
     return query_int(request, "offset", default=0, min_value=0)
 
 
-
 def _should_include_total():
     """Return whether the response should include paginated total metadata."""
-    return request.args.get("includeTotal", "0") == "1"
+    return query_bool(request, "includeTotal", default=False)
+
+
+def _get_matchmaking_base_query():
+    """Return a safe clan match query for the current session."""
+    player_name = session.get("player_name", None)
+    if not player_name or player_name == "Guest":
+        return {}
+
+    stats = {}
+    for session_key, query_key in MATCHMAKING_SESSION_FIELDS.items():
+        value = session.get(session_key)
+        if value is None:
+            return {}
+        stats[query_key] = _session_int(value, session_key)
+
+    return {query_key: {"$lte": value} for query_key, value in stats.items()}
+
+
+def _session_int(value, field_name):
+    if isinstance(value, bool):
+        raise RequestValidationError(f"{field_name} is invalid.")
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str):
+        stripped = value.strip()
+        if stripped and stripped.isdecimal():
+            return int(stripped)
+    raise RequestValidationError(f"{field_name} is invalid.")
 
 
 def _active_listing_query(query=None):
@@ -59,22 +112,15 @@ def recruitee_get():
         default_limit = 10
         requested_limit = _get_requested_limit(default_limit)
         requested_offset = _get_requested_offset()
+        include_total = _should_include_total()
     except RequestValidationError as exc:
         return jsonify({"error": exc.message}), 400
 
     clan_collection = get_clan_collection()
-    player_name = session.get("player_name", None)
-
-    if not player_name or player_name == "Guest":
-        base_query = {}
-    else:
-        base_query = {
-            "requirements.0": {"$lte": session.get("player_league")},
-            "requirements.1": {
-                "$lte": session.get("player_builderbase_trophies")
-            },
-            "requirements.2": {"$lte": session.get("player_townhall")},
-        }
+    try:
+        base_query = _get_matchmaking_base_query()
+    except RequestValidationError as exc:
+        return jsonify({"error": exc.message}), 400
     query = _active_listing_query(base_query)
 
     data = list(
@@ -84,7 +130,7 @@ def recruitee_get():
         .limit(requested_limit)
     )
 
-    if not _should_include_total():
+    if not include_total:
         return jsonify(data)
 
     total = clan_collection.count_documents(query)
@@ -106,14 +152,15 @@ def recruitee_post():
         default_limit = 10
         requested_limit = _get_requested_limit(default_limit)
         requested_offset = _get_requested_offset()
+        include_total = _should_include_total()
         raw_form = _validate_recruitee_payload(get_json_object(request))
     except RequestValidationError as exc:
         return jsonify({"error": exc.message}), 400
 
     clan_collection = get_clan_collection()
 
-    clan_tag = raw_form.get("clanTag") or raw_form.get("clan_tag")
-    if clan_tag:
+    clan_tag = raw_form.get("clanTag")
+    if clan_tag is not None:
         data = clan_collection.find_one(
             _active_listing_query({"clan_tag": clan_tag}), {"_id": 0}
         )
@@ -177,7 +224,7 @@ def recruitee_post():
         .limit(requested_limit)
     )
 
-    if not _should_include_total():
+    if not include_total:
         return jsonify(data)
 
     total = clan_collection.count_documents(query)
@@ -193,18 +240,24 @@ def recruitee_post():
 
 def _validate_recruitee_payload(payload):
     """Return normalized recruitee POST payload."""
+    ensure_allowed_fields(payload, RECRUITEE_PAYLOAD_FIELDS, "recruitee")
+    payload_mode = ensure_exactly_one_field(
+        payload,
+        RECRUITEE_PAYLOAD_FIELDS,
+        "recruitee payload",
+    )
     normalized = {}
-    raw_tag = payload.get("clanTag") or payload.get("clan_tag")
-    if raw_tag is not None:
-        normalized["clanTag"] = normalize_tag(raw_tag, "clanTag")
+    if payload_mode == "clanTag":
+        normalized["clanTag"] = normalize_tag(payload["clanTag"], "clanTag")
         return normalized
 
-    filters = ensure_object(payload.get("filters"), "filters")
+    filters = ensure_object(payload["filters"], "filters")
     normalized["filters"] = _validate_filter_payload(filters)
     return normalized
 
 
 def _validate_filter_payload(filters):
+    ensure_allowed_fields(filters, RECRUITEE_FILTER_FIELDS, "filter")
     normalized = {}
 
     name = optional_string(filters, "name", max_length=120)
@@ -215,14 +268,23 @@ def _validate_filter_payload(filters):
         filters.get("requirements"),
         "filters.requirements",
     )
+    ensure_allowed_fields(
+        requirements,
+        RECRUITEE_REQUIREMENT_FIELDS,
+        "requirements",
+    )
     normalized_requirements = {}
     townhall = optional_int(
         requirements,
         "townhall",
         min_value=0,
-        max_value=25,
     )
     if townhall is not None:
+        max_townhall = refresh(headers)
+        if townhall > max_townhall:
+            raise RequestValidationError(
+                f"townhall must be at most {max_townhall}."
+            )
         normalized_requirements["townhall"] = townhall
     league = optional_int(requirements, "league", min_value=0, max_value=34)
     if league is not None:
@@ -238,14 +300,28 @@ def _validate_filter_payload(filters):
     if normalized_requirements:
         normalized["requirements"] = normalized_requirements
 
-    min_clan_level = optional_int(filters, "minClanLevel", min_value=0)
+    min_clan_level = optional_int(
+        filters,
+        "minClanLevel",
+        min_value=0,
+        max_value=MAX_CLAN_LEVEL,
+    )
     if min_clan_level is not None:
         normalized["minClanLevel"] = min_clan_level
-    clan_points = optional_int(filters, "clanPoints", min_value=0)
+    clan_points = optional_int(
+        filters,
+        "clanPoints",
+        min_value=0,
+        max_value=MAX_CLAN_POINTS,
+    )
     if clan_points is not None:
         normalized["clanPoints"] = clan_points
 
-    war_frequency = optional_string(filters, "warFrequency", max_length=40)
+    war_frequency = optional_enum(
+        filters,
+        "warFrequency",
+        CLASH_WAR_FREQUENCIES,
+    )
     if war_frequency:
         normalized["warFrequency"] = war_frequency
 
@@ -261,6 +337,7 @@ def _validate_filter_payload(filters):
 
 
 def _validate_members_filter(members):
+    ensure_allowed_fields(members, MEMBER_FILTER_FIELDS, "members")
     normalized = {}
     min_members = optional_int(members, "min", min_value=0, max_value=50)
     max_members = optional_int(members, "max", min_value=0, max_value=50)

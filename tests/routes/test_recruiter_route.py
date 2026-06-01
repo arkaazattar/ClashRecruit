@@ -63,9 +63,11 @@ class DummyRecruiter:
 
 
 def setup_recruiter_route(monkeypatch, collection):
+    import ClashRecruit.routes.recruiter_route as recruiter_route
     import ClashRecruit.services.recruiter_listing as recruiter_listing
 
     DummyRecruiter.instances = []
+    monkeypatch.setattr(recruiter_route, "refresh", lambda headers: 17)
     monkeypatch.setattr(recruiter_listing, "Recruiter", DummyRecruiter)
     monkeypatch.setattr(
         recruiter_listing,
@@ -77,6 +79,41 @@ def setup_recruiter_route(monkeypatch, collection):
 
 
 def test_recruiter_get_forbidden_without_recruiter_status(client):
+    response = client.get("/recruiter")
+
+    assert response.status_code == 403
+    assert response.get_json() == {"message": "Forbidden"}
+
+
+def test_recruiter_get_forbidden_without_clan_tag(client, set_session):
+    set_session(recruiter_status=True)
+
+    response = client.get("/recruiter")
+
+    assert response.status_code == 403
+    assert response.get_json() == {"message": "clan_tag must be a string."}
+
+
+def test_recruiter_get_forbidden_for_malformed_clan_tag(
+    client,
+    set_session,
+):
+    set_session(recruiter_status=True, clan_tag="bad-tag!")
+
+    response = client.get("/recruiter")
+
+    assert response.status_code == 403
+    assert response.get_json() == {
+        "message": "clan_tag must contain only letters and numbers."
+    }
+
+
+def test_recruiter_get_forbidden_for_truthy_recruiter_status(
+    client,
+    set_session,
+):
+    set_session(recruiter_status="true", clan_tag="TEST123")
+
     response = client.get("/recruiter")
 
     assert response.status_code == 403
@@ -197,6 +234,31 @@ def test_recruiter_post_creates_new_listing(
     )
 
 
+def test_recruiter_post_create_returns_400_without_player_tag(
+    client,
+    monkeypatch,
+    set_session,
+):
+    collection = DummyClanCollection()
+    setup_recruiter_route(monkeypatch, collection)
+    set_session(recruiter_status=True, clan_tag="TEST123")
+
+    response = client.post(
+        "/recruiter",
+        json={
+            "status": "new",
+            "requiredLeague": 5,
+            "requiredBuilderLeague": 2400,
+            "requiredTownhall": 13,
+            "description": "new_description",
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "player_tag must be a string."}
+    assert collection.inserted_doc is None
+
+
 def test_recruiter_post_updates_listing_and_refreshes_expiry(
     client,
     monkeypatch,
@@ -233,12 +295,17 @@ def test_recruiter_post_updates_listing_and_refreshes_expiry(
     assert isinstance(set_doc["expires"], datetime)
 
 
-def test_recruiter_post_updates_listing_and_preserves_provided_expiry(
+def test_recruiter_post_updates_listing_and_preserves_existing_expiry(
     client,
     monkeypatch,
     set_session,
 ):
-    collection = DummyClanCollection(existing={"requirements": [1, 2, 3]})
+    collection = DummyClanCollection(
+        existing={
+            "requirements": [1, 2, 3],
+            "expires": "existing_expiry",
+        },
+    )
     setup_recruiter_route(monkeypatch, collection)
     set_session(recruiter_status=True, clan_tag="TEST123")
 
@@ -251,7 +318,7 @@ def test_recruiter_post_updates_listing_and_preserves_provided_expiry(
             "requiredTownhall": 14,
             "description": "updated_description",
             "updateExpiry": False,
-            "expiry": "provided_expiry",
+            "expiry": "client_controlled_expiry",
         },
     )
     update_query, update_doc = collection.update_call
@@ -259,7 +326,7 @@ def test_recruiter_post_updates_listing_and_preserves_provided_expiry(
 
     assert response.status_code == 200
     assert response.get_json() == {
-        "status": "provided_expiry",
+        "status": "existing_expiry",
         "message": "Listing updated successfully.",
     }
     assert update_query == {
@@ -396,6 +463,107 @@ def test_recruiter_post_returns_400_for_bad_requirement_type(
     assert response.status_code == 400
     assert response.get_json() == {
         "error": "requiredLeague must be an integer."
+    }
+    assert collection.inserted_doc is None
+
+
+def test_recruiter_post_returns_400_for_unknown_new_field(
+    client,
+    monkeypatch,
+    set_session,
+):
+    collection = DummyClanCollection()
+    setup_recruiter_route(monkeypatch, collection)
+    set_session(recruiter_status=True, clan_tag="TEST123")
+
+    response = client.post(
+        "/recruiter",
+        json={
+            "status": "new",
+            "requiredLeague": 5,
+            "requiredBuilderLeague": 2400,
+            "requiredTownhall": 13,
+            "description": "new_description",
+            "expiry": "not_allowed_for_new",
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "Unsupported recruiter field: expiry."
+    }
+    assert collection.inserted_doc is None
+
+
+def test_recruiter_post_returns_400_for_unknown_remove_field(
+    client,
+    monkeypatch,
+    set_session,
+):
+    collection = DummyClanCollection(existing={"requirements": [1, 2, 3]})
+    setup_recruiter_route(monkeypatch, collection)
+    set_session(recruiter_status=True, clan_tag="TEST123")
+
+    response = client.post(
+        "/recruiter",
+        json={"status": "removeListing", "requiredLeague": 5},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "Unsupported recruiter field: requiredLeague."
+    }
+    assert collection.delete_query is None
+
+
+def test_recruiter_post_returns_400_for_huge_builder_league(
+    client,
+    monkeypatch,
+    set_session,
+):
+    collection = DummyClanCollection()
+    setup_recruiter_route(monkeypatch, collection)
+    set_session(recruiter_status=True, clan_tag="TEST123")
+
+    response = client.post(
+        "/recruiter",
+        json={
+            "status": "new",
+            "requiredLeague": 5,
+            "requiredBuilderLeague": 999999,
+            "requiredTownhall": 13,
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "requiredBuilderLeague must be at most 10000."
+    }
+    assert collection.inserted_doc is None
+
+
+def test_recruiter_post_returns_400_for_townhall_above_current_max(
+    client,
+    monkeypatch,
+    set_session,
+):
+    collection = DummyClanCollection()
+    setup_recruiter_route(monkeypatch, collection)
+    set_session(recruiter_status=True, clan_tag="TEST123")
+
+    response = client.post(
+        "/recruiter",
+        json={
+            "status": "new",
+            "requiredLeague": 5,
+            "requiredBuilderLeague": 2600,
+            "requiredTownhall": 18,
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "requiredTownhall must be at most 17."
     }
     assert collection.inserted_doc is None
 

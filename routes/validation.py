@@ -6,6 +6,13 @@ from typing import Any
 from flask import Request
 
 TAG_PATTERN = re.compile(r"^[A-Z0-9]+$")
+CLASH_WAR_FREQUENCIES = {
+    "always",
+    "moreThanOncePerWeek",
+    "oncePerWeek",
+    "lessThanOncePerWeek",
+    "never",
+}
 
 
 class RequestValidationError(ValueError):
@@ -42,6 +49,25 @@ def query_int(
     return parsed
 
 
+def query_bool(
+    request: Request,
+    field_name: str,
+    *,
+    default: bool = False,
+) -> bool:
+    """Return a validated boolean query parameter."""
+    value = request.args.get(field_name)
+    if value is None:
+        return default
+
+    normalized = value.strip().lower()
+    if normalized in {"1", "true"}:
+        return True
+    if normalized in {"0", "false"}:
+        return False
+    raise RequestValidationError(f"{field_name} must be true or false.")
+
+
 def ensure_object(value: Any, field_name: str) -> dict[str, Any]:
     """Return a dict value or raise a validation error for bad shape."""
     if value is None:
@@ -49,6 +75,34 @@ def ensure_object(value: Any, field_name: str) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise RequestValidationError(f"{field_name} must be an object.")
     return value
+
+
+def ensure_allowed_fields(
+    payload: dict[str, Any],
+    allowed_fields: set[str],
+    object_name: str,
+) -> None:
+    """Raise when a request object contains unsupported fields."""
+    unknown_fields = sorted(set(payload) - allowed_fields)
+    if unknown_fields:
+        raise RequestValidationError(
+            f"Unsupported {object_name} field: {unknown_fields[0]}."
+        )
+
+
+def ensure_exactly_one_field(
+    payload: dict[str, Any],
+    field_names: set[str],
+    object_name: str,
+) -> str:
+    """Return the single present field from a one-of request contract."""
+    present_fields = sorted(field_names & set(payload))
+    if len(present_fields) != 1:
+        expected = " or ".join(sorted(field_names))
+        raise RequestValidationError(
+            f"{object_name} must include exactly one of {expected}."
+        )
+    return present_fields[0]
 
 
 def optional_string(
@@ -72,6 +126,19 @@ def optional_string(
     return normalized
 
 
+def required_string(
+    payload: dict[str, Any],
+    field_name: str,
+    *,
+    max_length: int | None = None,
+) -> str:
+    """Return a required trimmed string field."""
+    value = optional_string(payload, field_name, max_length=max_length)
+    if not value:
+        raise RequestValidationError(f"{field_name} is required.")
+    return value
+
+
 def optional_bool(payload: dict[str, Any], field_name: str) -> bool | None:
     """Return an optional boolean field."""
     value = payload.get(field_name)
@@ -79,6 +146,20 @@ def optional_bool(payload: dict[str, Any], field_name: str) -> bool | None:
         return None
     if not isinstance(value, bool):
         raise RequestValidationError(f"{field_name} must be a boolean.")
+    return value
+
+
+def optional_enum(
+    payload: dict[str, Any],
+    field_name: str,
+    allowed_values: set[str],
+) -> str | None:
+    """Return an optional string enum field."""
+    value = optional_string(payload, field_name, max_length=40)
+    if not value:
+        return None
+    if value not in allowed_values:
+        raise RequestValidationError(f"{field_name} is invalid.")
     return value
 
 

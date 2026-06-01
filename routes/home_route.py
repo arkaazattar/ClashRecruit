@@ -11,14 +11,16 @@ from ..services.rate_limiter import is_rate_limited
 from .rate_limit import rate_limit
 from .validation import (
     RequestValidationError,
+    ensure_allowed_fields,
     get_json_object,
     normalize_tag,
-    optional_string,
+    required_string,
 )
 
 home_bp = Blueprint("home", __name__)
 LOGIN_RATE_LIMIT = 5
 LOGIN_RATE_WINDOW_SECONDS = 5
+LOGIN_FIELDS = {"playerTag", "apiToken"}
 
 
 @home_bp.post("/")
@@ -44,8 +46,9 @@ def home():
 
     try:
         data = get_json_object(request)
+        ensure_allowed_fields(data, LOGIN_FIELDS, "login")
         received_tag = normalize_tag(data.get("playerTag"), "playerTag")
-        received_token = optional_string(data, "apiToken", max_length=128)
+        received_token = required_string(data, "apiToken", max_length=128)
     except RequestValidationError as exc:
         return jsonify({"error": exc.message}), 400
 
