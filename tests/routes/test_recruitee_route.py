@@ -229,6 +229,48 @@ def test_recruitee_post_returns_clan_by_tag(
     assert collection.find_query is None
 
 
+def test_recruitee_post_returns_400_for_empty_clan_tag(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post("/recruitee", json={"clanTag": ""})
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "clanTag is required."}
+    assert collection.find_query is None
+    assert collection.find_one_query is None
+
+
+def test_recruitee_post_returns_400_for_bad_clan_tag_type(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.post("/recruitee", json={"clanTag": []})
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "clanTag must be a string."}
+    assert collection.find_query is None
+    assert collection.find_one_query is None
+
+
 def test_recruitee_post_filters_by_location_name_without_location_id(
     client,
     monkeypatch,

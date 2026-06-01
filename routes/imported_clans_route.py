@@ -95,8 +95,8 @@ def imported_clans_post():
 
     clan_collection = get_clan_collection()
 
-    clan_tag = raw_form.get("clanTag") or raw_form.get("clan_tag")
-    if clan_tag:
+    clan_tag = raw_form.get("clanTag")
+    if clan_tag is not None:
         clan = get_imported_clan(clan_tag)
         if clan is None:
             return jsonify({"error": "Imported clan not found"}), 404
@@ -134,9 +134,8 @@ def imported_clans_post():
 def _validate_imported_payload(payload):
     """Return normalized imported-clans POST payload."""
     normalized = {}
-    raw_tag = payload.get("clanTag") or payload.get("clan_tag")
-    if raw_tag is not None:
-        normalized["clanTag"] = normalize_tag(raw_tag, "clanTag")
+    if "clanTag" in payload:
+        normalized["clanTag"] = normalize_tag(payload["clanTag"], "clanTag")
         return normalized
 
     filters = ensure_object(payload.get("filters"), "filters")

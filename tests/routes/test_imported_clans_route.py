@@ -133,6 +133,42 @@ def test_imported_clans_post_returns_clan_by_tag(
     assert lookup_calls == ["TEST123"]
 
 
+def test_imported_clans_post_returns_400_for_empty_clan_tag(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.imported_clans_route as imported_clans_route
+
+    monkeypatch.setattr(
+        imported_clans_route,
+        "get_clan_collection",
+        lambda: object(),
+    )
+
+    response = client.post("/imported_clans", json={"clanTag": ""})
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "clanTag is required."}
+
+
+def test_imported_clans_post_returns_400_for_bad_clan_tag_type(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.imported_clans_route as imported_clans_route
+
+    monkeypatch.setattr(
+        imported_clans_route,
+        "get_clan_collection",
+        lambda: object(),
+    )
+
+    response = client.post("/imported_clans", json={"clanTag": []})
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "clanTag must be a string."}
+
+
 def test_imported_clans_post_returns_404_for_missing_tag(
     client,
     monkeypatch,
@@ -150,7 +186,7 @@ def test_imported_clans_post_returns_404_for_missing_tag(
         lambda clan_tag: None,
     )
 
-    response = client.post("/imported_clans", json={"clan_tag": "MISSING"})
+    response = client.post("/imported_clans", json={"clanTag": "MISSING"})
 
     assert response.status_code == 404
     assert response.get_json() == {"error": "Imported clan not found"}
