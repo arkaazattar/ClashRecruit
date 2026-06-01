@@ -49,12 +49,12 @@ def test_search_clans_returns_success_payload(
     }
     assert DummyRecruitee.instances[0].player_tag == "PLAYER123"
     assert DummyRecruitee.instances[0].search_call == (
-        {"name": "test", "after": "cursor-0"},
+        {"name": "test"},
         "cursor-0",
     )
 
 
-def test_search_clans_maps_empty_filter_error(client, monkeypatch):
+def test_search_clans_returns_400_for_empty_filter(client, monkeypatch):
     setup_search_route(
         monkeypatch,
         {
@@ -72,10 +72,9 @@ def test_search_clans_maps_empty_filter_error(client, monkeypatch):
 
     assert response.status_code == 400
     assert response.get_json() == {
-        "error": "Add at least one random clan filter before searching.",
-        "reason": "badRequest",
-        "message": "At least one filtering parameter must exist",
+        "error": "Add at least one random clan filter before searching."
     }
+    assert DummyRecruitee.instances == []
 
 
 def test_search_clans_maps_generic_api_error(client, monkeypatch):
@@ -125,7 +124,117 @@ def test_search_clans_returns_400_for_nested_filter_value(client, monkeypatch):
     response = client.post("/search_clans", json={"name": {"bad": "shape"}})
 
     assert response.status_code == 400
+    assert response.get_json() == {"error": "name must be a string."}
+    assert DummyRecruitee.instances == []
+
+
+def test_search_clans_returns_400_for_unknown_field(client, monkeypatch):
+    setup_search_route(
+        monkeypatch,
+        {"items": [], "after": None, "error": None},
+    )
+
+    response = client.post(
+        "/search_clans",
+        json={"name": "test", "typoField": "ignored-before"},
+    )
+
+    assert response.status_code == 400
     assert response.get_json() == {
-        "error": "name must be a string or integer."
+        "error": "Unsupported search field: typoField."
     }
     assert DummyRecruitee.instances == []
+
+
+def test_search_clans_returns_400_for_negative_number(client, monkeypatch):
+    setup_search_route(
+        monkeypatch,
+        {"items": [], "after": None, "error": None},
+    )
+
+    response = client.post(
+        "/search_clans",
+        json={"name": "test", "minMembers": -1},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "minMembers must be at least 1."
+    }
+    assert DummyRecruitee.instances == []
+
+
+def test_search_clans_returns_400_for_invalid_war_frequency(
+    client,
+    monkeypatch,
+):
+    setup_search_route(
+        monkeypatch,
+        {"items": [], "after": None, "error": None},
+    )
+
+    response = client.post(
+        "/search_clans",
+        json={"warFrequency": "sometimes"},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "warFrequency is invalid."}
+    assert DummyRecruitee.instances == []
+
+
+def test_search_clans_returns_400_for_after_without_filter(
+    client,
+    monkeypatch,
+):
+    setup_search_route(
+        monkeypatch,
+        {"items": [], "after": None, "error": None},
+    )
+
+    response = client.post("/search_clans", json={"after": "cursor-0"})
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "Add at least one random clan filter before searching."
+    }
+    assert DummyRecruitee.instances == []
+
+
+def test_search_clans_validates_supported_filters(client, monkeypatch):
+    setup_search_route(
+        monkeypatch,
+        {"items": [], "after": None, "error": None},
+    )
+
+    response = client.post(
+        "/search_clans",
+        json={
+            "name": " test ",
+            "warFrequency": "always",
+            "locationId": "32000007",
+            "minMembers": "5",
+            "maxMembers": 45,
+            "minClanPoints": "1000",
+            "minClanLevel": "3",
+            "labelIds": " 56000000,56000001 ",
+            "limit": "20",
+            "after": "cursor-0",
+        },
+    )
+
+    assert response.status_code == 200
+    assert DummyRecruitee.instances[0].search_call == (
+        {
+            "name": "test",
+            "warFrequency": "always",
+            "locationId": 32000007,
+            "minMembers": 5,
+            "maxMembers": 45,
+            "minClanPoints": 1000,
+            "minClanLevel": 3,
+            "labelIds": "56000000,56000001",
+            "limit": 20,
+        },
+        "cursor-0",
+    )
