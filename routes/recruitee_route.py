@@ -16,6 +16,7 @@ from .validation import (
     optional_enum,
     optional_int,
     optional_string,
+    query_bool,
     query_int,
 )
 
@@ -55,7 +56,7 @@ def _get_requested_offset():
 
 def _should_include_total():
     """Return whether the response should include paginated total metadata."""
-    return request.args.get("includeTotal", "0") == "1"
+    return query_bool(request, "includeTotal", default=False)
 
 
 @recruitee_bp.get("/recruitee")
@@ -66,6 +67,7 @@ def recruitee_get():
         default_limit = 10
         requested_limit = _get_requested_limit(default_limit)
         requested_offset = _get_requested_offset()
+        include_total = _should_include_total()
     except RequestValidationError as exc:
         return jsonify({"error": exc.message}), 400
 
@@ -90,7 +92,7 @@ def recruitee_get():
         .limit(requested_limit)
     )
 
-    if not _should_include_total():
+    if not include_total:
         return jsonify(data)
 
     total = clan_collection.count_documents(base_query)
@@ -112,6 +114,7 @@ def recruitee_post():
         default_limit = 10
         requested_limit = _get_requested_limit(default_limit)
         requested_offset = _get_requested_offset()
+        include_total = _should_include_total()
         raw_form = _validate_recruitee_payload(get_json_object(request))
     except RequestValidationError as exc:
         return jsonify({"error": exc.message}), 400
@@ -180,7 +183,7 @@ def recruitee_post():
         .limit(requested_limit)
     )
 
-    if not _should_include_total():
+    if not include_total:
         return jsonify(data)
 
     total = clan_collection.count_documents(query)

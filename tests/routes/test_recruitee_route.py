@@ -135,6 +135,91 @@ def test_recruitee_get_returns_guest_default_raw_list(
     assert collection.cursor.limit_count == 10
 
 
+def test_recruitee_get_accepts_true_include_total(
+    client,
+    monkeypatch,
+    set_session,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection(
+        [{"clan_tag": "TEST1", "name": "test_clan_1"}]
+    )
+
+    set_session(player_name="Guest")
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.get("/recruitee?includeTotal=true")
+
+    assert response.status_code == 200
+    assert response.get_json() == {
+        "items": [{"clan_tag": "TEST1", "name": "test_clan_1"}],
+        "total": 1,
+        "limit": 10,
+        "offset": 0,
+    }
+    assert collection.find_query == {}
+    assert collection.count_query == {}
+
+
+def test_recruitee_get_accepts_false_include_total(
+    client,
+    monkeypatch,
+    set_session,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection(
+        [{"clan_tag": "TEST1", "name": "test_clan_1"}]
+    )
+
+    set_session(player_name="Guest")
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.get("/recruitee?includeTotal=false")
+
+    assert response.status_code == 200
+    assert response.get_json() == [
+        {"clan_tag": "TEST1", "name": "test_clan_1"}
+    ]
+    assert collection.find_query == {}
+    assert collection.count_query is None
+
+
+def test_recruitee_get_returns_400_for_invalid_include_total(
+    client,
+    monkeypatch,
+    set_session,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+
+    set_session(player_name="Guest")
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.get("/recruitee?includeTotal=maybe")
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "includeTotal must be true or false."
+    }
+    assert collection.find_query is None
+    assert collection.count_query is None
+
+
 def test_recruitee_post_filters_and_paginates_with_total(
     client,
     monkeypatch,

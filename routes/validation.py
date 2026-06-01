@@ -49,6 +49,25 @@ def query_int(
     return parsed
 
 
+def query_bool(
+    request: Request,
+    field_name: str,
+    *,
+    default: bool = False,
+) -> bool:
+    """Return a validated boolean query parameter."""
+    value = request.args.get(field_name)
+    if value is None:
+        return default
+
+    normalized = value.strip().lower()
+    if normalized in {"1", "true"}:
+        return True
+    if normalized in {"0", "false"}:
+        return False
+    raise RequestValidationError(f"{field_name} must be true or false.")
+
+
 def ensure_object(value: Any, field_name: str) -> dict[str, Any]:
     """Return a dict value or raise a validation error for bad shape."""
     if value is None:
