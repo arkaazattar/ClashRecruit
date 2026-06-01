@@ -11,6 +11,7 @@ from .validation import (
     RequestValidationError,
     ensure_allowed_fields,
     get_json_object,
+    normalize_tag,
     optional_bool,
     optional_string,
     required_int,
@@ -39,8 +40,10 @@ REMOVE_LISTING_FIELDS = {"status"}
 @recruiter_bp.route("/recruiter", methods=["GET", "POST"])
 def recruit():
     """Return recruiter listing data or create, update, and remove listings."""
-    if not session.get("recruiter_status"):
-        return jsonify({"message": "Forbidden"}), 403
+    try:
+        session_data = _validate_recruiter_session()
+    except RequestValidationError as exc:
+        return jsonify({"message": exc.message}), 403
 
     if request.method == "GET":
         limited_response = _rate_limit_recruiter_get()
@@ -48,25 +51,41 @@ def recruit():
             return limited_response
 
         payload, status_code = get_recruiter_listing_page(
-            session.get("clan_tag")
+            session_data["clan_tag"]
         )
         return jsonify(payload), status_code
 
     try:
         data = _validate_recruiter_payload(get_json_object(request))
+        if data.get("status") == "new":
+            session_data["player_tag"] = _validated_session_tag(
+                "player_tag",
+            )
     except RequestValidationError as exc:
         return jsonify({"error": exc.message}), 400
 
-    limited_response = _rate_limit_recruiter_action(data)
+    limited_response = _rate_limit_recruiter_action(data, session_data)
     if limited_response:
         return limited_response
 
     payload, status_code = handle_recruiter_listing_action(
-        session.get("clan_tag"),
-        session.get("player_tag"),
+        session_data["clan_tag"],
+        session_data.get("player_tag"),
         data,
     )
     return jsonify(payload), status_code
+
+
+def _validate_recruiter_session():
+    """Return normalized recruiter session identity data."""
+    if session.get("recruiter_status") is not True:
+        raise RequestValidationError("Forbidden")
+
+    return {"clan_tag": _validated_session_tag("clan_tag")}
+
+
+def _validated_session_tag(field_name):
+    return normalize_tag(session.get(field_name), field_name)
 
 
 def _rate_limit_recruiter_get():
@@ -86,14 +105,14 @@ def _rate_limit_recruiter_get():
     return response, 429
 
 
-def _rate_limit_recruiter_action(data):
+def _rate_limit_recruiter_action(data, session_data):
     """Return a 429 response when a listing mutation is being spammed."""
     action = data.get("status")
     limit = RECRUITER_ACTION_RATE_LIMITS.get(action)
     if limit is None:
         return None
 
-    clan_tag = session.get("clan_tag") or "unknown"
+    clan_tag = session_data["clan_tag"]
     limited, retry_after = is_rate_limited(
         f"recruiter_action:{action}:{clan_tag}",
         limit=limit,

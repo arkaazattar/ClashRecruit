@@ -78,6 +78,41 @@ def test_recruiter_get_forbidden_without_recruiter_status(client):
     assert response.get_json() == {"message": "Forbidden"}
 
 
+def test_recruiter_get_forbidden_without_clan_tag(client, set_session):
+    set_session(recruiter_status=True)
+
+    response = client.get("/recruiter")
+
+    assert response.status_code == 403
+    assert response.get_json() == {"message": "clan_tag must be a string."}
+
+
+def test_recruiter_get_forbidden_for_malformed_clan_tag(
+    client,
+    set_session,
+):
+    set_session(recruiter_status=True, clan_tag="bad-tag!")
+
+    response = client.get("/recruiter")
+
+    assert response.status_code == 403
+    assert response.get_json() == {
+        "message": "clan_tag must contain only letters and numbers."
+    }
+
+
+def test_recruiter_get_forbidden_for_truthy_recruiter_status(
+    client,
+    set_session,
+):
+    set_session(recruiter_status="true", clan_tag="TEST123")
+
+    response = client.get("/recruiter")
+
+    assert response.status_code == 403
+    assert response.get_json() == {"message": "Forbidden"}
+
+
 def test_recruiter_get_returns_existing_listing(
     client,
     monkeypatch,
@@ -181,6 +216,31 @@ def test_recruiter_post_creates_new_listing(
     )
     assert isinstance(collection.inserted_doc["last_updated"], datetime)
     assert isinstance(collection.inserted_doc["expires"], datetime)
+
+
+def test_recruiter_post_create_returns_400_without_player_tag(
+    client,
+    monkeypatch,
+    set_session,
+):
+    collection = DummyClanCollection()
+    setup_recruiter_route(monkeypatch, collection)
+    set_session(recruiter_status=True, clan_tag="TEST123")
+
+    response = client.post(
+        "/recruiter",
+        json={
+            "status": "new",
+            "requiredLeague": 5,
+            "requiredBuilderLeague": 2400,
+            "requiredTownhall": 13,
+            "description": "new_description",
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "player_tag must be a string."}
+    assert collection.inserted_doc is None
 
 
 def test_recruiter_post_updates_listing_and_refreshes_expiry(
