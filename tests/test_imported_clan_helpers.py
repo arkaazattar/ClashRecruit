@@ -1,10 +1,10 @@
 import pytest
 from ClashRecruit.routes.imported_clans_route import (
-    _build_imported_query,
     _get_requested_limit,
     _get_requested_offset,
 )
 from ClashRecruit.routes.validation import RequestValidationError
+from ClashRecruit.services.imported_clan_search import build_imported_query
 from flask import Flask
 
 
@@ -57,7 +57,7 @@ def test_invalid_pagination_raises_validation_error(
 
 
 def test_build_imported_query_empty_filters_returns_active_imports() -> None:
-    query = _build_imported_query({})
+    query = build_imported_query({})
 
     assert query == {
         "source": "clash_api_import",
@@ -67,7 +67,7 @@ def test_build_imported_query_empty_filters_returns_active_imports() -> None:
 
 
 def test_build_imported_query_escapes_name_and_ignores_empty() -> None:
-    query = _build_imported_query(
+    query = build_imported_query(
         {
             "name": "  test.*(name)  ",
             "warFrequency": "",
@@ -95,7 +95,7 @@ def test_build_imported_query_member_ranges(
     members: dict[str, int],
     expected: dict[str, int],
 ) -> None:
-    query = _build_imported_query(
+    query = build_imported_query(
         {
             "requirements": {"members": members},
         }
@@ -107,7 +107,7 @@ def test_build_imported_query_member_ranges(
 
 
 def test_build_imported_query_all_scalar_filters() -> None:
-    query = _build_imported_query(
+    query = build_imported_query(
         {
             "minClanLevel": 10,
             "clanPoints": 35000,
