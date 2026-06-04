@@ -1,12 +1,14 @@
 """Register routes for handling session state requests."""
 
-from datetime import datetime, timezone
-
 from flask import Blueprint, jsonify, session
 
 from ..api.clash_api import API
 from ..config import headers
 from ..services.mongo_db_client import get_clan_collection
+from ..services.session_state import (
+    get_session_state_payload,
+    get_user_info_payload,
+)
 from .rate_limit import rate_limit
 from .validation import RequestValidationError, normalize_tag
 
@@ -18,30 +20,19 @@ session_state_bp = Blueprint("session_state", __name__)
 def session_state():
     """Return current session status, player state, and active listing info."""
     username = session.get("player_name", "Guest")
-    recruit_status = bool(session.get("recruiter_status"))
-    has_active_listing = False
-    townhall = None
-    townhallWeaponLevel = None
     clan_tag = _normalized_session_tag("clan_tag")
 
-    if username != "Guest":
-        townhall = session.get("player_townhall")
-        townhallWeaponLevel = session.get("player_townhall_weapon_level")
-
-    if clan_tag:
-        clan_collection = get_clan_collection()
-        now = datetime.now(timezone.utc)
-        listing = clan_collection.find_one(
-            {"clan_tag": clan_tag, "expires": {"$gt": now}}, {"_id": 1}
-        )
-        has_active_listing = listing is not None
-
     return jsonify(
-        username=username,
-        recruit_status=recruit_status,
-        has_active_listing=has_active_listing,
-        townhall=townhall,
-        townhallWeaponLevel=townhallWeaponLevel,
+        get_session_state_payload(
+            username=username,
+            recruit_status=bool(session.get("recruiter_status")),
+            clan_tag=clan_tag,
+            townhall=session.get("player_townhall"),
+            townhall_weapon_level=session.get(
+                "player_townhall_weapon_level"
+            ),
+            clan_collection=get_clan_collection() if clan_tag else None,
+        )
     )
 
 
@@ -51,21 +42,12 @@ def session_state_user_info():
     """Return extended player info for the current session when available."""
     player_tag = _normalized_session_tag("player_tag")
 
-    if player_tag is None:
-        return jsonify({})
-
-    user = API(player_tag, None, headers)
-    stats = user.check_player(
-        [
-            "expLevel",
-            "leagueTier",
-            "builderBaseLeague",
-            "builderHallLevel",
-            "clan",
-        ]
+    return jsonify(
+        get_user_info_payload(
+            player_tag,
+            lambda tag: API(tag, None, headers),
+        )
     )
-
-    return jsonify(stats or {})
 
 
 def _normalized_session_tag(field_name):

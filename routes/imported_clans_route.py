@@ -1,13 +1,11 @@
 """Register routes for handling imported clans."""
 
-import re
-from datetime import datetime, timezone
-
 from flask import Blueprint, jsonify, request
 
 from ..services.import_clash_api_clans import (
     get_imported_clan,
 )
+from ..services.imported_clan_search import get_imported_clans_response
 from ..services.mongo_db_client import get_clan_collection
 from .rate_limit import rate_limit
 from .validation import (
@@ -58,48 +56,6 @@ def _get_requested_offset():
     return query_int(request, "offset", default=0, min_value=0)
 
 
-def _build_imported_query(filters):
-    """Build a MongoDB query for imported clans from request filter data."""
-    query = {
-        "source": "clash_api_import",
-        "expires": {"$gt": datetime.now(timezone.utc)},
-    }
-
-    name = filters.get("name")
-    if name:
-        query["name"] = {"$regex": re.escape(name.strip()), "$options": "i"}
-
-    min_clan_level = filters.get("minClanLevel")
-    if min_clan_level is not None:
-        query["clan_info.clan_level"] = {"$gte": min_clan_level}
-
-    min_clan_points = filters.get("clanPoints")
-    if min_clan_points is not None:
-        query["clan_info.clanPoints"] = {"$gte": min_clan_points}
-
-    requirements = filters.get("requirements", {})
-    members = requirements.get("members", {})
-    min_members = members.get("min")
-    max_members = members.get("max")
-    if min_members is not None or max_members is not None:
-        member_range = {}
-        if min_members is not None:
-            member_range["$gte"] = min_members
-        if max_members is not None:
-            member_range["$lte"] = max_members
-        query["clan_info.member_count"] = member_range
-
-    war_frequency = filters.get("warFrequency")
-    if war_frequency:
-        query["clan_info.warFrequency"] = war_frequency
-
-    location = filters.get("location")
-    if location:
-        query["clan_info.location.name"] = location
-
-    return query
-
-
 @imported_clans_bp.post("/imported_clans")
 @rate_limit("imported_clans", limit=20, window_seconds=60)
 def imported_clans_post():
@@ -112,42 +68,18 @@ def imported_clans_post():
     except RequestValidationError as exc:
         return jsonify({"error": exc.message}), 400
 
-    clan_collection = get_clan_collection()
-
-    clan_tag = raw_form.get("clanTag")
-    if clan_tag is not None:
-        clan = get_imported_clan(clan_tag)
-        if clan is None:
-            return jsonify({"error": "Imported clan not found"}), 404
-        return jsonify(clan)
-
-
-    filters = raw_form.get("filters", {})
-    query = _build_imported_query(filters)
-    total = clan_collection.count_documents(query)
-    items = list(
-        clan_collection.find(query, {"_id": 0})
-        .sort(
-            [
-                ("last_discovered", -1),
-                ("last_updated", -1),
-                ("clan_info.clan_level", -1),
-                ("clan_info.member_count", -1),
-                ("clan_tag", 1),
-            ]
-        )
-        .skip(requested_offset)
-        .limit(requested_limit)
+    payload, status_code = get_imported_clans_response(
+        raw_form,
+        limit=requested_limit,
+        offset=requested_offset,
+        clan_collection=(
+            None
+            if raw_form.get("clanTag") is not None
+            else get_clan_collection()
+        ),
+        imported_clan_lookup=get_imported_clan,
     )
-
-    return jsonify(
-        {
-            "items": items,
-            "total": total,
-            "limit": requested_limit,
-            "offset": requested_offset,
-        }
-    )
+    return jsonify(payload), status_code
 
 
 def _validate_imported_payload(payload):
