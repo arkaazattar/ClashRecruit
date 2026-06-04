@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
 import { formatWarFrequency, WAR_FREQUENCY_OPTIONS } from "./utils/warFrequency";
 import usePageTitle from "./hooks/usePageTitle"
 import LoadingScreen from "./components/LoadingScreen";
@@ -9,6 +9,50 @@ const PAGE_SIZE = 10;
 
 function toNumberOrNull(value) {
     return value === "" || value === null ? null : Number(value);
+}
+
+function parsePageParam(value) {
+  const pageNumber = Number(value);
+  return Number.isInteger(pageNumber) && pageNumber > 0 ? pageNumber : 1;
+}
+
+function readFilterParam(searchParams, name) {
+  return searchParams.get(name)?.trim() || "";
+}
+
+function parseFiltersFromSearchParams(searchParams) {
+  return {
+    name: readFilterParam(searchParams, "name"),
+    minTownhall: readFilterParam(searchParams, "minTownhall"),
+    minLeague: readFilterParam(searchParams, "minLeague"),
+    minMembers: readFilterParam(searchParams, "minMembers"),
+    maxMembers: readFilterParam(searchParams, "maxMembers"),
+    minClanLevel: readFilterParam(searchParams, "minClanLevel"),
+    warFrequency: readFilterParam(searchParams, "warFrequency"),
+    clanPoints: readFilterParam(searchParams, "clanPoints"),
+    location: readFilterParam(searchParams, "location"),
+  };
+}
+
+function hasActiveFilters(filters) {
+  return Object.values(filters).some((value) => String(value).trim() !== "");
+}
+
+function buildListingSearchParams(filters, page) {
+  const nextParams = new URLSearchParams();
+
+  Object.entries(filters).forEach(([key, value]) => {
+    const normalizedValue = String(value ?? "").trim();
+    if (normalizedValue) {
+      nextParams.set(key, normalizedValue);
+    }
+  });
+
+  if (page > 1) {
+    nextParams.set("page", String(page));
+  }
+
+  return nextParams;
 }
 
 function normalizeClanTag(tagValue) {
@@ -99,11 +143,12 @@ function LookingForClan() {
     usePageTitle("Find a Clan | ClashRecruit")
     
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const { user, sessionStateLoaded } = useOutletContext();
-    const hasMountedNameEffect = useRef(false);
     const debounceTimerRef = useRef(null);
     const requestControllerRef = useRef(null);
     const saveErrorTimerRef = useRef(null);
+    const hasLoadedListingsRef = useRef(false);
     const [savedClanTags, setSavedClanTags] = useState([]);
     const [saveErrorTag, setSaveErrorTag] = useState("");
     const [saveErrorText, setSaveErrorText] = useState("");
@@ -115,20 +160,9 @@ function LookingForClan() {
     const [clans, setClans] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalResults, setTotalResults] = useState(0);
-    const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
-    const [appliedFilterPayload, setAppliedFilterPayload] = useState(null);
-    const [Filters, setFilters] = useState({
-      name: "",
-      minTownhall: "",
-      minLeague: "",
-      minMembers: "",
-      maxMembers: "",
-      minClanLevel: "",
-      warFrequency: "",
-      clanPoints: "",
-      location: "",
-    });
+    const [Filters, setFilters] = useState(() => parseFiltersFromSearchParams(searchParams));
     const filtersRef = useRef(Filters);
+    const searchParamsKey = searchParams.toString();
     const isLoggedIn = Boolean(user && user !== "Guest");
     const savedTagSet = new Set(savedClanTags);
 
@@ -162,6 +196,15 @@ function LookingForClan() {
         saveErrorTimerRef.current = null;
       }, 2400);
     };
+
+    const updateListingUrl = useCallback((filters, page = 1, options = {}) => {
+      const nextParams = buildListingSearchParams(filters, page);
+      if (nextParams.toString() === searchParamsKey) {
+        return;
+      }
+
+      setSearchParams(nextParams, { replace: Boolean(options.replace) });
+    }, [searchParamsKey, setSearchParams]);
     
     const handleFilterChange = (e) => {
       const { name, value } = e.target;
@@ -173,33 +216,47 @@ function LookingForClan() {
 
     const handleNameChange = (e) => {
       const { value } = e.target;
+      const nextFilters = {
+        ...filtersRef.current,
+        name: value,
+      };
+
       setFilters((prev) => ({
         ...prev,
         name: value,
       }));
+
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      debounceTimerRef.current = setTimeout(() => {
+        updateListingUrl(nextFilters, 1, { replace: true });
+      }, 250);
     };
 
-    async function getLocations(){
+    const getLocations = useCallback(async () => {
       const rsp = await fetch("/clash_locations");
       if (!rsp.ok) {
         throw new Error("Failed to load locations.");
       }
       const locations = await rsp.json()
       setLocations(Array.isArray(locations) ? locations : [])
-    }
+    }, []);
 
-    async function fetchClanPage(page, filterPayload = null, includeTotal = true) {
+    const fetchClanPage = useCallback(async (page, filters, signal) => {
       const offset = (page - 1) * PAGE_SIZE;
-      const url = `/recruitee?limit=${PAGE_SIZE}&offset=${offset}&includeTotal=${includeTotal ? 1 : 0}`;
-      const response = filterPayload
+      const url = `/recruitee?limit=${PAGE_SIZE}&offset=${offset}&includeTotal=1`;
+      const filterPayload = buildFilterPayload(filters);
+      const response = hasActiveFilters(filters)
         ? await fetch(url, {
             method: "POST",
+            signal,
             headers: {
               "Content-Type": "application/json",
             },
             body: JSON.stringify(filterPayload),
           })
-        : await fetch(url);
+        : await fetch(url, { signal });
 
       if (!response.ok) {
         throw new Error(
@@ -211,10 +268,9 @@ function LookingForClan() {
       const normalized = normalizeListingPayload(payload);
       setClans(normalized.items);
       setCurrentPage(page);
-      if (includeTotal) {
-        setTotalResults(normalized.total);
-      }
-    }
+      setTotalResults(normalized.total);
+      return normalized;
+    }, []);
 
     const getSavedClans = useCallback(async () => {
       if (!isLoggedIn) {
@@ -246,11 +302,10 @@ function LookingForClan() {
       }
 
       const loadData = async() => {
-        setLoading(true);
         setLoadError("");
 
         try {
-          const loadJobs = [fetchClanPage(1, null, true), getLocations()];
+          const loadJobs = [getLocations()];
           if (isLoggedIn) {
             loadJobs.push(getSavedClans());
           } else {
@@ -260,14 +315,67 @@ function LookingForClan() {
           await Promise.all(loadJobs);
         } catch {
           setLoadError("Could not load clan listings right now. Please try again.");
-        } finally {
-          setLoading(false);
         }
       };
       loadData();
-    }, [isLoggedIn, getSavedClans, sessionStateLoaded]);
+    }, [isLoggedIn, getLocations, getSavedClans, sessionStateLoaded]);
 
-    const handleFilterSubmit = useCallback(async (e) => {
+    useEffect(() => {
+      if (!sessionStateLoaded) {
+        return;
+      }
+
+      const urlFilters = parseFiltersFromSearchParams(searchParams);
+      const urlPage = parsePageParam(searchParams.get("page"));
+      const normalizedParams = buildListingSearchParams(urlFilters, urlPage);
+
+      setFilters(urlFilters);
+      if (normalizedParams.toString() !== searchParamsKey) {
+        setSearchParams(normalizedParams, { replace: true });
+        return;
+      }
+
+      if (requestControllerRef.current) {
+        requestControllerRef.current.abort();
+      }
+
+      const controller = new AbortController();
+      requestControllerRef.current = controller;
+      if (!hasLoadedListingsRef.current) {
+        setLoading(true);
+      }
+      setFilterError("");
+
+      fetchClanPage(urlPage, urlFilters, controller.signal)
+        .then((normalized) => {
+          if (controller.signal.aborted) {
+            return;
+          }
+
+          const lastPage = Math.max(1, Math.ceil(normalized.total / PAGE_SIZE));
+          if (urlPage > lastPage) {
+            updateListingUrl(urlFilters, lastPage, { replace: true });
+          }
+        })
+        .catch((error) => {
+          if (error.name !== "AbortError") {
+            setFilterError(
+              error.message || "Could not load clans right now. Please try again."
+            );
+          }
+        })
+        .finally(() => {
+          if (requestControllerRef.current === controller) {
+            requestControllerRef.current = null;
+          }
+          if (!controller.signal.aborted) {
+            hasLoadedListingsRef.current = true;
+            setLoading(false);
+          }
+        });
+    }, [fetchClanPage, searchParams, searchParamsKey, sessionStateLoaded, setSearchParams, updateListingUrl]);
+
+    const handleFilterSubmit = useCallback((e) => {
       if (e) {
         e.preventDefault();
       }
@@ -276,85 +384,15 @@ function LookingForClan() {
         clearTimeout(debounceTimerRef.current);
       }
 
-      if (requestControllerRef.current) {
-        requestControllerRef.current.abort();
-      }
-      const controller = new AbortController();
-      requestControllerRef.current = controller;
+      updateListingUrl(filtersRef.current, 1);
+    }, [updateListingUrl]);
 
-      setHasAppliedFilters(true);
-      setCurrentPage(1);
-      setFilterError("");
-      const activeFilters = filtersRef.current;
-      const filterPayload = buildFilterPayload(activeFilters);
-      setAppliedFilterPayload(filterPayload);
-
-      try {
-        const offset = 0;
-        const response = await fetch(`/recruitee?limit=${PAGE_SIZE}&offset=${offset}&includeTotal=1`, {
-          method: "POST",
-          signal: controller.signal,
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(filterPayload),
-        });
-        if (!response.ok) {
-          throw new Error(
-            await getResponseErrorMessage(
-              response,
-              "Failed to fetch filtered clans."
-            )
-          );
-        }
-        const data = await response.json();
-        if (controller.signal.aborted) {
-          return;
-        }
-        const normalized = normalizeListingPayload(data);
-        setClans(normalized.items);
-        setTotalResults(normalized.total);
-      } catch (error) {
-        if (error.name !== "AbortError") {
-          setFilterError(
-            error.message || "Could not apply filters right now. Please try again."
-          );
-        }
-      } finally {
-        if (requestControllerRef.current === controller) {
-          requestControllerRef.current = null;
-        }
-      }
-    }, []);
-
-    useEffect(() => {
-      if (!hasMountedNameEffect.current) {
-        hasMountedNameEffect.current = true;
-        return;
-      }
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-      debounceTimerRef.current = setTimeout(() => {
-        handleFilterSubmit();
-      }, 250);
-    }, [Filters.name, handleFilterSubmit]);
-
-    const handlePageChange = async (nextPage) => {
+    const handlePageChange = (nextPage) => {
       if (nextPage < 1 || nextPage > totalPages || nextPage === currentPage) {
         return;
       }
 
-      try {
-        if (hasAppliedFilters) {
-          await fetchClanPage(nextPage, appliedFilterPayload, false);
-        } else {
-          await fetchClanPage(nextPage, null, false);
-        }
-        setFilterError("");
-      } catch {
-        setFilterError("Could not load that page right now. Please try again.");
-      }
+      updateListingUrl(parseFiltersFromSearchParams(searchParams), nextPage);
     };
 
     const handleToggleSaveClan = async (clanTag) => {
