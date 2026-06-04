@@ -1,5 +1,4 @@
 import pytest
-
 from ClashRecruit.routes.validation import RequestValidationError
 from ClashRecruit.services.recruitee_search import (
     RECRUITEE_SORT,
