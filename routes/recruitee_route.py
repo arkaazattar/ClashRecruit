@@ -1,13 +1,14 @@
 """Register routes for handling recruitee requests."""
 
-import re
-from datetime import datetime, timezone
-
 from flask import Blueprint, jsonify, request, session
 
 from ..config import headers
 from ..services.maxtownhall import refresh
 from ..services.mongo_db_client import get_clan_collection
+from ..services.recruitee_search import (
+    get_recruitee_list_response,
+    get_recruitee_post_response,
+)
 from .rate_limit import rate_limit
 from .validation import (
     CLASH_WAR_FREQUENCIES,
@@ -41,11 +42,6 @@ RECRUITEE_FILTER_FIELDS = {
 }
 RECRUITEE_REQUIREMENT_FIELDS = {"townhall", "league", "members"}
 MEMBER_FILTER_FIELDS = {"min", "max"}
-MATCHMAKING_SESSION_FIELDS = {
-    "player_league": "requirements.0",
-    "player_builderbase_trophies": "requirements.1",
-    "player_townhall": "requirements.2",
-}
 
 
 def _get_requested_limit(default_limit):
@@ -69,41 +65,6 @@ def _should_include_total():
     return query_bool(request, "includeTotal", default=False)
 
 
-def _get_matchmaking_base_query():
-    """Return a safe clan match query for the current session."""
-    player_name = session.get("player_name", None)
-    if not player_name or player_name == "Guest":
-        return {}
-
-    stats = {}
-    for session_key, query_key in MATCHMAKING_SESSION_FIELDS.items():
-        value = session.get(session_key)
-        if value is None:
-            return {}
-        stats[query_key] = _session_int(value, session_key)
-
-    return {query_key: {"$lte": value} for query_key, value in stats.items()}
-
-
-def _session_int(value, field_name):
-    if isinstance(value, bool):
-        raise RequestValidationError(f"{field_name} is invalid.")
-    if isinstance(value, int):
-        return value
-    if isinstance(value, str):
-        stripped = value.strip()
-        if stripped and stripped.isdecimal():
-            return int(stripped)
-    raise RequestValidationError(f"{field_name} is invalid.")
-
-
-def _active_listing_query(query=None):
-    """Return a listing query scoped to listings that have not expired."""
-    active_query = dict(query or {})
-    active_query["expires"] = {"$gt": datetime.now(timezone.utc)}
-    return active_query
-
-
 @recruitee_bp.get("/recruitee")
 @rate_limit("recruitee_get", limit=60, window_seconds=60)
 def recruitee_get():
@@ -116,32 +77,17 @@ def recruitee_get():
     except RequestValidationError as exc:
         return jsonify({"error": exc.message}), 400
 
-    clan_collection = get_clan_collection()
     try:
-        base_query = _get_matchmaking_base_query()
+        payload, status_code = get_recruitee_list_response(
+            dict(session),
+            limit=requested_limit,
+            offset=requested_offset,
+            include_total=include_total,
+            clan_collection=get_clan_collection(),
+        )
     except RequestValidationError as exc:
         return jsonify({"error": exc.message}), 400
-    query = _active_listing_query(base_query)
-
-    data = list(
-        clan_collection.find(query, {"_id": 0})
-        .sort([("last_updated", -1), ("clan_tag", 1)])
-        .skip(requested_offset)
-        .limit(requested_limit)
-    )
-
-    if not include_total:
-        return jsonify(data)
-
-    total = clan_collection.count_documents(query)
-    return jsonify(
-        {
-            "items": data,
-            "total": total,
-            "limit": requested_limit,
-            "offset": requested_offset,
-        }
-    )
+    return jsonify(payload), status_code
 
 
 @recruitee_bp.post("/recruitee")
@@ -157,85 +103,14 @@ def recruitee_post():
     except RequestValidationError as exc:
         return jsonify({"error": exc.message}), 400
 
-    clan_collection = get_clan_collection()
-
-    clan_tag = raw_form.get("clanTag")
-    if clan_tag is not None:
-        data = clan_collection.find_one(
-            _active_listing_query({"clan_tag": clan_tag}), {"_id": 0}
-        )
-        if data is None:
-            return jsonify({"error": "Clan not found"}), 404
-        return jsonify(data)
-
-
-    filters = raw_form.get("filters", {})
-    query = {}
-
-    name = filters.get("name", None)
-    if name:
-        query["name"] = {"$regex": re.escape(name.strip()), "$options": "i"}
-    requirements = filters.get("requirements", {})
-    min_townhall = requirements.get("townhall", None)
-    min_league = requirements.get("league", None)
-    if min_townhall is not None:
-        query["requirements.2"] = {"$gte": min_townhall}
-    if min_league is not None:
-        query["requirements.0"] = {"$gte": min_league}
-
-    min_clan_level = filters.get("minClanLevel", None)
-    if min_clan_level is not None:
-        query["clan_info.clan_level"] = {"$gte": min_clan_level}
-
-    min_clan_points = filters.get("clanPoints", None)
-    if min_clan_points is not None:
-        query["clan_info.clanPoints"] = {"$gte": min_clan_points}
-
-    members = requirements.get("members", {})
-    min_members = members.get("min", None)
-    max_members = members.get("max", None)
-    if min_members is not None or max_members is not None:
-        member_range = {}
-        if min_members is not None:
-            member_range["$gte"] = min_members
-        if max_members is not None:
-            member_range["$lte"] = max_members
-        query["clan_info.member_count"] = member_range
-    war_frequency = filters.get("warFrequency", None)
-    if war_frequency:
-        query["clan_info.warFrequency"] = war_frequency
-
-    location_id = filters.get("location_id", None)
-    if location_id:
-        try:
-            query["clan_info.location.id"] = int(location_id)
-        except (TypeError, ValueError):
-            return jsonify({"error": "Invalid location_id"}), 400
-    else:
-        location_name = filters.get("location", None)
-        if location_name:
-            query["clan_info.location.name"] = location_name
-
-    query = _active_listing_query(query)
-    data = list(
-        clan_collection.find(query, {"_id": 0})
-        .sort([("last_updated", -1), ("clan_tag", 1)])
-        .skip(requested_offset)
-        .limit(requested_limit)
+    payload, status_code = get_recruitee_post_response(
+        raw_form,
+        limit=requested_limit,
+        offset=requested_offset,
+        include_total=include_total,
+        clan_collection=get_clan_collection(),
     )
-
-    if not include_total:
-        return jsonify(data)
-
-    total = clan_collection.count_documents(query)
-    return jsonify(
-        {
-            "items": data,
-            "total": total,
-            "limit": requested_limit,
-            "offset": requested_offset,
-        }
-    )
+    return jsonify(payload), status_code
 
 
 def _validate_recruitee_payload(payload):
