@@ -1,0 +1,150 @@
+.static-page {
+  width: min(980px, 100%);
+  margin: 0 auto;
+  padding: 42px 24px 56px;
+  box-sizing: border-box;
+  color: #201913;
+}
+
+.static-page__hero {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 28px 0 24px;
+}
+
+.static-page__eyebrow {
+  color: #7a241f;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.static-page__hero h1 {
+  margin: 0;
+  font-size: clamp(2.2rem, 5vw, 3.7rem);
+  line-height: 1;
+}
+
+.static-page__hero p {
+  max-width: 64ch;
+  margin: 0;
+  color: #594b3f;
+  font-size: 1.08rem;
+  line-height: 1.55;
+}
+
+.static-page__content {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.static-page__section {
+  min-height: 160px;
+  padding: 18px;
+  background: rgba(255, 253, 246, 0.9);
+  border: 1px solid #d4b985;
+  border-radius: 8px;
+  box-shadow: 0 3px 8px rgba(32, 25, 19, 0.08);
+}
+
+.static-page__section h2 {
+  margin: 0 0 10px;
+  color: #2d2218;
+  font-size: 1.15rem;
+  line-height: 1.25;
+}
+
+.static-page__section p {
+  margin: 0;
+  color: #46392d;
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+
+.static-page__section p + p {
+  margin-top: 10px;
+}
+
+.static-page--legal {
+  width: min(860px, 100%);
+}
+
+.static-page--legal .static-page__hero {
+  padding-bottom: 18px;
+  border-bottom: 1px solid #d4b985;
+}
+
+.static-page--legal .static-page__content {
+  display: block;
+  margin-top: 28px;
+}
+
+.static-page--legal .static-page__section {
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.static-page--legal .static-page__section + .static-page__section {
+  margin-top: 28px;
+}
+
+.static-page--legal .static-page__section h2 {
+  margin-bottom: 10px;
+  font-size: 1.35rem;
+}
+
+.static-page--legal .static-page__section p {
+  color: #3f3329;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.static-page__actions {
+  display: flex;
+  margin-top: 24px;
+}
+
+.static-page__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 150px;
+  min-height: 44px;
+  padding: 0 18px;
+  color: #fff7ef;
+  background: #b33a32;
+  border: 1px solid #b33a32;
+  border-radius: 8px;
+  font-weight: 710;
+  text-decoration: none;
+  box-shadow: 0 3px 8px rgba(32, 25, 19, 0.1);
+}
+
+.static-page__button:hover,
+.static-page__button:focus-visible {
+  background: #922a24;
+  border-color: #922a24;
+}
+
+@media (max-width: 780px) {
+  .static-page {
+    padding: 30px 18px 44px;
+  }
+
+  .static-page__content {
+    grid-template-columns: 1fr;
+  }
+
+  .static-page__section {
+    min-height: auto;
+  }
+}

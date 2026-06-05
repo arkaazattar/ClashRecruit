@@ -9,6 +9,7 @@ import Layout from "./components/Layout"
 import ClanDetails from "./ClanDetails"
 import Landing from "./Landing"
 import LoadingScreen from "./components/LoadingScreen";
+import StaticPage from "./StaticPage";
 
 function DashboardRouteGuard() {
   const { user, sessionStateLoaded } = useOutletContext();
@@ -38,6 +39,12 @@ root.render(
           <Route path="/recruit" element={<Recruiter/>} />
           <Route path="/looking-for-clan" element={<LookingForClan/>}/>
           <Route path="/looking-for-clan/:clanTag" element={<ClanDetails/>}/>
+          <Route path="/about" element={<StaticPage page="about" />} />
+          <Route path="/faq" element={<StaticPage page="faq" />} />
+          <Route path="/contact" element={<StaticPage page="contact" />} />
+          <Route path="/discord" element={<StaticPage page="discord" />} />
+          <Route path="/privacy" element={<StaticPage page="privacy" />} />
+          <Route path="/terms" element={<StaticPage page="terms" />} />
         </Route>
       </Routes>
     </BrowserRouter>
