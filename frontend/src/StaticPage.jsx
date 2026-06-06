@@ -78,7 +78,7 @@ const pages = {
   privacy: {
     title: "Privacy Policy",
     eyebrow: "Legal",
-    intro: "Effective Date: June 5, 2026",
+    intro: "Last Updated: June 6, 2026",
     layout: "legal",
     sections: [
       {
@@ -161,7 +161,20 @@ const pages = {
       {
         title: "Contact",
         body: [
-          "For privacy-related questions or requests, contact ClashRecruit by email at clashrecruitsupport@gmail.com or through Discord at https://discord.gg/9zTNTfVhBD."
+          <>
+            For privacy-related questions or requests, contact ClashRecruit by email at{" "} 
+            <a href="mailto:clashrecruitsupport@gmail.com">
+              clashrecruitsupport@gmail.com 
+            </a>{" "}
+            or through our{" "}
+            <a href="https://discord.gg/9zTNTfVhBD"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Discord
+            </a>
+            .
+          </>
         ]
       },
       {
