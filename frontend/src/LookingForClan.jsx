@@ -393,6 +393,7 @@ function LookingForClan() {
       }
 
       updateListingUrl(parseFiltersFromSearchParams(searchParams), nextPage);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
     const handleToggleSaveClan = async (clanTag) => {
