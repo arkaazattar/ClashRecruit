@@ -91,6 +91,7 @@
   border: 0;
   border-radius: 0;
   box-shadow: none;
+  scroll-margin-top: 96px;
 }
 
 .static-page--legal .static-page__section + .static-page__section {
