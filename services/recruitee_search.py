@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from ..routes.validation import RequestValidationError
+from .builder_base_leagues import builder_base_league_id_from_trophies
 
 MATCHMAKING_SESSION_FIELDS = {
     "player_league": "requirements.0",
@@ -78,6 +79,11 @@ def get_matchmaking_base_query(
         if value is None:
             return {}
         stats[query_key] = _session_int(value, session_key)
+
+    if "requirements.1" in stats:
+        stats["requirements.1"] = builder_base_league_id_from_trophies(
+            stats["requirements.1"],
+        )
 
     return {query_key: {"$lte": value} for query_key, value in stats.items()}
 

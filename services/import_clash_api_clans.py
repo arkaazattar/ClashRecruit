@@ -14,6 +14,7 @@ from .mongo_db_client import (
     get_import_state_collection,
     get_location_collection,
 )
+from .builder_base_leagues import builder_base_league_id_from_trophies
 
 DISCOVERY_STALE_AFTER = timedelta(hours=6)
 IMPORTED_CLAN_RETENTION = timedelta(days=3)
@@ -218,6 +219,10 @@ def _extract_requirements(
         if detail_clan.get("requiredBuilderBaseTrophies") is not None
         else search_clan.get("requiredBuilderBaseTrophies", 0)
     )
+    required_builder_league = builder_base_league_id_from_trophies(
+        required_builder_trophies,
+        zero_as_no_requirement=True,
+    )
     required_townhall = (
         detail_clan.get("requiredTownhallLevel")
         if detail_clan.get("requiredTownhallLevel") is not None
@@ -225,7 +230,7 @@ def _extract_requirements(
     )
     return [
         required_league or 0,
-        required_builder_trophies or 0,
+        required_builder_league,
         required_townhall or 0,
     ]
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useOutletContext } from "react-router-dom";
+import { builderBaseLeagueOptions } from "./utils/builderBaseLeagues";
 import { leagueOptions } from "./utils/recruiter";
 import { LISTING_STATUS_CHANGED_EVENT } from "./utils/appEvents";
 import usePageTitle from "./hooks/usePageTitle"
@@ -257,17 +258,19 @@ function Recruiter() {
             </div>
 
             <div className="recruiter-field">
-              <label htmlFor="builderleagues">Required Builder Trophies</label>
-              <input
+              <label htmlFor="builderleagues">Required Builder Base League</label>
+              <select
                 id="builderleagues"
-                type="number"
                 name="builderleagues"
                 value={requiredBuilderLeague}
                 onChange={(e) => setRequiredBuilderLeague(Number(e.target.value))}
-                max={6700}
-                min={0}
-                placeholder="Minimum trophies (e.g. 3200)"
-              />
+              >
+                {builderBaseLeagueOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -417,19 +420,21 @@ function Recruiter() {
               </div>
 
               <div className="recruiter-field">
-                <label htmlFor="builderleagues">Required Builder Trophies</label>
-                <input
+                <label htmlFor="builderleagues">Required Builder Base League</label>
+                <select
                   id="builderleagues"
-                  type="number"
                   name="builderleagues"
                   value={requiredBuilderLeague}
                   onChange={(e) =>
                     setRequiredBuilderLeague(Number(e.target.value))
                   }
-                  max={6700}
-                  min={0}
-                  placeholder="Minimum trophies (e.g. 3200)"
-                />
+                >
+                  {builderBaseLeagueOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="recruiter-field recruiter-field-full">

@@ -32,7 +32,7 @@ def test_extract_requirements_prefers_detail_values_over_search_values():
         },
     )
 
-    assert requirements == [0, 2400, 13]
+    assert requirements == [0, 23, 13]
 
 
 def test_extract_requirements_uses_search_fallbacks_and_zero_defaults():
@@ -41,7 +41,7 @@ def test_extract_requirements_uses_search_fallbacks_and_zero_defaults():
             "requiredBuilderBaseTrophies": 1200,
             "requiredTownhallLevel": 10,
         }
-    ) == [0, 1200, 10]
+    ) == [0, 13, 10]
     assert import_service._extract_requirements() == [0, 0, 0]
 
 
@@ -204,7 +204,7 @@ def test_build_enriched_import_document_uses_detail_with_search_fallbacks(
         "name": "test_clan",
         "source": "clash_api_import",
         "seed_key": "name:a|limit:10",
-        "requirements": [0, 2200, 13],
+        "requirements": [0, 22, 13],
         "requirements_source": "clash_api",
         "last_discovered": frozen_now,
         "last_updated": frozen_now,
@@ -755,7 +755,7 @@ def test_get_imported_clan_fetches_caches_and_returns_imported_document(
     assert upsert is True
     assert set_doc["clan_tag"] == "TEST123"
     assert set_doc["name"] == "test_clan"
-    assert set_doc["requirements"] == [0, 2200, 13]
+    assert set_doc["requirements"] == [0, 22, 13]
     assert set_doc["last_discovered"] == frozen_now
     assert set_doc["last_updated"] == frozen_now
     assert set_doc["expires"] == (

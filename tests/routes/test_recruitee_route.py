@@ -86,7 +86,7 @@ def test_recruitee_get_filters_logged_in_player_with_total(
 
     expected_query = {
         "requirements.0": {"$lte": 5},
-        "requirements.1": {"$lte": 2200},
+        "requirements.1": {"$lte": 22},
         "requirements.2": {"$lte": 13},
         "expires": collection.find_query["expires"],
     }
@@ -169,7 +169,7 @@ def test_recruitee_get_normalizes_string_matchmaking_stats(
         collection,
         {
             "requirements.0": {"$lte": 5},
-            "requirements.1": {"$lte": 2200},
+            "requirements.1": {"$lte": 22},
             "requirements.2": {"$lte": 13},
         },
     )
