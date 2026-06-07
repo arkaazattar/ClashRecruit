@@ -212,10 +212,10 @@
 
 .dashboard-townhall-image {
     position: absolute;
-    width: 130%;
+    width: 118%;
     max-width: none;
-    left: -20%;
-    bottom: -14%;
+    left: -14%;
+    bottom: -10%;
     aspect-ratio: 1;
     object-fit: contain;
     filter: drop-shadow(0 14px 22px rgba(54, 28, 8, 0.32));
@@ -845,8 +845,8 @@
     }
 
     .dashboard-townhall-image {
-        width: 140%;
-        left: -22%;
+        width: 126%;
+        left: -15%;
     }
 
     .dashboard-townhall-shell {
@@ -912,9 +912,9 @@
     }
 
     .dashboard-townhall-image {
-        width: 126%;
-        left: -12%;
-        bottom: -10%;
+        width: 116%;
+        left: -8%;
+        bottom: -7%;
     }
 
     .dashboard-stats-strip {
