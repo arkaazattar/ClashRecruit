@@ -22,7 +22,7 @@ def test_pull_clan_requirements_success(monkeypatch) -> None:
 
     requirements = user.pull_clan_requirements()
 
-    assert requirements == [0, 2300, 12]
+    assert requirements == [0, 22, 12]
     mock_get.assert_called_once_with(
         f"https://api.clashofclans.com/v1/clans/%23{KNOWN_STABLE_TAG}",
         headers=MOCK_HEADERS,

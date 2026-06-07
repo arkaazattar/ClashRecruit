@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
+import { formatBuilderBaseLeague } from "./utils/builderBaseLeagues";
 import { formatWarFrequency, WAR_FREQUENCY_OPTIONS } from "./utils/warFrequency";
 import usePageTitle from "./hooks/usePageTitle"
 import LoadingScreen from "./components/LoadingScreen";
@@ -576,6 +577,7 @@ return (
             <div className="listing-stats">
               <p><strong>Townhall:</strong> {clan.requirements?.[2] ?? "?"}</p>
               <p><strong>League:</strong> {clan.requirements?.[0] ?? "?"}</p>
+              <p><strong>Builder League:</strong> {formatBuilderBaseLeague(clan.requirements?.[1] ?? 0)}</p>
               {clan.clan_info?.warFrequency !== "unknown" &&
                 <p><strong>War Freq:</strong> {formatWarFrequency(clan.clan_info?.warFrequency)}</p>
               }

@@ -71,7 +71,7 @@ def test_matchmaking_base_query_uses_logged_in_player_stats():
 
     assert query == {
         "requirements.0": {"$lte": 5},
-        "requirements.1": {"$lte": 2200},
+        "requirements.1": {"$lte": 22},
         "requirements.2": {"$lte": 13},
     }
 

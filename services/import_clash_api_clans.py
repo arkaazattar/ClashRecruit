@@ -8,6 +8,7 @@ from celery.signals import worker_ready
 from ..clash_http_client import ClashApiError
 from ..clash_http_client import get as clash_get
 from ..config import headers
+from .builder_base_leagues import builder_base_league_id_from_trophies
 from .celery_app import app
 from .mongo_db_client import (
     get_clan_collection,
@@ -218,6 +219,10 @@ def _extract_requirements(
         if detail_clan.get("requiredBuilderBaseTrophies") is not None
         else search_clan.get("requiredBuilderBaseTrophies", 0)
     )
+    required_builder_league = builder_base_league_id_from_trophies(
+        required_builder_trophies,
+        zero_as_no_requirement=True,
+    )
     required_townhall = (
         detail_clan.get("requiredTownhallLevel")
         if detail_clan.get("requiredTownhallLevel") is not None
@@ -225,7 +230,7 @@ def _extract_requirements(
     )
     return [
         required_league or 0,
-        required_builder_trophies or 0,
+        required_builder_league,
         required_townhall or 0,
     ]
 
