@@ -5,15 +5,38 @@ import usePageTitle from "./hooks/usePageTitle";
 import "./Dashboard.css";
 
 const townHallAssets = require.context("./assets", false, /\.webp$/);
+const townHallAssetOverrides = {
+  12: "./Town_Hall12-5.webp",
+  13: "./Town-hall-13-5.webp",
+  14: "./Town_Hall14-5.webp",
+  15: "./Town_Hall15-5.webp",
+};
 
 function getTownHallAsset(townhallLevel, weaponLevel) {
   if (!townhallLevel) {
     return null;
   }
 
-  const assetNames = weaponLevel
-    ? [`./townhall-${townhallLevel}-${weaponLevel}.webp`, `./townhall-${townhallLevel}.webp`]
-    : [`./townhall-${townhallLevel}.webp`];
+  const level = Number(townhallLevel);
+  const weapon = Number(weaponLevel);
+  const assetNames = [];
+
+  if (!Number.isFinite(level)) {
+    return null;
+  }
+
+  if (level === 17) {
+    if (weapon) {
+      assetNames.push(`./Town_Hall17-${weapon}.webp`);
+    }
+    assetNames.push("./Town_Hall17-5.webp");
+  }
+
+  if (townHallAssetOverrides[level]) {
+    assetNames.push(townHallAssetOverrides[level]);
+  }
+
+  assetNames.push(`./Town_Hall${level}.webp`);
 
   for (const assetName of assetNames) {
     try {
@@ -146,6 +169,29 @@ function Dashboard() {
 
   useEffect(() => {
     if (!sessionStateLoaded) {
+      setTownHallImage(null);
+      return undefined;
+    }
+
+    let isMounted = true;
+    const resolvedTownHallImage = getTownHallAsset(
+      townhall,
+      townhallWeaponLevel
+    );
+
+    preloadImage(resolvedTownHallImage).then(() => {
+      if (isMounted) {
+        setTownHallImage(resolvedTownHallImage);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [sessionStateLoaded, townhall, townhallWeaponLevel]);
+
+  useEffect(() => {
+    if (!sessionStateLoaded) {
       setLoading(true);
       return;
     }
@@ -154,13 +200,7 @@ function Dashboard() {
     setLoading(true);
     setUserInfo(readStoredUserInfo(normalizedUser));
 
-    const resolvedTownHallImage = getTownHallAsset(
-      townhall,
-      townhallWeaponLevel
-    );
-
     Promise.all([
-      preloadImage(resolvedTownHallImage).then(() => resolvedTownHallImage),
       fetch("/session-state/user-info", { credentials: "include" })
         .then((res) => {
           if (!res.ok) {
@@ -194,12 +234,11 @@ function Dashboard() {
           savedError: error.message || "Saved clans are temporarily unavailable.",
         })),
     ])
-      .then(([nextTownHallImage, nextUserInfo, nextSaved]) => {
+      .then(([nextUserInfo, nextSaved]) => {
         if (!isMounted) {
           return;
         }
 
-        setTownHallImage(nextTownHallImage);
         if (nextUserInfo !== undefined) {
           setUserInfo(nextUserInfo);
         }
@@ -217,7 +256,7 @@ function Dashboard() {
     return () => {
       isMounted = false;
     };
-  }, [sessionStateLoaded, townhall, townhallWeaponLevel, normalizedUser]);
+  }, [sessionStateLoaded, normalizedUser]);
 
   const copyTag = async (tag) => {
     if (!tag) {
