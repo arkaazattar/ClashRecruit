@@ -8,13 +8,13 @@ from celery.signals import worker_ready
 from ..clash_http_client import ClashApiError
 from ..clash_http_client import get as clash_get
 from ..config import headers
+from .builder_base_leagues import builder_base_league_id_from_trophies
 from .celery_app import app
 from .mongo_db_client import (
     get_clan_collection,
     get_import_state_collection,
     get_location_collection,
 )
-from .builder_base_leagues import builder_base_league_id_from_trophies
 
 DISCOVERY_STALE_AFTER = timedelta(hours=6)
 IMPORTED_CLAN_RETENTION = timedelta(days=3)

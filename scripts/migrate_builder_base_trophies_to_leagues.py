@@ -3,21 +3,21 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 import sys
+from pathlib import Path
 
 PACKAGE_PARENT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PACKAGE_PARENT))
 
-from ClashRecruit.services.builder_base_leagues import (  # noqa: E402
-    BUILDER_BASE_LEAGUE_MAX_ID,
-    builder_base_league_id_from_trophies,
-)
-from ClashRecruit.services.mongo_db_client import get_clan_collection  # noqa: E402
-
 
 def migrate_builder_base_requirements(*, apply: bool) -> int:
     """Convert legacy trophy values in ``requirements.1`` to league ids."""
+    from ClashRecruit.services.builder_base_leagues import (
+        BUILDER_BASE_LEAGUE_MAX_ID,
+        builder_base_league_id_from_trophies,
+    )
+    from ClashRecruit.services.mongo_db_client import get_clan_collection
+
     clan_collection = get_clan_collection()
     query = {"requirements.1": {"$gt": BUILDER_BASE_LEAGUE_MAX_ID}}
     documents = clan_collection.find(query, {"_id": 1, "requirements": 1})

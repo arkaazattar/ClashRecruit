@@ -14,7 +14,7 @@ def test_builder_base_league_id_from_trophies_maps_thresholds():
     assert builder_base_league_id_from_trophies(9999) == 42
 
 
-def test_builder_base_league_id_from_trophies_can_treat_zero_as_no_requirement():
+def test_builder_base_league_id_from_trophies_can_map_zero_to_none():
     assert builder_base_league_id_from_trophies(
         0,
         zero_as_no_requirement=True,
