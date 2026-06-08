@@ -1,5 +1,8 @@
 import './Footer.css';
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import sitCat from '../assets/Sit_Cat.png';
+import sleepCat from '../assets/Sleep_Cat.png';
 
 const navigationLinks = [
     { label: 'Home', to: '/' },
@@ -10,6 +13,9 @@ const navigationLinks = [
 ];
 
 function Footer() {
+    const [catSleeping, setCatSleeping] = useState(false);
+    const footerCat = catSleeping ? sleepCat : sitCat;
+
     return (
         <footer className="footer">
             <nav className="footer__nav" aria-label="Footer navigation">
@@ -34,6 +40,15 @@ function Footer() {
                     <a target="_blank" href="https://supercell.com/en/fan-content-policy/" rel="noopener noreferrer">www.supercell.com/fan-content-policy</a>.
                 </label>
             </section>
+
+            <button
+                type="button"
+                className="footer__cat"
+                onClick={() => setCatSleeping((currentValue) => !currentValue)}
+                aria-label={catSleeping ? "Wake footer cat" : "Put footer cat to sleep"}
+            >
+                <img src={footerCat} alt="" className="footer__cat-image" aria-hidden="true" />
+            </button>
         </footer>
     )
 }

@@ -86,7 +86,7 @@ def setup_recruiter_listing(monkeypatch, collection):
 
 def test_get_recruiter_listing_page_returns_existing_listing(monkeypatch):
     existing = {
-        "requirements": [4, 1800, 12],
+        "requirements": [4, 19, 12],
         "clan_info": {"description": "existing_description"},
         "expires": "existing_expiry",
     }
@@ -100,7 +100,7 @@ def test_get_recruiter_listing_page_returns_existing_listing(monkeypatch):
     assert status_code == 200
     assert payload == {
         "oldRequiredLeague": 4,
-        "oldRequiredBuilderLeague": 1800,
+        "oldRequiredBuilderLeague": 19,
         "oldRequiredTownhall": 12,
         "MAXTOWNHALL": 17,
         "clanDescription": "existing_description",
@@ -144,7 +144,7 @@ def test_create_recruiter_listing_inserts_live_listing(monkeypatch):
         "PLAYER123",
         {
             "requiredLeague": 5,
-            "requiredBuilderLeague": 2400,
+            "requiredBuilderLeague": 23,
             "requiredTownhall": 13,
             "description": "new_description",
         },
@@ -154,7 +154,7 @@ def test_create_recruiter_listing_inserts_live_listing(monkeypatch):
     assert status_code == 200
     assert payload["message"] == "Listing created successfully."
     assert payload["source"] == "live_listing"
-    assert payload["requirements"] == [5, 2400, 13]
+    assert payload["requirements"] == [5, 23, 13]
     assert payload["name"] == "test_clan"
     assert payload["clan_tag"] == "TEST123"
     assert payload["player_tag"] == "PLAYER123"
@@ -179,7 +179,7 @@ def test_update_recruiter_listing_refreshes_expiry(monkeypatch):
         "TEST123",
         {
             "requiredLeague": 6,
-            "requiredBuilderLeague": 2600,
+            "requiredBuilderLeague": 24,
             "requiredTownhall": 14,
             "description": "updated_description",
             "updateExpiry": True,
@@ -200,7 +200,7 @@ def test_update_recruiter_listing_refreshes_expiry(monkeypatch):
     }
     assert set_doc == {
         "source": "live_listing",
-        "requirements": [6, 2600, 14],
+        "requirements": [6, 24, 14],
         "clan_info.description": "updated_description",
         "last_updated": FROZEN_NOW,
         "expires": expiry,
@@ -220,7 +220,7 @@ def test_update_recruiter_listing_preserves_existing_expiry(monkeypatch):
         "TEST123",
         {
             "requiredLeague": 6,
-            "requiredBuilderLeague": 2600,
+            "requiredBuilderLeague": 24,
             "requiredTownhall": 14,
             "description": "updated_description",
             "updateExpiry": False,

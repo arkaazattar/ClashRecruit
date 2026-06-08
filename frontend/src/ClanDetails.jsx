@@ -2,6 +2,7 @@ import "./ClanDetails.css";
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { formatWarFrequency } from "./utils/warFrequency";
+import { formatBuilderBaseLeague } from "./utils/builderBaseLeagues";
 
 function normalizeLocation(rawLocation) {
     if (!rawLocation) return "";
@@ -161,7 +162,7 @@ function ClanDetails() {
                     <div><span>War Frequency</span><strong>{formatWarFrequency(details.warFrequency ?? details.war_frequency)}</strong></div>
                     <div><span>Clan Points</span><strong>{details.clanPoints ?? details.clan_points ?? 0}</strong></div>
                     <div><span>Required League</span><strong>{requirements[0] ?? 0}</strong></div>
-                    <div><span>Required Builder Trophies</span><strong>{requirements[1] ?? 0}</strong></div>
+                    <div><span>Required Builder Base League</span><strong>{formatBuilderBaseLeague(requirements[1] ?? 0)}</strong></div>
                     <div><span>Required Town Hall</span><strong>{requirements[2] ?? 0}</strong></div>
                 </div>
 

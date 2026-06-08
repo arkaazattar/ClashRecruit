@@ -1,6 +1,9 @@
 """API helpers for recruiter workflows and clan listing metadata."""
 
 from ..clash_http_client import get as clash_get
+from ..services.builder_base_leagues import (
+    builder_base_league_id_from_trophies,
+)
 
 
 def extract_clan_requirements(payload: object) -> list[int]:
@@ -9,9 +12,12 @@ def extract_clan_requirements(payload: object) -> list[int]:
         return [0, 0, 0]
 
     required_league = 0
-    required_builder_trophies = payload.get("requiredBuilderBaseTrophies") or 0
+    required_builder_league = builder_base_league_id_from_trophies(
+        payload.get("requiredBuilderBaseTrophies"),
+        zero_as_no_requirement=True,
+    )
     required_townhall = payload.get("requiredTownhallLevel") or 0
-    return [required_league, required_builder_trophies, required_townhall]
+    return [required_league, required_builder_league, required_townhall]
 
 
 class Recruiter:
@@ -86,15 +92,15 @@ class Recruiter:
     def new_clan_requirements(
         self,
         required_league: int | None,
-        required_builder_trophies: int | None,
+        required_builder_league: int | None,
         required_townhall: int | None,
     ) -> None:
         """Set all clan requirements and store them in canonical list order."""
         self.required_league = required_league
-        self.required_builder_trophies = required_builder_trophies
+        self.required_builder_league = required_builder_league
         self.required_townhall = required_townhall
         self.requirements = [
             self.required_league,
-            self.required_builder_trophies,
+            self.required_builder_league,
             self.required_townhall,
         ]

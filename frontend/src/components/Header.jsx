@@ -1,8 +1,11 @@
 import './Header.css';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
-import { AUTH_STATUS_CHANGED_EVENT } from '../utils/appEvents';
-import logoWithoutText from '../assets/logo_without_text.png';
+import {
+    AUTH_STATUS_CHANGED_EVENT,
+    OPEN_SAVED_CLANS_EVENT
+} from '../utils/appEvents';
+import logo from '../assets/clashrecruit.png';
 
 function Header({ user , hasActiveListing}) {
     const [open, setOpen] = useState(false);
@@ -48,26 +51,35 @@ function Header({ user , hasActiveListing}) {
     const handleSignin = () => {
         setOpen(false);
     };
-    
-    const handleListings = () => {
-        setOpen(false);
-    };
-    
-    const handleFindClan = () => {
-        setOpen(false);
-    }
 
+    const handleSavedClans = () => {
+        setOpen(false);
+        window.dispatchEvent(new CustomEvent(OPEN_SAVED_CLANS_EVENT));
+    };
+
+    const getNavLinkClassName = ({ isActive }) => (
+        `header-nav-link${isActive ? " is-active" : ""}`
+    );
+    
     return (
         <header className="header">
             <Link to='/' className='logo'>
-                <img src={logoWithoutText} alt="ClashRecruit logo" className="logo-image" />
+                <img src={logo} alt="ClashRecruit logo" className="logo-image" />
             </Link>
 
             <div className="header-right">
+                <NavLink to="/looking-for-clan" className={getNavLinkClassName}>
+                    Find a Clan
+                </NavLink>
                 {isLoggedIn && (
-                    <Link to="/dashboard" className="header-nav-link">
-                        Dashboard
-                    </Link>
+                    <>
+                        <NavLink to="/dashboard" className={getNavLinkClassName}>
+                            Dashboard
+                        </NavLink>
+                        <NavLink to="/recruit" className={getNavLinkClassName}>
+                            {hasActiveListing ? "View Listing" : "Recruit"}
+                        </NavLink>
+                    </>
                 )}
                 <span className="header-divider" aria-hidden="true"></span>
                 <div className="dropdown" ref={dropdownRef}>
@@ -78,9 +90,11 @@ function Header({ user , hasActiveListing}) {
                         aria-haspopup="menu"
                     >
                         <span className="user-button-copy">
-                            <span className="user-button-label">
-                                {isLoggedIn ? 'Signed in as' : 'Browsing as'}
-                            </span>
+                            {isLoggedIn && (
+                                <span className="user-button-label">
+                                    Signed in as
+                                </span>
+                            )}
                             <span className="user-button-name">{displayUser} ▾</span>
                         </span>
                     </button>
@@ -89,18 +103,15 @@ function Header({ user , hasActiveListing}) {
                         className={`dropdown-menu ${open ? "is-open" : "is-closed"}`}
                         aria-hidden={!open}
                     >
-                    <Link to="/looking-for-clan" onClick={handleFindClan} className="dropdown-item">
-                            Find a Clan
-                    </Link>
-                        {hasActiveListing && (
-                            <Link to="/recruit" onClick={handleListings} className="dropdown-item">
-                                My Listings
-                            </Link>
-                        )}
                         {isLoggedIn ?(
-                            <button onClick={handleLogout} className="dropdown-item">
-                                Logout
-                            </button>
+                            <>
+                                <button type="button" onClick={handleSavedClans} className="dropdown-item">
+                                    Saved Clans
+                                </button>
+                                <button type="button" onClick={handleLogout} className="dropdown-item">
+                                    Logout
+                                </button>
+                            </>
                         ): (
                             <Link to="/login" onClick={handleSignin} className="dropdown-item"> 
                                 Login

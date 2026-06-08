@@ -126,7 +126,7 @@ def test_recruiter_get_returns_existing_listing(
     set_session,
 ):
     existing = {
-        "requirements": [4, 1800, 12],
+        "requirements": [4, 19, 12],
         "clan_info": {"description": "existing_description"},
         "expires": "existing_expiry",
     }
@@ -139,7 +139,7 @@ def test_recruiter_get_returns_existing_listing(
     assert response.status_code == 200
     assert response.get_json() == {
         "oldRequiredLeague": 4,
-        "oldRequiredBuilderLeague": 1800,
+        "oldRequiredBuilderLeague": 19,
         "oldRequiredTownhall": 12,
         "MAXTOWNHALL": 17,
         "clanDescription": "existing_description",
@@ -203,7 +203,7 @@ def test_recruiter_post_creates_new_listing(
         json={
             "status": "new",
             "requiredLeague": 5,
-            "requiredBuilderLeague": 2400,
+            "requiredBuilderLeague": 23,
             "requiredTownhall": 13,
             "description": "new_description",
         },
@@ -213,7 +213,7 @@ def test_recruiter_post_creates_new_listing(
     assert response.status_code == 200
     assert response_json["message"] == "Listing created successfully."
     assert response_json["source"] == "live_listing"
-    assert response_json["requirements"] == [5, 2400, 13]
+    assert response_json["requirements"] == [5, 23, 13]
     assert response_json["name"] == "test_clan"
     assert response_json["clan_tag"] == "TEST123"
     assert response_json["player_tag"] == "PLAYER123"
@@ -221,7 +221,7 @@ def test_recruiter_post_creates_new_listing(
     assert response_json["expires"] == response_json["status"]
 
     assert collection.inserted_doc["source"] == "live_listing"
-    assert collection.inserted_doc["requirements"] == [5, 2400, 13]
+    assert collection.inserted_doc["requirements"] == [5, 23, 13]
     assert collection.inserted_doc["clan_info"]["description"] == (
         "new_description"
     )
@@ -248,7 +248,7 @@ def test_recruiter_post_create_returns_400_without_player_tag(
         json={
             "status": "new",
             "requiredLeague": 5,
-            "requiredBuilderLeague": 2400,
+            "requiredBuilderLeague": 23,
             "requiredTownhall": 13,
             "description": "new_description",
         },
@@ -273,7 +273,7 @@ def test_recruiter_post_updates_listing_and_refreshes_expiry(
         json={
             "status": "update",
             "requiredLeague": 6,
-            "requiredBuilderLeague": 2600,
+            "requiredBuilderLeague": 24,
             "requiredTownhall": 14,
             "description": "updated_description",
             "updateExpiry": True,
@@ -289,7 +289,7 @@ def test_recruiter_post_updates_listing_and_refreshes_expiry(
         "source": {"$ne": "clash_api_import"},
     }
     assert set_doc["source"] == "live_listing"
-    assert set_doc["requirements"] == [6, 2600, 14]
+    assert set_doc["requirements"] == [6, 24, 14]
     assert set_doc["clan_info.description"] == "updated_description"
     assert isinstance(set_doc["last_updated"], datetime)
     assert isinstance(set_doc["expires"], datetime)
@@ -314,7 +314,7 @@ def test_recruiter_post_updates_listing_and_preserves_existing_expiry(
         json={
             "status": "update",
             "requiredLeague": 6,
-            "requiredBuilderLeague": 2600,
+            "requiredBuilderLeague": 24,
             "requiredTownhall": 14,
             "description": "updated_description",
             "updateExpiry": False,
@@ -334,7 +334,7 @@ def test_recruiter_post_updates_listing_and_preserves_existing_expiry(
         "source": {"$ne": "clash_api_import"},
     }
     assert set_doc["source"] == "live_listing"
-    assert set_doc["requirements"] == [6, 2600, 14]
+    assert set_doc["requirements"] == [6, 24, 14]
     assert set_doc["clan_info.description"] == "updated_description"
     assert "expires" not in set_doc
 
@@ -455,7 +455,7 @@ def test_recruiter_post_returns_400_for_bad_requirement_type(
         json={
             "status": "new",
             "requiredLeague": "high",
-            "requiredBuilderLeague": 2400,
+            "requiredBuilderLeague": 23,
             "requiredTownhall": 13,
         },
     )
@@ -481,7 +481,7 @@ def test_recruiter_post_returns_400_for_unknown_new_field(
         json={
             "status": "new",
             "requiredLeague": 5,
-            "requiredBuilderLeague": 2400,
+            "requiredBuilderLeague": 23,
             "requiredTownhall": 13,
             "description": "new_description",
             "expiry": "not_allowed_for_new",
@@ -537,7 +537,7 @@ def test_recruiter_post_returns_400_for_huge_builder_league(
 
     assert response.status_code == 400
     assert response.get_json() == {
-        "error": "requiredBuilderLeague must be at most 10000."
+        "error": "requiredBuilderLeague must be at most 42."
     }
     assert collection.inserted_doc is None
 
@@ -556,7 +556,7 @@ def test_recruiter_post_returns_400_for_townhall_above_current_max(
         json={
             "status": "new",
             "requiredLeague": 5,
-            "requiredBuilderLeague": 2600,
+            "requiredBuilderLeague": 24,
             "requiredTownhall": 18,
         },
     )
@@ -580,7 +580,7 @@ def test_recruiter_update_allows_two_actions_per_minute(
     payload = {
         "status": "update",
         "requiredLeague": 6,
-        "requiredBuilderLeague": 2600,
+        "requiredBuilderLeague": 24,
         "requiredTownhall": 14,
         "description": "updated_description",
         "updateExpiry": False,
@@ -606,7 +606,7 @@ def test_recruiter_update_rate_limit_blocks_third_action_before_service(
     payload = {
         "status": "update",
         "requiredLeague": 6,
-        "requiredBuilderLeague": 2600,
+        "requiredBuilderLeague": 24,
         "requiredTownhall": 14,
         "description": "updated_description",
         "updateExpiry": False,
@@ -644,7 +644,7 @@ def test_recruiter_create_rate_limit_blocks_second_action_before_service(
     payload = {
         "status": "new",
         "requiredLeague": 5,
-        "requiredBuilderLeague": 2400,
+        "requiredBuilderLeague": 23,
         "requiredTownhall": 13,
         "description": "new_description",
     }
@@ -704,7 +704,7 @@ def test_recruiter_delete_still_runs_after_limited_updates(
     update_payload = {
         "status": "update",
         "requiredLeague": 6,
-        "requiredBuilderLeague": 2600,
+        "requiredBuilderLeague": 24,
         "requiredTownhall": 14,
         "description": "updated_description",
         "updateExpiry": False,
