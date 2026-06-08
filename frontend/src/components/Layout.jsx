@@ -1,10 +1,12 @@
 import Header from './Header.jsx';
 import Footer from './Footer.jsx'
+import SavedClansModal from './SavedClansModal.jsx';
 import { Outlet } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import {
     AUTH_STATUS_CHANGED_EVENT,
-    LISTING_STATUS_CHANGED_EVENT
+    LISTING_STATUS_CHANGED_EVENT,
+    OPEN_SAVED_CLANS_EVENT
 } from '../utils/appEvents';
 
 function normalizeUser(userValue) {
@@ -76,6 +78,7 @@ const Layout = () => {
         () => storedShellState.townhallWeaponLevel
     );
     const [sessionStateLoaded, setSessionStateLoaded] = useState(false);
+    const [savedClansModalOpen, setSavedClansModalOpen] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -137,14 +140,20 @@ const Layout = () => {
             loadSessionState({ resetBeforeLoad: true });
         };
 
+        const handleOpenSavedClans = () => {
+            setSavedClansModalOpen(true);
+        };
+
         loadSessionState();
         window.addEventListener(LISTING_STATUS_CHANGED_EVENT, handleListingStatusChanged);
         window.addEventListener(AUTH_STATUS_CHANGED_EVENT, handleAuthStatusChanged);
+        window.addEventListener(OPEN_SAVED_CLANS_EVENT, handleOpenSavedClans);
 
         return () => {
             isMounted = false;
             window.removeEventListener(LISTING_STATUS_CHANGED_EVENT, handleListingStatusChanged);
             window.removeEventListener(AUTH_STATUS_CHANGED_EVENT, handleAuthStatusChanged);
+            window.removeEventListener(OPEN_SAVED_CLANS_EVENT, handleOpenSavedClans);
         };
     }, []);
 
@@ -154,6 +163,10 @@ const Layout = () => {
             <main>
                 <Outlet context={{ user, townhall, townhallWeaponLevel, recruitStatus, hasActiveListing, sessionStateLoaded }} />
             </main>
+            <SavedClansModal
+                open={savedClansModalOpen}
+                onClose={() => setSavedClansModalOpen(false)}
+            />
             <Footer />
         </div>
     )

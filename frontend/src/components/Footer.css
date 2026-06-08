@@ -1,4 +1,6 @@
 .footer {
+    position: relative;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -7,6 +9,30 @@
     background: rgba(255, 250, 241, 0.9);
     justify-content: center;
     gap: 14px;
+}
+
+.footer__cat {
+    position: absolute;
+    right: -6px;
+    bottom: -12px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+.footer__cat:focus-visible {
+    outline: 2px solid #c8a04d;
+    outline-offset: -8px;
+}
+
+.footer__cat-image {
+    display: block;
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
 }
 
 .footer__nav {
@@ -66,5 +92,10 @@
 
     .footer__nav {
         gap: 8px 14px;
+    }
+
+    .footer__cat {
+        position: static;
+        margin-top: 2px;
     }
 }
