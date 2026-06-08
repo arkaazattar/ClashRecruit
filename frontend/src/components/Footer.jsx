@@ -1,6 +1,8 @@
 import './Footer.css';
 import { Link } from 'react-router-dom';
-import footerCat from '../assets/Sit_Cat.png';
+import { useState } from 'react';
+import sitCat from '../assets/Sit_Cat.png';
+import sleepCat from '../assets/Sleep_Cat.png';
 
 const navigationLinks = [
     { label: 'Home', to: '/' },
@@ -11,6 +13,9 @@ const navigationLinks = [
 ];
 
 function Footer() {
+    const [catSleeping, setCatSleeping] = useState(false);
+    const footerCat = catSleeping ? sleepCat : sitCat;
+
     return (
         <footer className="footer">
             <nav className="footer__nav" aria-label="Footer navigation">
@@ -36,9 +41,14 @@ function Footer() {
                 </label>
             </section>
 
-            <div className="footer__cat">
+            <button
+                type="button"
+                className="footer__cat"
+                onClick={() => setCatSleeping(true)}
+                aria-label="Put footer cat to sleep"
+            >
                 <img src={footerCat} alt="" className="footer__cat-image" aria-hidden="true" />
-            </div>
+            </button>
         </footer>
     )
 }

@@ -17,6 +17,15 @@
     bottom: -12px;
     display: inline-flex;
     align-items: center;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+.footer__cat:focus-visible {
+    outline: 2px solid #c8a04d;
+    outline-offset: -8px;
 }
 
 .footer__cat-image {
