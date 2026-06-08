@@ -148,6 +148,46 @@
     font-size: 1.15rem;
 }
 
+.listing-title-stack {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.listing-tag-copy-btn {
+    align-self: flex-start;
+    border: none;
+    background: transparent;
+    padding: 0;
+    color: #475569;
+    font-size: 0.86rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: left;
+}
+
+.listing-tag-copy-btn:hover {
+    color: #1d4ed8;
+}
+
+.listing-tag-copied {
+    display: inline-block;
+    margin-left: 8px;
+    color: #166534;
+    font-size: 0.76rem;
+    font-weight: 700;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 160ms ease, visibility 0s linear 160ms;
+}
+
+.listing-tag-copied.is-visible {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 160ms ease, visibility 0s linear 0s;
+}
+
 .listing-location {
     color: #1d4ed8;
     font-size: 0.92rem;

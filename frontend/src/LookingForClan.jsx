@@ -149,11 +149,13 @@ function LookingForClan() {
     const debounceTimerRef = useRef(null);
     const requestControllerRef = useRef(null);
     const saveErrorTimerRef = useRef(null);
+    const copyResetTimerRef = useRef(null);
     const hasLoadedListingsRef = useRef(false);
     const [savedClanTags, setSavedClanTags] = useState([]);
     const [saveErrorTag, setSaveErrorTag] = useState("");
     const [saveErrorText, setSaveErrorText] = useState("");
     const [savingClanTag, setSavingClanTag] = useState("");
+    const [copiedClanTag, setCopiedClanTag] = useState("");
     const [Locations, setLocations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState("");
@@ -182,8 +184,32 @@ function LookingForClan() {
         if (saveErrorTimerRef.current) {
           clearTimeout(saveErrorTimerRef.current);
         }
+        if (copyResetTimerRef.current) {
+          clearTimeout(copyResetTimerRef.current);
+        }
       };
     }, []);
+
+    const copyClanTag = async (tag, event) => {
+      event.stopPropagation();
+      const normalizedTag = normalizeClanTag(tag);
+      if (!normalizedTag) {
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(normalizedTag);
+        setCopiedClanTag(normalizedTag);
+        if (copyResetTimerRef.current) {
+          clearTimeout(copyResetTimerRef.current);
+        }
+        copyResetTimerRef.current = setTimeout(() => {
+          setCopiedClanTag("");
+          copyResetTimerRef.current = null;
+        }, 1200);
+      } catch {
+      }
+    };
 
     const showInlineSaveError = (clanTag, message) => {
       setSaveErrorTag(clanTag);
@@ -570,7 +596,22 @@ return (
             }}
           >
             <div className="listing-top">
-              <h3>{clan.name || clan.clan_info?.name || clan.clan_tag}</h3>
+              <div className="listing-title-stack">
+                <h3>{clan.name || clan.clan_info?.name || clan.clan_tag}</h3>
+                {normalizedClanTag && (
+                  <button
+                    type="button"
+                    className="listing-tag-copy-btn"
+                    onClick={(event) => copyClanTag(normalizedClanTag, event)}
+                    aria-label={`Copy clan tag ${normalizedClanTag}`}
+                  >
+                    {`#${normalizedClanTag}`}
+                    <span className={`listing-tag-copied${copiedClanTag === normalizedClanTag ? " is-visible" : ""}`}>
+                      Copied
+                    </span>
+                  </button>
+                )}
+              </div>
               <span className="listing-location">{clan.clan_info?.location?.name || "Unknown"}</span>
             </div>
 
