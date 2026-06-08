@@ -1,5 +1,5 @@
 import './Header.css';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import {
     AUTH_STATUS_CHANGED_EVENT,
@@ -56,6 +56,10 @@ function Header({ user , hasActiveListing}) {
         setOpen(false);
         window.dispatchEvent(new CustomEvent(OPEN_SAVED_CLANS_EVENT));
     };
+
+    const getNavLinkClassName = ({ isActive }) => (
+        `header-nav-link${isActive ? " is-active" : ""}`
+    );
     
     return (
         <header className="header">
@@ -64,17 +68,17 @@ function Header({ user , hasActiveListing}) {
             </Link>
 
             <div className="header-right">
-                <Link to="/looking-for-clan" className="header-nav-link">
+                <NavLink to="/looking-for-clan" className={getNavLinkClassName}>
                     Find a Clan
-                </Link>
+                </NavLink>
                 {isLoggedIn && (
                     <>
-                        <Link to="/dashboard" className="header-nav-link">
+                        <NavLink to="/dashboard" className={getNavLinkClassName}>
                             Dashboard
-                        </Link>
-                        <Link to="/recruit" className="header-nav-link">
+                        </NavLink>
+                        <NavLink to="/recruit" className={getNavLinkClassName}>
                             {hasActiveListing ? "View Listing" : "Recruit"}
-                        </Link>
+                        </NavLink>
                     </>
                 )}
                 <span className="header-divider" aria-hidden="true"></span>
@@ -86,9 +90,11 @@ function Header({ user , hasActiveListing}) {
                         aria-haspopup="menu"
                     >
                         <span className="user-button-copy">
-                            <span className="user-button-label">
-                                {isLoggedIn ? 'Signed in as' : 'Browsing as'}
-                            </span>
+                            {isLoggedIn && (
+                                <span className="user-button-label">
+                                    Signed in as
+                                </span>
+                            )}
                             <span className="user-button-name">{displayUser} ▾</span>
                         </span>
                     </button>
