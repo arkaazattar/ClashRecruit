@@ -1,7 +1,10 @@
 import './Header.css';
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
-import { AUTH_STATUS_CHANGED_EVENT } from '../utils/appEvents';
+import {
+    AUTH_STATUS_CHANGED_EVENT,
+    OPEN_SAVED_CLANS_EVENT
+} from '../utils/appEvents';
 import logoWithoutText from '../assets/logo_without_text.png';
 
 function Header({ user , hasActiveListing}) {
@@ -48,15 +51,12 @@ function Header({ user , hasActiveListing}) {
     const handleSignin = () => {
         setOpen(false);
     };
-    
-    const handleListings = () => {
+
+    const handleSavedClans = () => {
         setOpen(false);
+        window.dispatchEvent(new CustomEvent(OPEN_SAVED_CLANS_EVENT));
     };
     
-    const handleFindClan = () => {
-        setOpen(false);
-    }
-
     return (
         <header className="header">
             <Link to='/' className='logo'>
@@ -64,10 +64,18 @@ function Header({ user , hasActiveListing}) {
             </Link>
 
             <div className="header-right">
+                <Link to="/looking-for-clan" className="header-nav-link">
+                    Find a Clan
+                </Link>
                 {isLoggedIn && (
-                    <Link to="/dashboard" className="header-nav-link">
-                        Dashboard
-                    </Link>
+                    <>
+                        <Link to="/dashboard" className="header-nav-link">
+                            Dashboard
+                        </Link>
+                        <Link to="/recruit" className="header-nav-link">
+                            {hasActiveListing ? "View Listing" : "Recruit"}
+                        </Link>
+                    </>
                 )}
                 <span className="header-divider" aria-hidden="true"></span>
                 <div className="dropdown" ref={dropdownRef}>
@@ -89,18 +97,15 @@ function Header({ user , hasActiveListing}) {
                         className={`dropdown-menu ${open ? "is-open" : "is-closed"}`}
                         aria-hidden={!open}
                     >
-                    <Link to="/looking-for-clan" onClick={handleFindClan} className="dropdown-item">
-                            Find a Clan
-                    </Link>
-                        {hasActiveListing && (
-                            <Link to="/recruit" onClick={handleListings} className="dropdown-item">
-                                My Listings
-                            </Link>
-                        )}
                         {isLoggedIn ?(
-                            <button onClick={handleLogout} className="dropdown-item">
-                                Logout
-                            </button>
+                            <>
+                                <button type="button" onClick={handleSavedClans} className="dropdown-item">
+                                    Saved Clans
+                                </button>
+                                <button type="button" onClick={handleLogout} className="dropdown-item">
+                                    Logout
+                                </button>
+                            </>
                         ): (
                             <Link to="/login" onClick={handleSignin} className="dropdown-item"> 
                                 Login
