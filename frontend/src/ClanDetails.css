@@ -101,6 +101,37 @@
     color: #334155;
 }
 
+.clan-copy-tag-btn {
+    border: none;
+    background: transparent;
+    padding: 0;
+    color: #1d4ed8;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.clan-copy-tag-btn:hover {
+    color: #1e40af;
+}
+
+.clan-copy-tag-feedback {
+    display: inline-block;
+    margin-left: 8px;
+    color: #166534;
+    font-size: 0.82rem;
+    font-weight: 700;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 160ms ease, visibility 0s linear 160ms;
+}
+
+.clan-copy-tag-feedback.is-visible {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 160ms ease, visibility 0s linear 0s;
+}
+
 @media (max-width: 680px) {
     .clan-details-page {
         padding: 16px;

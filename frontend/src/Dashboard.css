@@ -83,7 +83,7 @@
     flex-direction: column;
     justify-content: flex-start;
     gap: 8px;
-    padding: 32px 0 0 32px;
+    padding: 60px 0 0 32px;
 }
 
 .dashboard-hero-copy {
@@ -121,52 +121,6 @@
     line-height: 1.35;
 }
 
-.dashboard-actions {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 2px;
-}
-
-.dashboard-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-    border-radius: 999px;
-    padding: 10px 17px;
-    font-size: 0.86rem;
-    font-weight: 700;
-    cursor: pointer;
-    border: 1px solid transparent;
-    box-shadow: 0 8px 18px var(--dash-shadow);
-    transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
-}
-
-.dashboard-btn-primary {
-    background: var(--dash-accent-red);
-    border-color: transparent;
-    color: #fff7ef;
-    box-shadow: 0 12px 20px rgba(128, 50, 37, 0.25);
-}
-
-.dashboard-btn-primary:hover {
-    background: var(--dash-accent-red-hover);
-    transform: translateY(-1px);
-}
-
-.dashboard-btn-secondary {
-    background: rgba(255, 247, 231, 0.85);
-    border-color: rgba(122, 92, 55, 0.22);
-    color: #51361d;
-}
-
-.dashboard-btn-secondary:hover {
-    background: rgba(255, 250, 240, 0.96);
-    transform: translateY(-1px);
-}
-
 .dashboard-hero-profile-label {
     margin: 0;
     color: #83613a;
@@ -181,14 +135,33 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 1px;
-    width: fit-content;
-    min-width: 124px;
+    gap: 7px;
+    width: 188px;
+    min-width: 188px;
     transform: translateX(-10px);
-    background: rgba(253, 245, 230, 0.88);
-    border-radius: 16px;
-    padding: 2px 5px 3px;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 10px 16px rgba(58, 38, 19, 0.1);
+}
+
+.dashboard-clan-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 14px 10px;
+    color: inherit;
+    text-decoration: none;
+    border-radius: 12px;
+    transition: background-color 140ms ease, color 140ms ease;
+}
+
+.dashboard-clan-link:hover {
+    background: rgba(184, 137, 63, 0.12);
+}
+
+.dashboard-clan-link:hover .dashboard-clan-name,
+.dashboard-clan-link:hover .dashboard-clan-role {
+    color: var(--dash-accent-red);
 }
 
 .dashboard-townhall-shell {
@@ -233,7 +206,7 @@
 }
 
 .dashboard-panel-badge {
-    height: 56px;
+    height: 86px;
     width: auto;
     object-fit: contain;
 }
@@ -241,19 +214,19 @@
 .dashboard-clan-name {
     margin: 0;
     color: var(--dash-text-muted);
-    font-size: 0.82rem;
-    font-weight: 700;
+    font-size: 1.08rem;
+    font-weight: 800;
     text-align: center;
     line-height: 1.2;
-    max-width: 118px;
+    max-width: 160px;
     word-break: normal;
     overflow-wrap: anywhere;
 }
 
 .dashboard-clan-role {
     margin: 0;
-    font-size: 0.68rem;
-    font-weight: 700;
+    font-size: 0.86rem;
+    font-weight: 800;
     color: #7d5f3d;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -733,38 +706,6 @@
     border-bottom: none;
 }
 
-.dashboard-current-clan-card {
-    background: rgba(255, 252, 246, 0.78);
-    padding: 12px 13px;
-    box-shadow: 0 5px 10px rgba(108, 74, 41, 0.04);
-}
-
-.dashboard-current-clan-grid {
-    display: grid;
-    gap: 8px;
-}
-
-.dashboard-current-clan-row {
-    display: flex;
-    justify-content: space-between;
-    gap: 8px;
-    border-bottom: 1px dashed #e4ceaa;
-    padding-bottom: 5px;
-}
-
-.dashboard-current-clan-row:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-}
-
-.dashboard-current-label {
-    color: #8a6640;
-    font-size: 0.74rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-}
-
 .dashboard-current-value {
     color: #51361d;
     font-size: 0.86rem;
@@ -837,7 +778,7 @@
     }
 
     .dashboard-hero {
-        grid-template-columns: 200px minmax(0, 1fr) 156px;
+        grid-template-columns: 200px minmax(0, 1fr) 190px;
     }
 
     .dashboard-hero-main {
@@ -883,15 +824,6 @@
 
     .dashboard-hero-main {
         padding: 0;
-    }
-
-    .dashboard-actions {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .dashboard-btn {
-        width: 100%;
     }
 
     .dashboard-hero-left,

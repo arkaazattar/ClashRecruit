@@ -1,6 +1,6 @@
 import "./ClanDetails.css";
 import { Link, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatWarFrequency } from "./utils/warFrequency";
 
 function normalizeLocation(rawLocation) {
@@ -21,6 +21,11 @@ function formatDate(value) {
     return date ? date.toLocaleDateString() : "Not available";
 }
 
+function normalizeTag(tagValue) {
+    if (!tagValue) return "";
+    return String(tagValue).trim().replace(/^#+/, "");
+}
+
 function getImportedClanExpiry(clanInfo) {
     const explicitExpiry = parseDate(clanInfo.expires);
     if (explicitExpiry) return explicitExpiry;
@@ -37,6 +42,8 @@ function ClanDetails() {
     const { clanTag } = useParams();
     const [clanInfo, setClanInfo] = useState(null);
     const [error, setError] = useState("");
+    const [copiedTag, setCopiedTag] = useState("");
+    const copyResetTimerRef = useRef(null);
 
     useEffect(() => {
         fetch("/recruitee", {
@@ -64,6 +71,51 @@ function ClanDetails() {
             });
     }, [clanTag]);
 
+    useEffect(() => {
+        return () => {
+            if (copyResetTimerRef.current) {
+                clearTimeout(copyResetTimerRef.current);
+            }
+        };
+    }, []);
+
+    const copyTag = async (tag) => {
+        const normalizedTag = normalizeTag(tag);
+        if (!normalizedTag) return;
+
+        try {
+            await navigator.clipboard.writeText(normalizedTag);
+            setCopiedTag(normalizedTag);
+            if (copyResetTimerRef.current) {
+                clearTimeout(copyResetTimerRef.current);
+            }
+            copyResetTimerRef.current = setTimeout(() => {
+                setCopiedTag((currentTag) => (currentTag === normalizedTag ? "" : currentTag));
+                copyResetTimerRef.current = null;
+            }, 1200);
+        } catch {
+        }
+    };
+
+    const renderCopyableTag = (tag, label) => {
+        const normalizedTag = normalizeTag(tag);
+        if (!normalizedTag) return "Not available";
+
+        return (
+            <button
+                type="button"
+                className="clan-copy-tag-btn"
+                onClick={() => copyTag(normalizedTag)}
+                aria-label={`Copy ${label} ${normalizedTag}`}
+            >
+                {`#${normalizedTag}`}
+                <span className={`clan-copy-tag-feedback${copiedTag === normalizedTag ? " is-visible" : ""}`}>
+                    Copied
+                </span>
+            </button>
+        );
+    };
+
     if (error) {
         return <section className="clan-details-page">{error}</section>;
     }
@@ -78,6 +130,9 @@ function ClanDetails() {
     const attributionLabel = isApiImported
         ? "Imported from Clash API"
         : clanInfo.player_tag || "Unknown player";
+    const attributionValue = isApiImported
+        ? attributionLabel
+        : renderCopyableTag(clanInfo.player_tag, "player tag");
     const expiryDate = isApiImported
         ? getImportedClanExpiry(clanInfo)
         : parseDate(clanInfo.expires);
@@ -111,8 +166,8 @@ function ClanDetails() {
                 </div>
 
                 <div className="clan-meta">
-                    <p><strong>Clan Tag:</strong> {clanInfo.clan_tag}</p>
-                    <p><strong>{isApiImported ? "Source:" : "Posted by:"}</strong> {attributionLabel}</p>
+                    <p><strong>Clan Tag:</strong> {renderCopyableTag(clanInfo.clan_tag, "clan tag")}</p>
+                    <p><strong>{isApiImported ? "Source:" : "Posted by:"}</strong> {attributionValue}</p>
                     <p><strong>Last updated:</strong> {formatDate(clanInfo.last_updated || clanInfo.last_discovered)}</p>
                     <p><strong>Expires:</strong> {expiryDate ? expiryDate.toLocaleDateString() : "Not available"}</p>
                 </div>

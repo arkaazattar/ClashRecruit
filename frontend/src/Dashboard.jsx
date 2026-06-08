@@ -291,11 +291,11 @@ function Dashboard() {
   const clanRole = normalizeClanRoleLabel(clan?.role);
   const clanBadge = clan ? clan.badgeUrl : "";
   const clanDisplay = clanName || "No clan linked";
-  const canRecruit = recruitStatus === true;
   const isInClan = Boolean(clan);
-  const canManageListing = canRecruit;
+  const canManageListing = recruitStatus === true;
   const listingExists = Boolean(hasActiveListing);
   const listingChip = getListingChipMeta();
+  const clanListingPath = normalizedClanTag ? `/looking-for-clan/${normalizedClanTag}` : "";
   const hasSavedClans = savedClans.length > 0;
   const savedClansPreview = savedClans.slice(0, 2);
   const remainingSavedClansCount = Math.max(savedClans.length - savedClansPreview.length, 0);
@@ -560,37 +560,38 @@ function Dashboard() {
               </p>
             </div>
 
-            <div className="dashboard-actions">
-              <Link
-                to="/looking-for-clan"
-                className="dashboard-btn dashboard-btn-primary"
-              >
-                Look for Clans
-              </Link>
-
-              {canRecruit && (
-                <Link
-                  to="/recruit"
-                  className="dashboard-btn dashboard-btn-secondary"
-                >
-                  Recruit
-                </Link>
-              )}
-            </div>
           </div>
 
           <aside className="dashboard-hero-right">
-            {clanBadge ? (
-              <img
-                src={clanBadge}
-                alt={`${clanName} badge`}
-                className="dashboard-panel-badge"
-              />
+            {clanListingPath ? (
+              <Link to={clanListingPath} className="dashboard-clan-link">
+                {clanBadge ? (
+                  <img
+                    src={clanBadge}
+                    alt={`${clanName} badge`}
+                    className="dashboard-panel-badge"
+                  />
+                ) : (
+                  <div className="dashboard-clan-placeholder">Clan Badge</div>
+                )}
+                <p className="dashboard-clan-name">{clanDisplay}</p>
+                <p className="dashboard-clan-role">{clanRole}</p>
+              </Link>
             ) : (
-              <div className="dashboard-clan-placeholder">Clan Badge</div>
+              <>
+                {clanBadge ? (
+                  <img
+                    src={clanBadge}
+                    alt={`${clanName} badge`}
+                    className="dashboard-panel-badge"
+                  />
+                ) : (
+                  <div className="dashboard-clan-placeholder">Clan Badge</div>
+                )}
+                <p className="dashboard-clan-name">{clanDisplay}</p>
+                <p className="dashboard-clan-role">{clanRole}</p>
+              </>
             )}
-            <p className="dashboard-clan-name">{clanDisplay}</p>
-            <p className="dashboard-clan-role">{clanRole}</p>
           </aside>
         </section>
 
@@ -646,41 +647,6 @@ function Dashboard() {
           </div>
 
           <aside className="dashboard-secondary-column">
-            <article className="dashboard-section-card dashboard-current-clan-card">
-              <header className="dashboard-section-header">
-                <h2>Your Clan</h2>
-              </header>
-              <div className="dashboard-current-clan-grid">
-                <div className="dashboard-current-clan-row">
-                  <span className="dashboard-current-label">Name</span>
-                  <span className="dashboard-current-value">{clanDisplay}</span>
-                </div>
-                <div className="dashboard-current-clan-row">
-                  <span className="dashboard-current-label">Tag</span>
-                  {normalizedClanTag ? (
-                    <div className="dashboard-tag-inline dashboard-tag-inline-right">
-                      <button
-                        type="button"
-                        className="dashboard-current-value dashboard-tag-copy-btn dashboard-tag-copy-btn-inline"
-                        onClick={() => copyTag(normalizedClanTag)}
-                      >
-                        {`#${normalizedClanTag}`}
-                      </button>
-                      <span className={`dashboard-tag-copied-inline${copiedTag === normalizedClanTag ? " is-visible" : ""}`}>
-                        ✓ Copied
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="dashboard-current-value">{clanTag}</span>
-                  )}
-                </div>
-                <div className="dashboard-current-clan-row">
-                  <span className="dashboard-current-label">Role</span>
-                  <span className="dashboard-current-value">{clanRole}</span>
-                </div>
-              </div>
-            </article>
-
             <article className="dashboard-section-card dashboard-saved-card">
               <header className="dashboard-section-header">
                 <h2>Saved Clans</h2>
