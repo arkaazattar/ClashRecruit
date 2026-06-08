@@ -295,7 +295,7 @@ function Dashboard() {
   const canManageListing = recruitStatus === true;
   const listingExists = Boolean(hasActiveListing);
   const listingChip = getListingChipMeta();
-  const clanListingPath = normalizedClanTag ? `/looking-for-clan/${normalizedClanTag}` : "";
+  const clanListingPath = normalizedClanTag && listingExists ? `/looking-for-clan/${normalizedClanTag}` : "";
   const hasSavedClans = savedClans.length > 0;
   const savedClansPreview = savedClans.slice(0, 2);
   const remainingSavedClansCount = Math.max(savedClans.length - savedClansPreview.length, 0);
@@ -578,7 +578,7 @@ function Dashboard() {
                 <p className="dashboard-clan-role">{clanRole}</p>
               </Link>
             ) : (
-              <>
+              <div className="dashboard-clan-summary">
                 {clanBadge ? (
                   <img
                     src={clanBadge}
@@ -590,7 +590,7 @@ function Dashboard() {
                 )}
                 <p className="dashboard-clan-name">{clanDisplay}</p>
                 <p className="dashboard-clan-role">{clanRole}</p>
-              </>
+              </div>
             )}
           </aside>
         </section>
