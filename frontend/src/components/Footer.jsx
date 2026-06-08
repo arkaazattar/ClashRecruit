@@ -44,8 +44,8 @@ function Footer() {
             <button
                 type="button"
                 className="footer__cat"
-                onClick={() => setCatSleeping(true)}
-                aria-label="Put footer cat to sleep"
+                onClick={() => setCatSleeping((currentValue) => !currentValue)}
+                aria-label={catSleeping ? "Wake footer cat" : "Put footer cat to sleep"}
             >
                 <img src={footerCat} alt="" className="footer__cat-image" aria-hidden="true" />
             </button>
