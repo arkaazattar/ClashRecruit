@@ -5,7 +5,7 @@ import {
     AUTH_STATUS_CHANGED_EVENT,
     OPEN_SAVED_CLANS_EVENT
 } from '../utils/appEvents';
-import logoWithoutText from '../assets/logo_without_text.png';
+import logo from '../assets/clashrecruit.png';
 
 function Header({ user , hasActiveListing}) {
     const [open, setOpen] = useState(false);
@@ -64,7 +64,7 @@ function Header({ user , hasActiveListing}) {
     return (
         <header className="header">
             <Link to='/' className='logo'>
-                <img src={logoWithoutText} alt="ClashRecruit logo" className="logo-image" />
+                <img src={logo} alt="ClashRecruit logo" className="logo-image" />
             </Link>
 
             <div className="header-right">

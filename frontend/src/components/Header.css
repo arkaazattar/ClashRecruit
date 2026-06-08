@@ -14,12 +14,16 @@
     text-decoration: none;
     display: inline-flex;
     align-items: center;
+    flex: 0 0 auto;
+    max-width: min(220px, 34vw);
 }
 
 .logo-image {
     display: block;
-    height: 34px;
-    width: auto;
+    width: 100%;
+    max-height: 42px;
+    height: auto;
+    object-fit: contain;
 }
 
 .header-right {

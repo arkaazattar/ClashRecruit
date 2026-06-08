@@ -1,5 +1,6 @@
 import './Footer.css';
 import { Link } from 'react-router-dom';
+import footerCat from '../assets/Sit_Cat.png';
 
 const navigationLinks = [
     { label: 'Home', to: '/' },
@@ -34,6 +35,10 @@ function Footer() {
                     <a target="_blank" href="https://supercell.com/en/fan-content-policy/" rel="noopener noreferrer">www.supercell.com/fan-content-policy</a>.
                 </label>
             </section>
+
+            <div className="footer__cat">
+                <img src={footerCat} alt="" className="footer__cat-image" aria-hidden="true" />
+            </div>
         </footer>
     )
 }
