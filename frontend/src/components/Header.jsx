@@ -63,61 +63,63 @@ function Header({ user , hasActiveListing}) {
     
     return (
         <header className="header">
-            <Link to='/' className='logo'>
-                <img src={logo} alt="ClashRecruit logo" className="logo-image" />
-            </Link>
+            <div className="header-inner">
+                <Link to='/' className='logo'>
+                    <img src={logo} alt="ClashRecruit logo" className="logo-image" />
+                </Link>
 
-            <div className="header-right">
-                <NavLink to="/looking-for-clan" className={getNavLinkClassName}>
-                    Find a Clan
-                </NavLink>
-                {isLoggedIn && (
-                    <>
-                        <NavLink to="/dashboard" className={getNavLinkClassName}>
-                            Dashboard
-                        </NavLink>
-                        <NavLink to="/recruit" className={getNavLinkClassName}>
-                            {hasActiveListing ? "View Listing" : "Recruit"}
-                        </NavLink>
-                    </>
-                )}
-                <span className="header-divider" aria-hidden="true"></span>
-                <div className="dropdown" ref={dropdownRef}>
-                    <button
-                        className="user-button"
-                        onClick={toggleDropdown}
-                        aria-expanded={open}
-                        aria-haspopup="menu"
-                    >
-                        <span className="user-button-copy">
-                            {isLoggedIn && (
-                                <span className="user-button-label">
-                                    Signed in as
-                                </span>
+                <div className="header-right">
+                    <NavLink to="/looking-for-clan" className={getNavLinkClassName}>
+                        Find a Clan
+                    </NavLink>
+                    {isLoggedIn && (
+                        <>
+                            <NavLink to="/dashboard" className={getNavLinkClassName}>
+                                Dashboard
+                            </NavLink>
+                            <NavLink to="/recruit" className={getNavLinkClassName}>
+                                {hasActiveListing ? "View Listing" : "Recruit"}
+                            </NavLink>
+                        </>
+                    )}
+                    <span className="header-divider" aria-hidden="true"></span>
+                    <div className="dropdown" ref={dropdownRef}>
+                        <button
+                            className="user-button"
+                            onClick={toggleDropdown}
+                            aria-expanded={open}
+                            aria-haspopup="menu"
+                        >
+                            <span className="user-button-copy">
+                                {isLoggedIn && (
+                                    <span className="user-button-label">
+                                        Signed in as
+                                    </span>
+                                )}
+                                <span className="user-button-name">{displayUser} ▾</span>
+                            </span>
+                        </button>
+
+                        <div
+                            className={`dropdown-menu ${open ? "is-open" : "is-closed"}`}
+                            aria-hidden={!open}
+                        >
+                            {isLoggedIn ?(
+                                <>
+                                    <button type="button" onClick={handleSavedClans} className="dropdown-item">
+                                        Saved Clans
+                                    </button>
+                                    <button type="button" onClick={handleLogout} className="dropdown-item">
+                                        Logout
+                                    </button>
+                                </>
+                            ): (
+                                <Link to="/login" onClick={handleSignin} className="dropdown-item"> 
+                                    Login
+                                </Link>
                             )}
-                            <span className="user-button-name">{displayUser} ▾</span>
-                        </span>
-                    </button>
 
-                    <div
-                        className={`dropdown-menu ${open ? "is-open" : "is-closed"}`}
-                        aria-hidden={!open}
-                    >
-                        {isLoggedIn ?(
-                            <>
-                                <button type="button" onClick={handleSavedClans} className="dropdown-item">
-                                    Saved Clans
-                                </button>
-                                <button type="button" onClick={handleLogout} className="dropdown-item">
-                                    Logout
-                                </button>
-                            </>
-                        ): (
-                            <Link to="/login" onClick={handleSignin} className="dropdown-item"> 
-                                Login
-                            </Link>
-                        )}
-
+                        </div>
                     </div>
                 </div>
             </div>
