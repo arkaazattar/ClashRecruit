@@ -3,6 +3,7 @@ import { Link, useOutletContext } from "react-router-dom";
 import LoadingScreen from "./components/LoadingScreen";
 import { formatWarFrequency } from "./utils/warFrequency";
 import { leagueOptions } from "./utils/recruiter";
+import usePageTitle from "./hooks/usePageTitle"
 import "./Landing.css";
 
 const leagueLabelByValue = new Map(leagueOptions.map((option) => [option.value, option.label]));
@@ -18,6 +19,7 @@ function getLeagueLabel(leagueValue) {
 }
 
 function Landing() {
+    usePageTitle("ClashRecruit");
     const { user } = useOutletContext();
     const [Loading, setLoading] = useState(true);
     const [numClans, setNumClans] = useState(0);
