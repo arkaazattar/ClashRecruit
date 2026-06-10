@@ -4,7 +4,7 @@ import "./StaticPage.css";
 
 const pages = {
   contact: {
-    title: "Contact",
+    title: "Contact Us",
     eyebrow: "Contact",
     intro: "For support, project questions, bug reports, and clan listing issues.",
     sections: [

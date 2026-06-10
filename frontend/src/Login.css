@@ -15,6 +15,7 @@
   gap: 32px;
   align-items: center;
   margin: -12px auto 0;
+  transform: translateX(32px);
 }
 
 .login-left {
@@ -159,6 +160,7 @@
   .login-container {
     grid-template-columns: 1fr;
     gap: 24px;
+    transform: none;
   }
 
   .Divider {
