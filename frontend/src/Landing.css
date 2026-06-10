@@ -74,7 +74,7 @@
   font-weight: 700;
   line-height: 1;
   background: rgba(255, 255, 255, 0.82);
-  border: 1px solid var(--landing-border);
+  box-shadow: 5px 2px 15px 1px rgb(0 0 0 / 0.2);
   border-radius: 999px;
   padding: 10px 14px;
 }
@@ -127,7 +127,7 @@
   width: 210px;
   padding: 8px 10px;
   background-color: white;
-  border: 2px solid var(--landing-border);
+  box-shadow: 0 3px 8px var(--landing-shadow);
   border-radius: 10px;
 }
 
@@ -194,13 +194,11 @@
 
 .landing-btn-secondary {
   background: #ffffff;
-  border-color: var(--landing-gold);
   color: #7a241f;
 }
 
 .landing-btn-secondary:hover {
   background: #fff2ef;
-  border-color: #b99245;
   transform: translateY(-1px);
   box-shadow: 0 5px 12px var(--landing-shadow-strong);
 }
@@ -323,7 +321,7 @@
 }
 
 .landing-scroll-cue {
-  border: 1px solid rgba(190, 162, 127, 0.7);
+  border: transparent;
   background: rgba(255, 251, 243, 0.94);
   color: rgba(93, 79, 66, 0.82);
   width: 38px;
@@ -334,7 +332,7 @@
   padding: 0;
   border-radius: 999px;
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(84, 60, 37, 0.12);
+  box-shadow: 1px 4px 10px rgba(84, 60, 37, 0.4);
 }
 
 .landing-scroll-cue-wrap {
