@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useOutletContext } from "react-router-dom";
-import { builderBaseLeagueOptions } from "./utils/builderBaseLeagues";
-import { leagueOptions } from "./utils/recruiter";
+import {
+  defaultBuilderBaseLeagueOptions,
+  normalizeBuilderBaseLeagueOptions
+} from "./utils/builderBaseLeagues";
+import { defaultLeagueOptions, normalizeLeagueOptions } from "./utils/recruiter";
 import { LISTING_STATUS_CHANGED_EVENT } from "./utils/appEvents";
 import usePageTitle from "./hooks/usePageTitle"
 import LoadingScreen from "./components/LoadingScreen";
@@ -15,6 +18,10 @@ function Recruiter() {
   const [requiredLeague, setRequiredLeague] = useState("");
   const [requiredBuilderLeague, setRequiredBuilderLeague] = useState("");
   const [requiredTownhall, setRequiredTownhall] = useState("");
+  const [builderBaseLeagueOptions, setBuilderBaseLeagueOptions] = useState(
+    defaultBuilderBaseLeagueOptions
+  );
+  const [leagueOptions, setLeagueOptions] = useState(defaultLeagueOptions);
   const [clanDescription, setClanDescription] = useState("");
   const [maxTownhall, setmaxTownhall] = useState(0);
   const [status, setStatus] = useState(null);
@@ -68,6 +75,12 @@ function Recruiter() {
         }
 
         setmaxTownhall(recruiterData.MAXTOWNHALL);
+        setBuilderBaseLeagueOptions(
+          normalizeBuilderBaseLeagueOptions(
+            recruiterData.builderBaseLeagueOptions
+          )
+        );
+        setLeagueOptions(normalizeLeagueOptions(recruiterData.leagueOptions));
         setRequiredLeague(recruiterData.oldRequiredLeague);
         setRequiredBuilderLeague(recruiterData.oldRequiredBuilderLeague);
         setRequiredTownhall(recruiterData.oldRequiredTownhall);

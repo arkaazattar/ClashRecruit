@@ -3,7 +3,10 @@
 from flask import Blueprint, jsonify, request, session
 
 from ..config import headers
-from ..services.builder_base_leagues import BUILDER_BASE_LEAGUE_MAX_ID
+from ..services.leagues import (
+    get_max_builder_base_league,
+    get_max_ranked_league,
+)
 from ..services.maxtownhall import refresh
 from ..services.rate_limiter import is_rate_limited
 from ..services.recruiter_listing import (
@@ -150,13 +153,13 @@ def _validate_recruiter_payload(data):
         data,
         "requiredLeague",
         min_value=0,
-        max_value=34,
+        max_value=get_max_ranked_league(),
     )
     normalized["requiredBuilderLeague"] = required_int(
         data,
         "requiredBuilderLeague",
         min_value=0,
-        max_value=BUILDER_BASE_LEAGUE_MAX_ID,
+        max_value=get_max_builder_base_league(),
     )
     normalized["requiredTownhall"] = required_int(
         data,

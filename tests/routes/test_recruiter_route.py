@@ -62,13 +62,43 @@ class DummyRecruiter:
         }
 
 
+TEST_LEAGUE_OPTIONS = [
+    {"value": 0, "label": "Unranked"},
+    {"value": 36, "label": "Legend League 3"},
+]
+TEST_BUILDER_BASE_LEAGUE_OPTIONS = [
+    {"value": 0, "label": "No Builder Base Requirement"},
+    {"value": 42, "label": "Diamond"},
+]
+
+
 def setup_recruiter_route(monkeypatch, collection):
     import ClashRecruit.routes.recruiter_route as recruiter_route
     import ClashRecruit.services.recruiter_listing as recruiter_listing
 
     DummyRecruiter.instances = []
     monkeypatch.setattr(recruiter_route, "refresh", lambda headers: 17)
+    monkeypatch.setattr(
+        recruiter_route,
+        "get_max_ranked_league",
+        lambda: 36,
+    )
+    monkeypatch.setattr(
+        recruiter_route,
+        "get_max_builder_base_league",
+        lambda: 42,
+    )
     monkeypatch.setattr(recruiter_listing, "Recruiter", DummyRecruiter)
+    monkeypatch.setattr(
+        recruiter_listing,
+        "get_ranked_league_options",
+        lambda: TEST_LEAGUE_OPTIONS,
+    )
+    monkeypatch.setattr(
+        recruiter_listing,
+        "get_builder_base_league_options",
+        lambda: TEST_BUILDER_BASE_LEAGUE_OPTIONS,
+    )
     monkeypatch.setattr(
         recruiter_listing,
         "get_clan_collection",
@@ -142,6 +172,8 @@ def test_recruiter_get_returns_existing_listing(
         "oldRequiredBuilderLeague": 19,
         "oldRequiredTownhall": 12,
         "MAXTOWNHALL": 17,
+        "builderBaseLeagueOptions": TEST_BUILDER_BASE_LEAGUE_OPTIONS,
+        "leagueOptions": TEST_LEAGUE_OPTIONS,
         "clanDescription": "existing_description",
         "status": "existing_expiry",
     }
@@ -172,6 +204,8 @@ def test_recruiter_get_returns_default_listing_and_lookup_description(
         "oldRequiredBuilderLeague": 2,
         "oldRequiredTownhall": 3,
         "MAXTOWNHALL": 17,
+        "builderBaseLeagueOptions": TEST_BUILDER_BASE_LEAGUE_OPTIONS,
+        "leagueOptions": TEST_LEAGUE_OPTIONS,
         "clanDescription": "test_clan_description",
         "status": None,
     }
@@ -232,6 +266,60 @@ def test_recruiter_post_creates_new_listing(
         collection.inserted_doc,
         True,
     )
+
+
+def test_recruiter_post_accepts_current_api_max_league(
+    client,
+    monkeypatch,
+    set_session,
+):
+    collection = DummyClanCollection()
+    setup_recruiter_route(monkeypatch, collection)
+    set_session(
+        recruiter_status=True,
+        clan_tag="TEST123",
+        player_tag="PLAYER123",
+    )
+
+    response = client.post(
+        "/recruiter",
+        json={
+            "status": "new",
+            "requiredLeague": 36,
+            "requiredBuilderLeague": 23,
+            "requiredTownhall": 13,
+            "description": "new_description",
+        },
+    )
+
+    assert response.status_code == 200
+    assert collection.inserted_doc["requirements"] == [36, 23, 13]
+
+
+def test_recruiter_post_rejects_league_above_current_api_max(
+    client,
+    monkeypatch,
+    set_session,
+):
+    collection = DummyClanCollection()
+    setup_recruiter_route(monkeypatch, collection)
+    set_session(recruiter_status=True, clan_tag="TEST123")
+
+    response = client.post(
+        "/recruiter",
+        json={
+            "status": "new",
+            "requiredLeague": 37,
+            "requiredBuilderLeague": 23,
+            "requiredTownhall": 13,
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "requiredLeague must be at most 36."
+    }
+    assert collection.inserted_doc is None
 
 
 def test_recruiter_post_create_returns_400_without_player_tag(

@@ -1,4 +1,4 @@
-export const leagueOptions = [
+export const defaultLeagueOptions = [
   { value: 0, label: "Unranked" },
   { value: 1, label: "Skeleton 1" },
   { value: 2, label: "Skeleton 2" },
@@ -33,5 +33,15 @@ export const leagueOptions = [
   { value: 31, label: "Electro Dragon 31" },
   { value: 32, label: "Electro Dragon 32" },
   { value: 33, label: "Electro Dragon 33" },
-  { value: 34, label: "Legend League" }
+  { value: 34, label: "Legend League 1" },
+  { value: 35, label: "Legend League 2" },
+  { value: 36, label: "Legend League 3" }
 ];
+
+export const leagueOptions = defaultLeagueOptions;
+
+export function normalizeLeagueOptions(options) {
+  return Array.isArray(options) && options.length > 0
+    ? options
+    : defaultLeagueOptions;
+}
