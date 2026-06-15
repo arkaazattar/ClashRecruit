@@ -1,6 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
-import { formatBuilderBaseLeague } from "./utils/builderBaseLeagues";
+import {
+  defaultBuilderBaseLeagueOptions,
+  normalizeBuilderBaseLeagueOptions
+} from "./utils/builderBaseLeagues";
+import { defaultLeagueOptions, normalizeLeagueOptions } from "./utils/recruiter";
 import { formatWarFrequency, WAR_FREQUENCY_OPTIONS } from "./utils/warFrequency";
 import usePageTitle from "./hooks/usePageTitle"
 import LoadingScreen from "./components/LoadingScreen";
@@ -67,6 +71,11 @@ function normalizeClanTag(tagValue) {
     }
 
     return normalized;
+}
+
+function formatBuilderBaseLeague(value, labels) {
+  const leagueId = Number(value);
+  return labels.get(leagueId) || "Unknown";
 }
 
 function buildFilterPayload(filters) {
@@ -157,6 +166,10 @@ function LookingForClan() {
     const [savingClanTag, setSavingClanTag] = useState("");
     const [copiedClanTag, setCopiedClanTag] = useState("");
     const [Locations, setLocations] = useState([]);
+    const [builderBaseLeagueOptions, setBuilderBaseLeagueOptions] = useState(
+      defaultBuilderBaseLeagueOptions
+    );
+    const [leagueOptions, setLeagueOptions] = useState(defaultLeagueOptions);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState("");
     const [filterError, setFilterError] = useState("");
@@ -168,6 +181,12 @@ function LookingForClan() {
     const searchParamsKey = searchParams.toString();
     const isLoggedIn = Boolean(user && user !== "Guest");
     const savedTagSet = new Set(savedClanTags);
+    const builderBaseLeagueLabels = useMemo(
+      () => new Map(
+        builderBaseLeagueOptions.map((option) => [option.value, option.label])
+      ),
+      [builderBaseLeagueOptions]
+    );
 
     useEffect(() => {
       filtersRef.current = Filters;
@@ -270,6 +289,19 @@ function LookingForClan() {
       setLocations(Array.isArray(locations) ? locations : [])
     }, []);
 
+    const getMetadata = useCallback(async () => {
+      const response = await fetch("/recruitee/metadata");
+      if (!response.ok) {
+        throw new Error("Failed to load metadata.");
+      }
+
+      const metadata = await response.json();
+      setBuilderBaseLeagueOptions(
+        normalizeBuilderBaseLeagueOptions(metadata.builderBaseLeagueOptions)
+      );
+      setLeagueOptions(normalizeLeagueOptions(metadata.leagueOptions));
+    }, []);
+
     const fetchClanPage = useCallback(async (page, filters, signal) => {
       const offset = (page - 1) * PAGE_SIZE;
       const url = `/recruitee?limit=${PAGE_SIZE}&offset=${offset}&includeTotal=1`;
@@ -332,7 +364,7 @@ function LookingForClan() {
         setLoadError("");
 
         try {
-          const loadJobs = [getLocations()];
+          const loadJobs = [getLocations(), getMetadata()];
           if (isLoggedIn) {
             loadJobs.push(getSavedClans());
           } else {
@@ -345,7 +377,7 @@ function LookingForClan() {
         }
       };
       loadData();
-    }, [isLoggedIn, getLocations, getSavedClans, sessionStateLoaded]);
+    }, [isLoggedIn, getLocations, getMetadata, getSavedClans, sessionStateLoaded]);
 
     useEffect(() => {
       if (!sessionStateLoaded) {
@@ -512,7 +544,14 @@ return (
 
       <label>
         Min League
-        <input type="number" name="minLeague" value={Filters.minLeague} onChange={handleFilterChange} min={0} max={34} />
+        <select name="minLeague" value={Filters.minLeague} onChange={handleFilterChange}>
+          <option value="">Any League</option>
+          {leagueOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
       </label>
 
       <label>
@@ -618,7 +657,7 @@ return (
             <div className="listing-stats">
               <p><strong>Townhall:</strong> {clan.requirements?.[2] ?? "?"}</p>
               <p><strong>League:</strong> {clan.requirements?.[0] ?? "?"}</p>
-              <p><strong>Builder League:</strong> {formatBuilderBaseLeague(clan.requirements?.[1] ?? 0)}</p>
+              <p><strong>Builder League:</strong> {formatBuilderBaseLeague(clan.requirements?.[1] ?? 0, builderBaseLeagueLabels)}</p>
               {clan.clan_info?.warFrequency !== "unknown" &&
                 <p><strong>War Freq:</strong> {formatWarFrequency(clan.clan_info?.warFrequency)}</p>
               }

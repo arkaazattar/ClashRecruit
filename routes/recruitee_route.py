@@ -3,6 +3,11 @@
 from flask import Blueprint, jsonify, request, session
 
 from ..config import headers
+from ..services.leagues import (
+    get_builder_base_league_options,
+    get_max_ranked_league,
+    get_ranked_league_options,
+)
 from ..services.maxtownhall import refresh
 from ..services.mongo_db_client import get_clan_collection
 from ..services.recruitee_search import (
@@ -90,6 +95,18 @@ def recruitee_get():
     return jsonify(payload), status_code
 
 
+@recruitee_bp.get("/recruitee/metadata")
+@rate_limit("recruitee_metadata_get", limit=60, window_seconds=60)
+def recruitee_metadata_get():
+    """Return metadata needed to render recruitee filters."""
+    return jsonify(
+        {
+            "builderBaseLeagueOptions": get_builder_base_league_options(),
+            "leagueOptions": get_ranked_league_options(),
+        }
+    ), 200
+
+
 @recruitee_bp.post("/recruitee")
 @rate_limit("recruitee_post", limit=30, window_seconds=60)
 def recruitee_post():
@@ -161,8 +178,13 @@ def _validate_filter_payload(filters):
                 f"townhall must be at most {max_townhall}."
             )
         normalized_requirements["townhall"] = townhall
-    league = optional_int(requirements, "league", min_value=0, max_value=34)
+    league = optional_int(requirements, "league", min_value=0)
     if league is not None:
+        max_ranked_league = get_max_ranked_league()
+        if league > max_ranked_league:
+            raise RequestValidationError(
+                f"league must be at most {max_ranked_league}."
+            )
         normalized_requirements["league"] = league
 
     members = ensure_object(

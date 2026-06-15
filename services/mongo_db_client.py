@@ -37,6 +37,11 @@ def get_location_collection() -> Collection[Any]:
     return _get_database()["locations"]
 
 
+def get_league_metadata_collection() -> Collection[Any]:
+    """Return the league metadata collection."""
+    return _get_database()["league_metadata"]
+
+
 def get_clan_collection() -> Collection[Any]:
     """Return the clans collection."""
     return _get_database()["clans"]
@@ -63,6 +68,7 @@ def _ping_mongo() -> None:
 def _ensure_indexes() -> None:
     """Create indexes required by the application."""
     clan_collection = get_clan_collection()
+    league_metadata_collection = get_league_metadata_collection()
     user_collection = get_user_collection()
     import_state_collection = get_import_state_collection()
 
@@ -85,6 +91,10 @@ def _ensure_indexes() -> None:
     clan_collection.create_index("clan_info.clan_level")
     clan_collection.create_index("clan_info.clanPoints")
     clan_collection.create_index("clan_info.warFrequency")
+    league_metadata_collection.create_index(
+        [("kind", 1), ("value", 1)],
+        unique=True,
+    )
 
     import_state_collection.create_index("seed_key", unique=True)
 
