@@ -1,4 +1,4 @@
-export const builderBaseLeagueOptions = [
+export const defaultBuilderBaseLeagueOptions = [
   { value: 0, label: "No Builder Base Requirement" },
   { value: 1, label: "Wood V" },
   { value: 2, label: "Wood IV" },
@@ -44,8 +44,16 @@ export const builderBaseLeagueOptions = [
   { value: 42, label: "Diamond" }
 ];
 
+export const builderBaseLeagueOptions = defaultBuilderBaseLeagueOptions;
+
+export function normalizeBuilderBaseLeagueOptions(options) {
+  return Array.isArray(options) && options.length > 0
+    ? options
+    : defaultBuilderBaseLeagueOptions;
+}
+
 const builderBaseLeagueLabels = new Map(
-  builderBaseLeagueOptions.map((option) => [option.value, option.label])
+  defaultBuilderBaseLeagueOptions.map((option) => [option.value, option.label])
 );
 
 export function formatBuilderBaseLeague(value) {

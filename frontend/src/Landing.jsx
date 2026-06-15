@@ -7,6 +7,7 @@ import usePageTitle from "./hooks/usePageTitle"
 import "./Landing.css";
 
 const leagueLabelByValue = new Map(leagueOptions.map((option) => [option.value, option.label]));
+const maxLeagueValue = Math.max(...leagueOptions.map((option) => option.value));
 
 function getLeagueLabel(leagueValue) {
     const parsedValue = Number(leagueValue);
@@ -15,7 +16,7 @@ function getLeagueLabel(leagueValue) {
         return `League ${leagueValue ?? "?"}`;
     }
 
-    return label === "Legend League" ? label : `${label}+`;
+    return parsedValue === maxLeagueValue ? label : `${label}+`;
 }
 
 function Landing() {

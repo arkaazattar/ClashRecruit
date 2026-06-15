@@ -3,6 +3,14 @@ from datetime import datetime, timedelta, timezone
 import ClashRecruit.services.recruiter_listing as recruiter_listing
 
 FROZEN_NOW = datetime(2026, 5, 12, 12, 30, tzinfo=timezone.utc)
+TEST_LEAGUE_OPTIONS = [
+    {"value": 0, "label": "Unranked"},
+    {"value": 36, "label": "Legend League 3"},
+]
+TEST_BUILDER_BASE_LEAGUE_OPTIONS = [
+    {"value": 0, "label": "No Builder Base Requirement"},
+    {"value": 42, "label": "Diamond"},
+]
 
 
 class DummyDeleteResult:
@@ -81,6 +89,16 @@ def setup_recruiter_listing(monkeypatch, collection):
         lambda: collection,
     )
     monkeypatch.setattr(recruiter_listing, "refresh", lambda headers: 17)
+    monkeypatch.setattr(
+        recruiter_listing,
+        "get_ranked_league_options",
+        lambda: TEST_LEAGUE_OPTIONS,
+    )
+    monkeypatch.setattr(
+        recruiter_listing,
+        "get_builder_base_league_options",
+        lambda: TEST_BUILDER_BASE_LEAGUE_OPTIONS,
+    )
     monkeypatch.setattr(recruiter_listing, "datetime", FakeDatetime)
 
 
@@ -103,6 +121,8 @@ def test_get_recruiter_listing_page_returns_existing_listing(monkeypatch):
         "oldRequiredBuilderLeague": 19,
         "oldRequiredTownhall": 12,
         "MAXTOWNHALL": 17,
+        "builderBaseLeagueOptions": TEST_BUILDER_BASE_LEAGUE_OPTIONS,
+        "leagueOptions": TEST_LEAGUE_OPTIONS,
         "clanDescription": "existing_description",
         "status": "existing_expiry",
     }
@@ -129,6 +149,8 @@ def test_get_recruiter_listing_page_uses_clash_defaults(monkeypatch):
         "oldRequiredBuilderLeague": 2,
         "oldRequiredTownhall": 3,
         "MAXTOWNHALL": 17,
+        "builderBaseLeagueOptions": TEST_BUILDER_BASE_LEAGUE_OPTIONS,
+        "leagueOptions": TEST_LEAGUE_OPTIONS,
         "clanDescription": "test_clan_description",
         "status": None,
     }

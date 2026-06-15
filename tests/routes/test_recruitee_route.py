@@ -48,6 +48,16 @@ class DummyClanCollection:
         return self.tag_result
 
 
+TEST_LEAGUE_OPTIONS = [
+    {"value": 0, "label": "Unranked"},
+    {"value": 36, "label": "Legend League 3"},
+]
+TEST_BUILDER_BASE_LEAGUE_OPTIONS = [
+    {"value": 0, "label": "No Builder Base Requirement"},
+    {"value": 42, "label": "Diamond"},
+]
+
+
 def expected_active_query(collection, query=None):
     expected = dict(query or {})
     expected["expires"] = collection.find_query["expires"]
@@ -346,6 +356,11 @@ def test_recruitee_post_filters_and_paginates_with_total(
         lambda: collection,
     )
     monkeypatch.setattr(recruitee_route, "refresh", lambda headers: 17)
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_max_ranked_league",
+        lambda: 36,
+    )
 
     response = client.post(
         "/recruitee?includeTotal=1&limit=2&offset=0",
@@ -397,6 +412,29 @@ def test_recruitee_post_filters_and_paginates_with_total(
     ]
     assert collection.cursor.skip_count == 0
     assert collection.cursor.limit_count == 2
+
+
+def test_recruitee_metadata_returns_league_options(client, monkeypatch):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_ranked_league_options",
+        lambda: TEST_LEAGUE_OPTIONS,
+    )
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_builder_base_league_options",
+        lambda: TEST_BUILDER_BASE_LEAGUE_OPTIONS,
+    )
+
+    response = client.get("/recruitee/metadata")
+
+    assert response.status_code == 200
+    assert response.get_json() == {
+        "builderBaseLeagueOptions": TEST_BUILDER_BASE_LEAGUE_OPTIONS,
+        "leagueOptions": TEST_LEAGUE_OPTIONS,
+    }
 
 
 def test_recruitee_post_returns_clan_by_tag(
@@ -761,6 +799,11 @@ def test_recruitee_post_rejects_townhall_above_current_max(
         lambda: collection,
     )
     monkeypatch.setattr(recruitee_route, "refresh", lambda headers: 17)
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_max_ranked_league",
+        lambda: 36,
+    )
 
     response = client.post(
         "/recruitee",
@@ -769,6 +812,34 @@ def test_recruitee_post_rejects_townhall_above_current_max(
 
     assert response.status_code == 400
     assert response.get_json() == {"error": "townhall must be at most 17."}
+    assert collection.find_query is None
+
+
+def test_recruitee_post_rejects_league_above_current_api_max(
+    client,
+    monkeypatch,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_max_ranked_league",
+        lambda: 36,
+    )
+
+    response = client.post(
+        "/recruitee",
+        json={"filters": {"requirements": {"league": 37}}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "league must be at most 36."}
     assert collection.find_query is None
 
 
@@ -882,6 +953,11 @@ def test_recruitee_post_normalizes_numeric_string_filters(
         lambda: collection,
     )
     monkeypatch.setattr(recruitee_route, "refresh", lambda headers: 17)
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_max_ranked_league",
+        lambda: 36,
+    )
 
     response = client.post(
         "/recruitee",

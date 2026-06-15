@@ -4,6 +4,10 @@ from datetime import datetime, timedelta, timezone
 
 from ..api.recruiter_api import Recruiter
 from ..config import headers
+from .leagues import (
+    get_builder_base_league_options,
+    get_ranked_league_options,
+)
 from .maxtownhall import refresh
 from .mongo_db_client import get_clan_collection
 
@@ -43,6 +47,8 @@ def get_recruiter_listing_page(
             "oldRequiredBuilderLeague": required_builder_league,
             "oldRequiredTownhall": required_townhall,
             "MAXTOWNHALL": refresh(headers),
+            "builderBaseLeagueOptions": get_builder_base_league_options(),
+            "leagueOptions": get_ranked_league_options(),
             "clanDescription": clan_description,
             "status": status,
         },
