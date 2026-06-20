@@ -664,9 +664,9 @@ return (
               <p><strong>Clan Points:</strong> {clan.clan_info?.clanPoints ?? 0}</p>
             </div>
 
-            <p className="listing-description">
-              {clan.clan_info?.description || "No description provided."}
-            </p>
+            {clan.clan_info?.description && <p className="listing-description">
+              {clan.clan_info.description}
+            </p>}
 
             <div className="listing-card-actions">
               {isLoggedIn && (
