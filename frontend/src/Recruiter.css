@@ -1,4 +1,16 @@
 .recruiter-page {
+    --recruiter-surface: rgba(255, 255, 255, 0.9);
+    --recruiter-surface-soft: #f7efe0;
+    --recruiter-border: #d4b985;
+    --recruiter-border-strong: #c8a04d;
+    --recruiter-text-main: #201913;
+    --recruiter-text-muted: #594b3f;
+    --recruiter-accent-red: #b33a32;
+    --recruiter-accent-red-hover: #922a24;
+    --recruiter-status: #2f7d32;
+    --recruiter-shadow: rgba(32, 25, 19, 0.1);
+    --recruiter-shadow-strong: rgba(32, 25, 19, 0.16);
+
     padding: 24px;
     width: min(1160px, 100%);
     box-sizing: border-box;
@@ -22,13 +34,13 @@
 }
 
 .recruiter-error-links a {
-    color: black;
+    color: #51361d;
     font-weight: 600;
     text-decoration: none;
 }
 
 .recruiter-error-links a:hover {
-    text-decoration: underline;
+    color: var(--recruiter-accent-red);
 }
 
 .recruiter-loading {
@@ -48,10 +60,11 @@
 }
 
 .recruiter-card {
-    border: 1px solid #d8e0ea;
-    border-radius: 12px;
-    background: #f8fbff;
+    border: none;
+    border-radius: 18px;
+    background: rgba(255, 249, 236, 0.95);
     padding: 20px;
+    box-shadow: 0 22px 40px rgba(54, 35, 17, 0.12);
 }
 
 .recruiter-fields {
@@ -79,19 +92,29 @@
     flex-direction: column;
     gap: 6px;
     font-size: 0.86rem;
-    color: #334155;
+    color: #51361d;
+    font-weight: 700;
 }
 
 .recruiter-field input,
 .recruiter-field select,
 .recruiter-field textarea {
-    border: 1px solid #cbd5e1;
+    border: 1px solid #d5bb94;
     border-radius: 8px;
     padding: 8px 10px;
     font-size: 0.95rem;
-    background: #ffffff;
+    background: rgba(255, 253, 249, 0.95);
+    color: var(--recruiter-text-main);
     width: 100%;
     box-sizing: border-box;
+}
+
+.recruiter-field input:focus,
+.recruiter-field select:focus,
+.recruiter-field textarea:focus {
+    border-color: var(--recruiter-border-strong);
+    box-shadow: 0 0 0 3px rgba(200, 160, 77, 0.18);
+    outline: none;
 }
 
 .recruiter-field textarea {
@@ -109,24 +132,27 @@
 .recruiter-secondary,
 .recruiter-danger {
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 9px 14px;
     font-size: 0.92rem;
+    font-weight: 700;
     cursor: pointer;
 }
 
 .recruiter-primary {
-    background: #2563eb;
-    color: #ffffff;
+    background: var(--recruiter-accent-red);
+    color: #fff8f2;
+    box-shadow: 0 8px 16px rgba(128, 58, 44, 0.2);
 }
 
 .recruiter-primary:hover {
-    background: #1d4ed8;
+    background: var(--recruiter-accent-red-hover);
 }
 
 .recruiter-secondary {
-    background: #e2e8f0;
-    color: #0f172a;
+    border: 1px solid var(--recruiter-border);
+    background: var(--recruiter-surface-soft);
+    color: #51361d;
 }
 
 .recruiter-secondary-link {
@@ -137,20 +163,22 @@
 }
 
 .recruiter-secondary:hover {
-    background: #cbd5e1;
+    background: #fff2df;
 }
 
 .recruiter-danger {
-    background: #dc2626;
-    color: #ffffff;
+    background: #b91c1c;
+    color: #fff8f2;
+    box-shadow: 0 8px 16px rgba(128, 58, 44, 0.18);
 }
 
 .recruiter-danger:hover {
-    background: #b91c1c;
+    background: #991b1b;
 }
 
 .recruiter-status-card {
-    background: #ffffff;
+    background: rgba(255, 248, 234, 0.96);
+    box-shadow: 0 10px 20px var(--recruiter-shadow);
 }
 
 .recruiter-listing-toggle-input {
@@ -165,7 +193,7 @@
 }
 
 .recruiter-listing-toggle-input:checked ~ .recruiter-actions .recruiter-listing-toggle {
-    background: #1d4ed8;
+    background: var(--recruiter-accent-red-hover);
 }
 
 .recruiter-update-box {
@@ -192,20 +220,20 @@
     margin-top: 14px;
     padding-top: 16px;
     padding-bottom: 16px;
-    border-color: #d8e0ea;
+    border-color: transparent;
     opacity: 1;
     pointer-events: auto;
 }
 
 .recruiter-status-title {
     margin: 0;
-    color: #0f172a;
+    color: var(--recruiter-text-main);
     font-weight: 600;
 }
 
 .recruiter-status-expiry {
     margin: 8px 0 0;
-    color: #475569;
+    color: var(--recruiter-text-muted);
 }
 
 .recruiter-checkbox {
@@ -213,7 +241,8 @@
     align-items: center;
     gap: 8px;
     font-size: 0.86rem;
-    color: #334155;
+    color: #51361d;
+    font-weight: 700;
 }
 
 .recruiter-checkbox input {
@@ -237,7 +266,7 @@
 
 .recruiter-success-message {
     margin: 14px 0 0;
-    color: #166534;
+    color: var(--recruiter-status);
     font-size: 0.9rem;
     font-weight: 500;
 }
@@ -247,9 +276,9 @@
     max-height: 0;
     margin-top: 0;
     padding: 0 12px;
-    border: 1px solid #fecaca;
+    border: 1px solid #fca5a5;
     border-radius: 10px;
-    background: #fef2f2;
+    background: #fff1f2;
     opacity: 0;
     overflow: hidden;
     pointer-events: none;
@@ -270,7 +299,7 @@
     padding-bottom: 12px;
     opacity: 1;
     pointer-events: auto;
-    border-color: #fecaca;
+    border-color: #fca5a5;
 }
 
 .recruiter-delete-confirm-text {
