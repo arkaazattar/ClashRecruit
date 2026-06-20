@@ -165,6 +165,7 @@ For a small deployment, configure at minimum:
 - `DBURI`
 - `APIKEY`
 - Redis/Celery if scheduled import or refresh jobs are needed
+- Redis bound only to the private app network; do not publish port `6379`
 - a production frontend build
 - a production Flask runner such as Gunicorn rather than `flask run`
 - a trusted CORS/frontend origin instead of local development defaults
