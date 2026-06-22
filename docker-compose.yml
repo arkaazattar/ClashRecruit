@@ -10,19 +10,27 @@ services:
   web:
     build: .
     working_dir: /app
-    command: flask --app ClashRecruit.app run --host=0.0.0.0 --port=5000
+    command: gunicorn --bind 0.0.0.0:5000 --workers 2 --threads 4 --timeout 120 ClashRecruit.app:app
     env_file:
       - .env
     environment:
       PYTHONPATH: /app
       CELERY_BROKER_URL: redis://redis:6379/0
-    volumes:
-      - .:/app/ClashRecruit
-    ports:
-      - "5000:5000"
+    expose:
+      - "5000"
     depends_on:
       redis:
         condition: service_healthy
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - web
     restart: unless-stopped
 
   worker:
@@ -34,8 +42,6 @@ services:
     environment:
       PYTHONPATH: /app
       CELERY_BROKER_URL: redis://redis:6379/0
-    volumes:
-      - .:/app/ClashRecruit
     depends_on:
       redis:
         condition: service_healthy
@@ -50,8 +56,6 @@ services:
     environment:
       PYTHONPATH: /app
       CELERY_BROKER_URL: redis://redis:6379/0
-    volumes:
-      - .:/app/ClashRecruit
     depends_on:
       redis:
         condition: service_healthy

@@ -5,4 +5,8 @@ WORKDIR /app
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
-COPY . /app/ClashRecruiter
+COPY . /app/ClashRecruit
+
+ENV PYTHONPATH=/app
+
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--threads", "4", "--timeout", "120", "ClashRecruit.app:app"]
