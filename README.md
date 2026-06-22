@@ -87,6 +87,15 @@ This starts:
 
 Nginx serves the production React build and proxies backend requests to Gunicorn.
 
+For HTTPS, place the Cloudflare Origin Certificate and private key on the host at:
+
+```text
+certs/cloudflare-origin.pem
+certs/cloudflare-origin-key.pem
+```
+
+The `certs/` directory is mounted into the Nginx container read-only and is ignored by git.
+
 Stop the stack:
 
 ```bash
