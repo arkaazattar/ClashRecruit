@@ -32,7 +32,7 @@ ClashRecruit/
 ├── app.py               Flask application entrypoint
 ├── clash_http_client.py Shared Clash API HTTP client
 ├── config.py            Environment-backed config
-├── docker-compose.yml   Local backend/worker/Redis stack
+├── docker-compose.yml   Local Nginx/Gunicorn/worker/Redis stack
 ├── Dockerfile           Backend image
 ├── pyproject.toml       Ruff and pytest config
 └── requirements.txt     Pinned backend dependencies
@@ -70,7 +70,7 @@ CLASH_INIT_DB_ON_START=False
 
 ## Local Development
 
-### Backend with Docker Compose
+### Full Stack with Docker Compose
 
 From the repository root:
 
@@ -79,10 +79,13 @@ docker compose up --build
 ```
 
 This starts:
-- Flask backend on `http://127.0.0.1:5000`
+- Nginx on `http://127.0.0.1`
+- Gunicorn-backed Flask app on the private Docker network
 - Redis
 - Celery worker
 - Celery beat scheduler
+
+Nginx serves the production React build and proxies backend requests to Gunicorn.
 
 Stop the stack:
 
@@ -123,6 +126,8 @@ npm start
 ```
 
 The frontend runs at `http://localhost:3000` and proxies API requests to `http://127.0.0.1:5000`.
+
+When running through Docker Compose, Nginx serves the frontend at `http://127.0.0.1` and proxies API requests to the `web` service at `http://web:5000`.
 
 ## Checks
 
@@ -169,6 +174,7 @@ For a small deployment, configure at minimum:
 - a production frontend build
 - a production Flask runner such as Gunicorn rather than `flask run`
 - a trusted CORS/frontend origin instead of local development defaults
+- Cloudflare set to Full or Full (strict) SSL mode, with only ports `80`, `443`, and restricted SSH open on EC2
 
 Before deploying publicly, verify:
 - backend tests pass
