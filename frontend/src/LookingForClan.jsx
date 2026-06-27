@@ -11,6 +11,9 @@ import LoadingScreen from "./components/LoadingScreen";
 import "./LookingForClan.css";
 
 const PAGE_SIZE = 10;
+const PAGE_WINDOW_SIZE = 10;
+const DEFAULT_SOURCE_SORT = "community";
+const SOURCE_SORT_OPTIONS = new Set(["community", "discovered"]);
 
 function toNumberOrNull(value) {
     return value === "" || value === null ? null : Number(value);
@@ -19,6 +22,10 @@ function toNumberOrNull(value) {
 function parsePageParam(value) {
   const pageNumber = Number(value);
   return Number.isInteger(pageNumber) && pageNumber > 0 ? pageNumber : 1;
+}
+
+function parseSourceSortParam(value) {
+  return SOURCE_SORT_OPTIONS.has(value) ? value : DEFAULT_SOURCE_SORT;
 }
 
 function readFilterParam(searchParams, name) {
@@ -36,22 +43,33 @@ function parseFiltersFromSearchParams(searchParams) {
     warFrequency: readFilterParam(searchParams, "warFrequency"),
     clanPoints: readFilterParam(searchParams, "clanPoints"),
     location: readFilterParam(searchParams, "location"),
+    sourceSort: parseSourceSortParam(searchParams.get("sourceSort")),
   };
 }
 
 function hasActiveFilters(filters) {
-  return Object.values(filters).some((value) => String(value).trim() !== "");
+  return Object.entries(filters).some(([key, value]) => (
+    key !== "sourceSort" && String(value).trim() !== ""
+  ));
 }
 
 function buildListingSearchParams(filters, page) {
   const nextParams = new URLSearchParams();
 
   Object.entries(filters).forEach(([key, value]) => {
+    if (key === "sourceSort") {
+      return;
+    }
+
     const normalizedValue = String(value ?? "").trim();
     if (normalizedValue) {
       nextParams.set(key, normalizedValue);
     }
   });
+
+  if (filters.sourceSort && filters.sourceSort !== DEFAULT_SOURCE_SORT) {
+    nextParams.set("sourceSort", filters.sourceSort);
+  }
 
   if (page > 1) {
     nextParams.set("page", String(page));
@@ -303,8 +321,10 @@ function LookingForClan() {
     }, []);
 
     const fetchClanPage = useCallback(async (page, filters, signal) => {
-      const offset = (page - 1) * PAGE_SIZE;
-      const url = `/recruitee?limit=${PAGE_SIZE}&offset=${offset}&includeTotal=1`;
+    const offset = (page - 1) * PAGE_SIZE;
+      const sourceSort = parseSourceSortParam(filters.sourceSort);
+      const sourceSortParam = encodeURIComponent(sourceSort);
+      const url = `/recruitee?limit=${PAGE_SIZE}&offset=${offset}&includeTotal=1&sourceSort=${sourceSortParam}`;
       const filterPayload = buildFilterPayload(filters);
       const response = hasActiveFilters(filters)
         ? await fetch(url, {
@@ -518,7 +538,19 @@ function LookingForClan() {
       }
     };
     const totalPages = Math.max(1, Math.ceil(totalResults / PAGE_SIZE));
-    const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
+    const pageWindowStart = (
+      Math.floor((currentPage - 1) / PAGE_WINDOW_SIZE) * PAGE_WINDOW_SIZE
+    ) + 1;
+    const pageWindowEnd = Math.min(
+      pageWindowStart + PAGE_WINDOW_SIZE - 1,
+      totalPages
+    );
+    const pageNumbers = Array.from(
+      { length: pageWindowEnd - pageWindowStart + 1 },
+      (_, i) => pageWindowStart + i
+    );
+    const hasPreviousPageWindow = pageWindowStart > 1;
+    const hasNextPageWindow = pageWindowEnd < totalPages;
 
 if (!sessionStateLoaded || loading){
   return <LoadingScreen />;
@@ -595,6 +627,14 @@ return (
               {location.name}
             </option>
           ))}
+        </select>
+      </label>
+
+      <label>
+        Sort
+        <select name="sourceSort" value={Filters.sourceSort} onChange={handleFilterChange}>
+          <option value="community">Community listings first</option>
+          <option value="discovered">Discovered clans first</option>
         </select>
       </label>
 
@@ -687,8 +727,18 @@ return (
         );
       })}
     </div>
-    {pageNumbers.length > 1 && (
-      <div className="listing-pagination-wrap">
+    {totalPages > 1 && (
+      <div className="listing-pagination-wrap" aria-label="Clan listing pages">
+        {hasPreviousPageWindow && (
+          <button
+            type="button"
+            className="listing-page-btn listing-page-arrow"
+            onClick={() => handlePageChange(pageWindowStart - PAGE_WINDOW_SIZE)}
+            aria-label="Previous 10 pages"
+          >
+            &lt;
+          </button>
+        )}
         {pageNumbers.map((pageNumber) => (
           <button
             key={pageNumber}
@@ -699,6 +749,16 @@ return (
             {pageNumber}
           </button>
         ))}
+        {hasNextPageWindow && (
+          <button
+            type="button"
+            className="listing-page-btn listing-page-arrow"
+            onClick={() => handlePageChange(pageWindowEnd + 1)}
+            aria-label="Next 10 pages"
+          >
+            &gt;
+          </button>
+        )}
       </div>
     )}
 

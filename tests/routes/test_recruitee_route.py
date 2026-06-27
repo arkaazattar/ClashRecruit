@@ -336,6 +336,30 @@ def test_recruitee_get_returns_400_for_invalid_include_total(
     assert collection.count_query is None
 
 
+def test_recruitee_get_returns_400_for_invalid_source_sort(
+    client,
+    monkeypatch,
+    set_session,
+):
+    import ClashRecruit.routes.recruitee_route as recruitee_route
+
+    collection = DummyClanCollection()
+
+    set_session(player_name="Guest")
+    monkeypatch.setattr(
+        recruitee_route,
+        "get_clan_collection",
+        lambda: collection,
+    )
+
+    response = client.get("/recruitee?sourceSort=unknown")
+
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "sourceSort is invalid."}
+    assert collection.find_query is None
+    assert collection.count_query is None
+
+
 def test_recruitee_post_filters_and_paginates_with_total(
     client,
     monkeypatch,
