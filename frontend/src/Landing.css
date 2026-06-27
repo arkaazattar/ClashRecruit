@@ -558,6 +558,10 @@
   .landing-hero {
     min-height: calc(100vh - 96px);
     padding-top: clamp(34px, 8vh, 62px);
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 24px;
   }
 
   .landing-hero-layout {
@@ -569,16 +573,27 @@
     max-width: 620px;
     width: 100%;
   }
+
+  .landing-block {
+    width: 100%;
+    margin-left: 0;
+    padding-left: 0;
+  }
+
+  .landing-cards {
+    flex: 1 1 0;
+    min-width: 0;
+  }
 }
 
 @media (max-width: 760px) {
   .landing {
-    padding: 20px 16px 30px;
+    padding: 20px 0 30px;
   }
 
   .landing-hero {
     min-height: calc(100vh - 110px);
-    padding: clamp(30px, 7vh, 52px) 16px 34px;
+    padding: clamp(30px, 7vh, 52px) 16px 112px;
   }
 
   .landing-btn {
@@ -613,6 +628,16 @@
 }
 
 @media (max-width: 680px) {
+  .landing-block {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 20px;
+  }
+
+  .landing-cards {
+    width: min(100%, 280px);
+  }
+
   .landing-clan-card {
     min-height: 196px;
   }
