@@ -310,6 +310,10 @@
     color: #ffffff;
 }
 
+.listing-page-arrow {
+    font-weight: 700;
+}
+
 @media (max-width: 820px) {
     .looking-filters {
         grid-template-columns: repeat(2, minmax(140px, 1fr));

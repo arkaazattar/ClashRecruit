@@ -4,6 +4,8 @@ import re
 from datetime import datetime, timezone
 from typing import Any
 
+from .clan_search_sorting import priority_sort_pipeline
+
 IMPORTED_CLAN_SORT = [
     ("last_discovered", -1),
     ("last_updated", -1),
@@ -32,12 +34,24 @@ def get_imported_clans_response(
     filters = payload.get("filters", {})
     query = build_imported_query(filters)
     total = clan_collection.count_documents(query)
-    items = list(
-        clan_collection.find(query, {"_id": 0})
-        .sort(IMPORTED_CLAN_SORT)
-        .skip(offset)
-        .limit(limit)
-    )
+    if hasattr(clan_collection, "aggregate"):
+        items = list(
+            clan_collection.aggregate(
+                priority_sort_pipeline(
+                    query,
+                    IMPORTED_CLAN_SORT,
+                    offset=offset,
+                    limit=limit,
+                )
+            )
+        )
+    else:
+        items = list(
+            clan_collection.find(query, {"_id": 0})
+            .sort(IMPORTED_CLAN_SORT)
+            .skip(offset)
+            .limit(limit)
+        )
 
     return (
         {

@@ -47,6 +47,16 @@ class DummyClanCollection:
         return self.cursor
 
 
+class AggregateClanCollection(DummyClanCollection):
+    def __init__(self, docs):
+        super().__init__(docs)
+        self.aggregate_pipeline = None
+
+    def aggregate(self, pipeline):
+        self.aggregate_pipeline = pipeline
+        return iter(self.cursor.docs)
+
+
 def test_build_imported_query_uses_filters():
     query = build_imported_query(
         {
@@ -97,6 +107,33 @@ def test_imported_clans_response_returns_paginated_search():
     assert collection.find_query["clan_info.location.name"] == "Canada"
     assert collection.find_projection == {"_id": 0}
     assert collection.cursor.sort_fields == IMPORTED_CLAN_SORT
+
+
+def test_imported_clans_response_prioritizes_english_clans():
+    collection = AggregateClanCollection(
+        [{"clan_tag": "ONE", "name": "First"}]
+    )
+
+    payload, status_code = get_imported_clans_response(
+        {"filters": {}},
+        limit=10,
+        offset=0,
+        clan_collection=collection,
+        imported_clan_lookup=lambda clan_tag: None,
+    )
+
+    assert status_code == 200
+    assert payload["items"] == [{"clan_tag": "ONE", "name": "First"}]
+    assert collection.aggregate_pipeline[0] == {"$match": collection.count_query}
+    assert collection.aggregate_pipeline[2]["$sort"] == {
+        "_listing_source_priority": 1,
+        "_english_priority": 1,
+        "last_discovered": -1,
+        "last_updated": -1,
+        "clan_info.clan_level": -1,
+        "clan_info.member_count": -1,
+        "clan_tag": 1,
+    }
 
 
 def test_imported_clans_response_returns_tag_lookup():

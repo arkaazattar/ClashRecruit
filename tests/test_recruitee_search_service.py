@@ -59,6 +59,16 @@ class DummyClanCollection:
         return self.tag_result
 
 
+class AggregateClanCollection(DummyClanCollection):
+    def __init__(self, docs=None, tag_result=None):
+        super().__init__(docs, tag_result)
+        self.aggregate_pipeline = None
+
+    def aggregate(self, pipeline):
+        self.aggregate_pipeline = pipeline
+        return iter(self.cursor.docs)
+
+
 def test_matchmaking_base_query_uses_logged_in_player_stats():
     query = get_matchmaking_base_query(
         {
@@ -160,6 +170,60 @@ def test_recruitee_list_response_filters_and_includes_total():
     assert collection.count_query == collection.find_query
     assert collection.find_projection == {"_id": 0}
     assert collection.cursor.sort_fields == RECRUITEE_SORT
+
+
+def test_recruitee_list_response_prioritizes_community_and_english_clans():
+    collection = AggregateClanCollection(
+        [{"clan_tag": "TEST1", "name": "test_clan_1"}]
+    )
+
+    payload, status_code = get_recruitee_list_response(
+        {},
+        limit=10,
+        offset=0,
+        include_total=True,
+        clan_collection=collection,
+    )
+
+    assert status_code == 200
+    assert payload["items"] == [{"clan_tag": "TEST1", "name": "test_clan_1"}]
+    assert collection.aggregate_pipeline[0] == {"$match": collection.count_query}
+    assert collection.aggregate_pipeline[1]["$addFields"][
+        "_listing_source_priority"
+    ] == {
+        "$cond": [{"$eq": ["$source", "clash_api_import"]}, 1, 0],
+    }
+    assert collection.aggregate_pipeline[2]["$sort"] == {
+        "_listing_source_priority": 1,
+        "_english_priority": 1,
+        "last_updated": -1,
+        "clan_tag": 1,
+    }
+    assert collection.aggregate_pipeline[3] == {"$skip": 0}
+    assert collection.aggregate_pipeline[4] == {"$limit": 10}
+
+
+def test_recruitee_list_response_can_prioritize_discovered_clans():
+    collection = AggregateClanCollection(
+        [{"clan_tag": "TEST1", "name": "test_clan_1"}]
+    )
+
+    payload, status_code = get_recruitee_list_response(
+        {},
+        limit=10,
+        offset=0,
+        include_total=True,
+        source_sort="discovered",
+        clan_collection=collection,
+    )
+
+    assert status_code == 200
+    assert payload["items"] == [{"clan_tag": "TEST1", "name": "test_clan_1"}]
+    assert collection.aggregate_pipeline[1]["$addFields"][
+        "_listing_source_priority"
+    ] == {
+        "$cond": [{"$eq": ["$source", "clash_api_import"]}, 0, 1],
+    }
 
 
 def test_recruitee_post_response_returns_tag_lookup():

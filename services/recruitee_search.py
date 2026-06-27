@@ -6,6 +6,7 @@ from typing import Any
 
 from ..routes.validation import RequestValidationError
 from .builder_base_leagues import builder_base_league_id_from_trophies
+from .clan_search_sorting import priority_sort_pipeline
 
 MATCHMAKING_SESSION_FIELDS = {
     "player_league": "requirements.0",
@@ -22,6 +23,7 @@ def get_recruitee_list_response(
     offset: int,
     include_total: bool,
     clan_collection: Any,
+    source_sort: str = "community",
 ) -> tuple[Any, int]:
     """Return clans for a session with optional total metadata."""
     query = active_listing_query(get_matchmaking_base_query(session_data))
@@ -30,6 +32,7 @@ def get_recruitee_list_response(
         limit=limit,
         offset=offset,
         include_total=include_total,
+        source_sort=source_sort,
         clan_collection=clan_collection,
     ), 200
 
@@ -41,6 +44,7 @@ def get_recruitee_post_response(
     offset: int,
     include_total: bool,
     clan_collection: Any,
+    source_sort: str = "community",
 ) -> tuple[Any, int]:
     """Return clan details by tag or a filtered clan list."""
     clan_tag = payload.get("clanTag")
@@ -61,6 +65,7 @@ def get_recruitee_post_response(
         limit=limit,
         offset=offset,
         include_total=include_total,
+        source_sort=source_sort,
         clan_collection=clan_collection,
     ), 200
 
@@ -154,13 +159,27 @@ def _paginated_response(
     offset: int,
     include_total: bool,
     clan_collection: Any,
+    source_sort: str = "community",
 ) -> Any:
-    data = list(
-        clan_collection.find(query, {"_id": 0})
-        .sort(RECRUITEE_SORT)
-        .skip(offset)
-        .limit(limit)
-    )
+    if hasattr(clan_collection, "aggregate"):
+        data = list(
+            clan_collection.aggregate(
+                priority_sort_pipeline(
+                    query,
+                    RECRUITEE_SORT,
+                    offset=offset,
+                    limit=limit,
+                    source_sort=source_sort,
+                )
+            )
+        )
+    else:
+        data = list(
+            clan_collection.find(query, {"_id": 0})
+            .sort(RECRUITEE_SORT)
+            .skip(offset)
+            .limit(limit)
+        )
 
     if not include_total:
         return data

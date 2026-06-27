@@ -47,6 +47,7 @@ RECRUITEE_FILTER_FIELDS = {
 }
 RECRUITEE_REQUIREMENT_FIELDS = {"townhall", "league", "members"}
 MEMBER_FILTER_FIELDS = {"min", "max"}
+SOURCE_SORT_VALUES = {"community", "discovered"}
 
 
 def _get_requested_limit(default_limit):
@@ -70,6 +71,14 @@ def _should_include_total():
     return query_bool(request, "includeTotal", default=False)
 
 
+def _get_requested_source_sort():
+    """Return source ordering preference for mixed live/imported results."""
+    source_sort = request.args.get("sourceSort", "community").strip()
+    if source_sort not in SOURCE_SORT_VALUES:
+        raise RequestValidationError("sourceSort is invalid.")
+    return source_sort
+
+
 @recruitee_bp.get("/recruitee")
 @rate_limit("recruitee_get", limit=60, window_seconds=60)
 def recruitee_get():
@@ -79,6 +88,7 @@ def recruitee_get():
         requested_limit = _get_requested_limit(default_limit)
         requested_offset = _get_requested_offset()
         include_total = _should_include_total()
+        source_sort = _get_requested_source_sort()
     except RequestValidationError as exc:
         return jsonify({"error": exc.message}), 400
 
@@ -88,6 +98,7 @@ def recruitee_get():
             limit=requested_limit,
             offset=requested_offset,
             include_total=include_total,
+            source_sort=source_sort,
             clan_collection=get_clan_collection(),
         )
     except RequestValidationError as exc:
@@ -116,6 +127,7 @@ def recruitee_post():
         requested_limit = _get_requested_limit(default_limit)
         requested_offset = _get_requested_offset()
         include_total = _should_include_total()
+        source_sort = _get_requested_source_sort()
         raw_form = _validate_recruitee_payload(get_json_object(request))
     except RequestValidationError as exc:
         return jsonify({"error": exc.message}), 400
@@ -125,6 +137,7 @@ def recruitee_post():
         limit=requested_limit,
         offset=requested_offset,
         include_total=include_total,
+        source_sort=source_sort,
         clan_collection=get_clan_collection(),
     )
     return jsonify(payload), status_code
