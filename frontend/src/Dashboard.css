@@ -837,10 +837,19 @@
 
     .dashboard-hero-right {
         transform: none;
+        width: 100%;
+        min-width: 0;
+        justify-self: center;
     }
 
     .dashboard-hero-left {
         justify-content: center;
+    }
+
+    .dashboard-clan-link,
+    .dashboard-clan-summary {
+        width: min(100%, 220px);
+        margin: 0 auto;
     }
 
     .dashboard-townhall-shell {
