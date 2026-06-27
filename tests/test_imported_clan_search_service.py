@@ -124,7 +124,9 @@ def test_imported_clans_response_prioritizes_english_clans():
 
     assert status_code == 200
     assert payload["items"] == [{"clan_tag": "ONE", "name": "First"}]
-    assert collection.aggregate_pipeline[0] == {"$match": collection.count_query}
+    assert collection.aggregate_pipeline[0] == {
+        "$match": collection.count_query,
+    }
     assert collection.aggregate_pipeline[2]["$sort"] == {
         "_listing_source_priority": 1,
         "_english_priority": 1,

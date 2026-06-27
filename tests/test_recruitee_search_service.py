@@ -187,7 +187,9 @@ def test_recruitee_list_response_prioritizes_community_and_english_clans():
 
     assert status_code == 200
     assert payload["items"] == [{"clan_tag": "TEST1", "name": "test_clan_1"}]
-    assert collection.aggregate_pipeline[0] == {"$match": collection.count_query}
+    assert collection.aggregate_pipeline[0] == {
+        "$match": collection.count_query,
+    }
     assert collection.aggregate_pipeline[1]["$addFields"][
         "_listing_source_priority"
     ] == {
