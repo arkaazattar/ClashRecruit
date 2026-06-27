@@ -63,25 +63,27 @@ function Header({ user , hasActiveListing}) {
     
     return (
         <header className="header">
-            <div className="header-inner">
+            <div className={`header-inner${isLoggedIn ? " is-logged-in" : ""}`}>
                 <Link to='/' className='logo'>
                     <img src={logo} alt="ClashRecruit logo" className="logo-image" />
                 </Link>
 
                 <div className="header-right">
-                    <NavLink to="/looking-for-clan" className={getNavLinkClassName}>
-                        Find a Clan
-                    </NavLink>
-                    {isLoggedIn && (
-                        <>
-                            <NavLink to="/dashboard" className={getNavLinkClassName}>
-                                Dashboard
-                            </NavLink>
-                            <NavLink to="/recruit" className={getNavLinkClassName}>
-                                {hasActiveListing ? "View Listing" : "Recruit"}
-                            </NavLink>
-                        </>
-                    )}
+                    <nav className="header-nav" aria-label="Primary navigation">
+                        <NavLink to="/looking-for-clan" className={getNavLinkClassName}>
+                            Find a Clan
+                        </NavLink>
+                        {isLoggedIn && (
+                            <>
+                                <NavLink to="/dashboard" className={getNavLinkClassName}>
+                                    Dashboard
+                                </NavLink>
+                                <NavLink to="/recruit" className={getNavLinkClassName}>
+                                    {hasActiveListing ? "View Listing" : "Recruit"}
+                                </NavLink>
+                            </>
+                        )}
+                    </nav>
                     <span className="header-divider" aria-hidden="true"></span>
                     <div className="dropdown" ref={dropdownRef}>
                         <button
