@@ -3,6 +3,7 @@
 __pycache__/
 .dist/
 .venv/
+.tools/
 venv/
 *.env
 cache/
