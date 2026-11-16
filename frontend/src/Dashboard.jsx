@@ -12,24 +12,16 @@ const townHallAssetOverrides = {
   15: "./Town_Hall15-5.webp",
 };
 
-function getTownHallAsset(townhallLevel, weaponLevel) {
+function getTownHallAsset(townhallLevel) {
   if (!townhallLevel) {
     return null;
   }
 
   const level = Number(townhallLevel);
-  const weapon = Number(weaponLevel);
   const assetNames = [];
 
   if (!Number.isFinite(level)) {
     return null;
-  }
-
-  if (level === 17) {
-    if (weapon) {
-      assetNames.push(`./Town_Hall17-${weapon}.webp`);
-    }
-    assetNames.push("./Town_Hall17-5.webp");
   }
 
   if (townHallAssetOverrides[level]) {
@@ -151,7 +143,7 @@ function normalizeSavedClanTag(tagValue) {
 
 function Dashboard() {
   usePageTitle("Dashboard | ClashRecruit")
-  const { user, townhall, townhallWeaponLevel, recruitStatus, hasActiveListing, sessionStateLoaded } = useOutletContext();
+  const { user, townhall, recruitStatus, hasActiveListing, sessionStateLoaded } = useOutletContext();
   const normalizedUser = user === "Guest" ? null : user;
 
   const [loading, setLoading] = useState(true);
@@ -174,10 +166,7 @@ function Dashboard() {
     }
 
     let isMounted = true;
-    const resolvedTownHallImage = getTownHallAsset(
-      townhall,
-      townhallWeaponLevel
-    );
+    const resolvedTownHallImage = getTownHallAsset(townhall);
 
     preloadImage(resolvedTownHallImage).then(() => {
       if (isMounted) {
@@ -188,7 +177,7 @@ function Dashboard() {
     return () => {
       isMounted = false;
     };
-  }, [sessionStateLoaded, townhall, townhallWeaponLevel]);
+  }, [sessionStateLoaded, townhall]);
 
   useEffect(() => {
     if (!sessionStateLoaded) {
